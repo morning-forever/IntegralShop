@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="GoodsHotMapper">
+	<select	id="getAdminGoodsHotList" resultType="PageData">
+		select * from hot_level
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<select id="getAdminGoodsHotCount" resultType="Integer">
+		select count(1) from (select * from hot_level) tb
+	</select>
+	
+	<select id="getHotLevelList" resultType="HotLevel">
+		select * from hot_level
+	</select>
+	
+	<delete id="delete">
+		delete from hot_level where id=#{id}
+	</delete>
+	
+	<select id="getHotLevelById" resultType="HotLevel">
+		select * from hot_level where id=#{id}
+	</select>
+	
+	<insert id="insert">
+		insert into hot_level(level) values(#{level})
+	</insert>
+	
+	<update id="update">
+		update hot_level set level=#{level} where id=#{id}
+	</update>
+</mapper>

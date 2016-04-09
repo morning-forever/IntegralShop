@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AddressMapper">
+	
+	<resultMap type="com.bm.webs.bean.integralShop.Province" id="provinceMap">
+		<id column="provinceid" property="provinceId"/>
+		<result column="province" property="province"/>
+	</resultMap>
+	
+	<resultMap type="com.bm.webs.bean.integralShop.City" id="cityMap">
+		<id column="cityid" property="cityId"/>
+		<result column="city" property="city"/>
+		<result column="provinceid" property="provinceId"/>
+		
+	</resultMap>
+	
+	<resultMap type="com.bm.webs.bean.integralShop.Area" id="areaMap">
+		<id column="areaid" property="areaId"/>
+		<result column="area" property="area"/>
+		<result column="cityid" property="cityId"/>
+	</resultMap>
+	
+	<select id="getAllProvinces" resultMap="provinceMap">
+		select * from province
+	</select>
+	
+	<select id="getCitiesByProvinceId" resultMap="cityMap">
+		select * from city where provinceid=#{provinceId}
+	</select>
+	
+	<select id="getAreasByCityId" resultMap="areaMap">
+		select * from area where cityid=#{cityId}
+	</select>
+	
+	<select id="getCityById" resultMap="cityMap">
+		select * from city where cityid=#{cityId}
+	</select>
+	
+	<select id="getProvinceById" resultMap="provinceMap">
+		select * from province where provinceid=#{provinceId}
+	</select>
+	
+	<select id="getAreaById" resultMap="areaMap">
+		select * from area where areaid=#{areaId}
+	</select>
+</mapper>

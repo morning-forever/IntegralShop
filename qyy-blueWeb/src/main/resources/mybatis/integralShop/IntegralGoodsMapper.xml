@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="IntegralGoodsMapper">
+	
+	<resultMap id="getGoodsByIdResultMap" type="com.bm.webs.vo.GoodsView">
+		<id column="id" property="id"/>
+		<result column="name" property="name"/>
+		<result column="original_price" property="originalPrice"/>
+		<result column="current_price" property="currentPrice"/>
+		<result column="allNumber" property="allNumber"/>
+		<result column="residueNumber" property="residueNumber"/>
+		<result column="summary" property="summary"/>
+		<result column="pv" property="pv"/>
+		<result column="detail_image" property="detailImage"/>
+		<association property="goodsType" javaType="com.bm.webs.bean.integralShop.GoodsType">
+			<id column="goodstype_id" property="id"/>
+			<result column="goods_type" property="goodsType"/>
+		</association>
+		<association property="hotLevel" javaType="com.bm.webs.bean.integralShop.HotLevel">
+			<id column="hot_level_id" property="id"/>
+			<result column="level" property="level"/>
+		</association>
+		<collection property="goodsImages" ofType="com.bm.webs.bean.integralShop.GoodsImage" >
+			<id column="goods_img_id" property="id"/>
+			<result column="img_url" property="imgUrl"/>
+		</collection>
+	</resultMap>
+	
+	
+	
+	<!-- 根据id查询商品信息 -->
+	<select id="getGoodsById" resultMap="getGoodsByIdResultMap">
+		select
+		ig.id,
+		ig.`name`,gi.id as goods_img_id,gi.img_url,ig.original_price,ig.current_price,ig.allNumber,ig.residueNumber,ig.summary,ig.pv,ig.detail_image,ig.goodstype_id,igt.goods_type,ig.hot_level_id
+		from integral_goods ig
+		left JOIN goods_image gi
+		on gi.goods_id=ig.id
+		left JOIN integral_goodstype igt
+		on ig.goodstype_id=igt.id
+		where ig.id=#{id}
+	</select>
+	
+	<select id="getGoodsResdById" resultType="java.lang.Integer" parameterType="Order">
+		select residueNumber from integral_goods where id=#{goods.id} for update;
+	</select>
+	
+	<!--商品删除 -->
+	<delete id="deleteGoods" parameterType="java.lang.Integer">
+		delete from integral_goods where id=#{id}
+	</delete>
+	
+   
+   <!-- 更新商品 -->
+   <update id="updateGoods" parameterType="com.bm.webs.vo.GoodsView">
+   	 update integral_goods set 
+   	 	`name`=#{name},
+   	 	original_price=#{originalPrice},
+   	 	current_price=#{currentPrice},
+   	 	allNumber=#{allNumber},
+   	 	residueNumber=#{residueNumber},
+   	 	summary=#{summary},
+   	 	detail_image=#{detailImage},
+   	 	hot_level_id=#{hotLevel.id},
+   	 	goodstype_id=#{goodsType.id} where id=#{id}
+   </update>
+  
+  
+  <!-- 查询所有商品：返回PageData -->
+
+	<select id="getAdminGoodsList" resultType="PageData">
+		select
+		ig.id,
+		ig.`name`,ig.original_price,ig.current_price,ig.allNumber,ig.residueNumber,ig.summary,igt.goods_type,hl.`level`,gi.img_url
+		from
+		integral_goods ig
+		left join integral_goodstype igt 
+			on ig.goodstype_id=igt.id
+		left join hot_level hl 
+			on ig.hot_level_id=hl.id
+		left join (select * from goods_image group by goods_id) gi
+			on gi.goods_id = ig.id
+		where 
+		1=1 
+		<if test="name != null and name != '' ">
+			and ig.`name` like CONCAT(CONCAT('%', #{name}),'%')
+		</if>
+		
+		GROUP BY ig.id 
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 查询商品总数 -->
+	<select id="getAdminGoodsListCount" resultType="Integer">
+		select count(1) from 
+		(select
+		ig.id,
+		ig.`name`,ig.original_price,ig.current_price,ig.allNumber,ig.residueNumber,igt.goods_type,hl.`level`
+		from
+		integral_goods ig
+		left join integral_goodstype igt 
+			on ig.goodstype_id=igt.id
+		left join hot_level hl 
+			on ig.hot_level_id=hl.id
+		where 
+		1=1 
+		<if test="name != null and name != '' ">
+			and ig.`name` like CONCAT(CONCAT('%', #{name}),'%')
+		</if>
+		GROUP BY ig.id) tb
+	</select>
+	
+	<!-- 后台上传商品 -->
+	<insert id="insert" parameterType="com.bm.webs.bean.integralShop.IntegralGoods">
+		<selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+			SELECT LAST_INSERT_ID()
+		</selectKey>
+		insert into integral_goods(name,original_price,current_price,allNumber,residueNumber,summary,detail_image,goodstype_id,hot_level_id) 
+			values(#{name},#{originalPrice},#{currentPrice},#{allNumber},#{residueNumber},#{summary},#{detailImage},#{goodsTypeId},#{hotLevel.id})
+	</insert>
+	
+	<!-- 查询推荐商品 -->
+	<select id="getRecommendGoods" resultMap="getGoodsByIdResultMap">
+		select ig.id,ig.`name`,ig.summary,gi.img_url from integral_goods ig
+			LEFT JOIN goods_image gi 
+				on ig.id=gi.goods_id
+			LEFT JOIN hot_level hl
+				ON ig.hot_level_id=hl.id
+			where hl.`level`='推荐商品'
+			group by ig.id 
+	</select>
+	
+	<select id="getNewShevelsGoods" resultMap="getGoodsByIdResultMap">
+		select ig.id,ig.`name`,ig.summary,gi.img_url from integral_goods ig
+			LEFT JOIN goods_image gi 
+				on ig.id=gi.goods_id
+			LEFT JOIN hot_level hl
+				ON ig.hot_level_id=hl.id
+			where hl.`level`='最新上架'
+			group by ig.id 
+	</select>
+	
+	<select id="getOriginalityGoods" resultMap="getGoodsByIdResultMap">
+		select ig.id,ig.`name`,ig.summary,gi.img_url from integral_goods ig
+			LEFT JOIN goods_image gi 
+				on ig.id=gi.goods_id
+			LEFT JOIN hot_level hl
+				ON ig.hot_level_id=hl.id
+			where hl.`level`='创意商品'
+			group by ig.id 
+	</select>
+	
+	<select id="getTravEqpmtGoods" resultMap="getGoodsByIdResultMap">
+		select ig.id,ig.`name`,ig.current_price,ig.residueNumber,gi.img_url from integral_goods ig
+			LEFT JOIN goods_image gi 
+			on ig.id=gi.goods_id
+			LEFT JOIN integral_goodstype igt
+			ON ig.goodstype_id=igt.id
+			where igt.goods_type='旅行装备'
+			group by ig.id 
+	</select>
+	
+	<select id="getYyzpGoods" resultMap="getGoodsByIdResultMap">
+		select ig.id,ig.`name`,ig.current_price,ig.residueNumber,gi.img_url from integral_goods ig
+			LEFT JOIN goods_image gi 
+			on ig.id=gi.goods_id
+			LEFT JOIN integral_goodstype igt
+			ON ig.goodstype_id=igt.id
+			where igt.goods_type='易游专品'
+			group by ig.id 
+	</select>
+	
+	<select id="getMzyxGoods" resultMap="getGoodsByIdResultMap">
+		select ig.id,ig.`name`,ig.current_price,ig.residueNumber,gi.img_url from integral_goods ig
+			LEFT JOIN goods_image gi 
+			on ig.id=gi.goods_id
+			LEFT JOIN integral_goodstype igt
+			ON ig.goodstype_id=igt.id
+			where igt.goods_type='民族印象'
+			group by ig.id 
+	</select>
+	
+	<update id="updateResidue" parameterType="Order">
+		update integral_goods set residueNumber=residueNumber-#{quantity} where id=#{goods.id}
+	</update>
+	
+	<!--更新商品浏览量  -->
+	<update id="updatePV" parameterType="java.lang.Integer"> 
+		update integral_goods set pv=pv+1 where id=#{id}
+	</update>
+	
+</mapper>

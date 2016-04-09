@@ -160,6 +160,26 @@ public class SessionInterceptor implements HandlerInterceptor {
 			request.getSession().setAttribute("redirect", (HString.isEmpty(redirect) ? "" : redirect));
 			return false;
 		}
+		
+		/**
+		 * 黔易游积分商城检查前端用户
+		 */
+		if(servletPath.contains("integralShopLogin")){
+			if (sessionSet != null && sessionSet instanceof SystemSet) {
+				set = (SystemSet)sessionSet;
+				if (set.getWebUser() != null){
+					return true;
+				}
+				
+			}
+			response.sendRedirect(request.getContextPath() + "/pc/login?op=toLogin");
+			redirect = request.getHeader("Referer");
+			request.getSession().setAttribute("redirect", URLEncoder.encode(redirect,"utf-8"));
+			return false;
+			
+			
+			
+		}
 
 		/**
 		 * 检查后台用户

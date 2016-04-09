@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="OrderMapper">
+	
+	<resultMap type="com.bm.webs.vo.OrderView" id="exchRcdsMap">
+		<id column="id" property="id"/>
+		<result column="quantity" property="quantity"/>
+		<result column="zip_code" property="zipCode"/>
+		<result column="consignee" property="consignee"/>
+		<result column="tel" property="tel"/>
+		<result column="address" property="address"/>
+		<result column="order_id" property="orderId"/>
+		<result column="waybill_number" property="waybillNumber"/>
+		<result column="time" property="time"/>
+		<result column="exch_rcd_status" property="exchRcdStatus"/>
+		<association property="goods" javaType="com.bm.webs.vo.GoodsView">
+			<result column="name" property="name"/>
+			<result column="summary" property="summary"/>
+			<result column="current_price" property="currentPrice"/>
+			<collection property="goodsImages" ofType="com.bm.webs.bean.integralShop.GoodsImage">
+				<result column="img_url" property="imgUrl"/>
+			</collection>
+		</association>
+		<!-- <association property="webUser" javaType="com.bm.webs.bean.WebUser">
+			<id column="user_id" property="id"/>
+			<result column="nickname" property="nickname"/>
+		</association> -->
+	</resultMap>
+
+	<insert id="saveOrder" parameterType="Order">
+		insert into `order`(user_id,goods_id,quantity,zip_code,consignee,tel,area_id,detail_street,time,order_id) values(#{userId},#{goods.id},#{quantity},#{zipCode},#{consignee},#{tel},#{area.areaId},#{detailStreet},#{time},#{orderId})
+	</insert>
+	
+	<!-- 根据用户查找兑换记录 -->
+	<select id="getExchRcds" parameterType="java.lang.Long" resultMap="exchRcdsMap">
+		select od.id,od.order_id,od.quantity,od.exch_rcd_status,ig.`name`,gi.img_url,ig.current_price,od.waybill_number
+			from `order` od 
+			LEFT JOIN integral_goods ig ON od.goods_id=ig.id
+			LEFT JOIN goods_image gi
+			ON gi.goods_id=ig.id
+		where od.user_id=#{userId} and od.exch_rcd_status!=0
+	</select>
+	<!-- 后台查找兑换记录 -->
+	<select id="getAdminExchRcds" resultMap="exchRcdsMap">
+		select od.id,od.order_id,ig.`name`,gi.img_url,od.consignee,
+			od.tel,CONCAT(prvnce.province,ct.city,ar.area,od.detail_street) as address,
+			od.waybill_number,od.exch_rcd_status,od.time
+			from `order` od 
+			LEFT JOIN area ar
+			on ar.areaid = od.area_id
+			
+			LEFT JOIN city ct
+			on ct.cityid = ar.cityid
+			
+			LEFT JOIN province prvnce
+			on ct.provinceid = prvnce.provinceid
+			
+			LEFT JOIN integral_goods ig
+			on ig.id=od.goods_id
+			
+			LEFT JOIN goods_image gi
+			on gi.goods_id = ig.id
+		where od.exch_rcd_status != 0
+		group by od.id
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 填写运单号 -->
+	<update id="saveWaybillNumber" parameterType="Order">
+		update `order` set waybill_number=#{waybillNumber}, exch_rcd_status=2 where id=#{id}
+ 	</update>
+	
+	<update id="userReceiveGoods" parameterType="java.lang.Integer">
+		update `order` set  exch_rcd_status=3 where id=#{id}
+	</update>
+	
+	<delete id="deleteRecordById" parameterType="java.lang.Integer">
+		delete from `order` where id=#{id}
+	</delete>
+</mapper>

@@ -20,7 +20,7 @@
 		</c:if>
 		<div class="fr">
 			<span onclick="goAppDownload()" class="appdown hasdownlist"><i class="iicon i-app"></i>APP下载<span class="appcode"><img src="static/web/images/twovcode.jpg" height="128" width="128" alt=""></span></span>
-			<span class="span-spc"><i class="iicon i-about"></i><a href="pc/aboutWe">关于我们</a></span>
+			<span class="span-spc"><i class="iicon i-about"></i><a href="integralShop/home">积分商城</a></span>
 			<c:if test="${system.webUser == null }">
 				<span class="social-span">
 					<a href="javascript:;" onclick="thirdLogin('wechat');" class="iicon i-weixin"></a>

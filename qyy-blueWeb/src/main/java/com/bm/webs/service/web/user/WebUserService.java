@@ -514,4 +514,9 @@ public class WebUserService {
 		}
 		return res;
 	}
+
+	public void updateWuScoreWhenExchange(Map<String, Object> parameters) throws Exception {
+
+		dao.update("WebUserMapper.updateScorewhenExchange", parameters);
+	}
 }

@@ -77,7 +77,7 @@ public class WebUserLevelService {
 	public PageData getById(Long id) throws Exception {
 		PageData pageData = new PageData();
 		pageData.put("id", id);
-		return (PageData) dao.findForObject("getById", pageData);
+		return (PageData) dao.findForObject("WebUserLevelMapper.getById", pageData);
 
 	}
 

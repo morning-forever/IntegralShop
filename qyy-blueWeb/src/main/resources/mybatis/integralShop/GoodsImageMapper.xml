@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="GoodsImageMapper">
+	
+	<!-- 保存商品图片-->
+	<insert id="insert" >
+		insert into goods_image(img_url,goods_id) values(#{imgUrl},#{goodsId})
+	</insert>	
+	
+	<!--删除商品图片 -->
+	<delete id="delGoodsImgByGoodsId" parameterType="java.lang.Integer">
+		delete from goods_image where goods_id=#{id}
+	</delete>
+	
+	<update id="update">
+		update goods_image set img_url=#{imgUrl} where id=#{id}
+	</update>
+	
+</mapper>

@@ -378,5 +378,8 @@
 	<select id="findUserPhone" resultType="map">
 		SELECT phone FROM `web_user` WHERE id=#{userId}
 	</select>
+	<update id="updateScorewhenExchange" parameterType="Map">
+		update web_user set  score=score-#{goodsScore}  where id=#{id}
+	</update>
 	
 </mapper>

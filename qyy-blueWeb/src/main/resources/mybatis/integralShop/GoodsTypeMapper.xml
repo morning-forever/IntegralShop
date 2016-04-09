@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="GoodsTypeMapper">
+	
+	<resultMap type="com.bm.webs.bean.integralShop.GoodsType" id="goodsTypeMap">
+		<id column="id" property="id"/>
+		<result column="goods_type" property="goodsType"/>
+	</resultMap>
+	
+	<insert id="insert" parameterType="com.bm.webs.bean.integralShop.GoodsType">
+		insert into integral_goodstype(goods_type) values(#{goodsType})
+	</insert>	
+	
+	<select id="getAdminGoodsTypeList" resultType="PageData">
+		select * from integral_goodstype
+	</select>
+	<select id="getAdminGoodsTypeListCount" resultType="java.lang.Integer">
+		select count(1) from (select * from integral_goodstype) tb
+	</select>
+	
+	<delete id="delete">
+		delete from integral_goodstype  where id=#{id}
+	</delete>
+	
+	<select id="getGoodsTypeById" resultMap="goodsTypeMap">
+		select * from integral_goodstype where id=#{id}
+	</select>
+	
+	<update id="update">
+		update integral_goodstype set goods_type=#{goodsType} where id=#{id}
+	</update>
+</mapper>

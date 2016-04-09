@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="BannerMapper">
+	
+	<select	id="getBannerList" resultType="Banner">
+		select * from banner_img
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<select id="getBannerCount" resultType="Integer">
+		select count(1) from (select * from banner_img) tb
+	</select>
+	
+	<select id="getById" resultType="Banner">
+		select * from banner_img where id=#{id}
+	</select>
+	
+	<insert id="insert">
+		insert into banner_img(name,url) values(#{name},#{url})
+	</insert>
+	
+	<delete id="deleteById">
+		delete from banner_img where id=#{id}
+	</delete>
+</mapper>
