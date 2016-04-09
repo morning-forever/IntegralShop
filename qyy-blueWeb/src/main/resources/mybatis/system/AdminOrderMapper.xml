@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AdminOrderMapper">
+	
+	<!-- 后台查询深度游订单列表 -->
+	<select id="findDepthOrderList" resultType="PageData">
+		SELECT 
+		  wof.id,
+		  wd.`name`,
+		  wof.order_code,
+		  wof.pay_order_id,
+		  wof.`create_time`,
+		  wof.`order_state`,
+		  wod.`person_name`,
+		  wod.`person_phone`,
+		  woi.`real_price`,
+		  wu.`nickname`,
+		  wu.`id` AS userId 
+		FROM
+		  web_order_form wof 
+		  LEFT JOIN web_order_item woi 
+		    ON woi.`form_id` = wof.`id` 
+		  LEFT JOIN web_order_depth wod 
+		    ON wod.`order_from_id` = wof.`id` 
+		  LEFT JOIN web_depth wd 
+		    ON wd.`id` = woi.`goods_id` 
+		  LEFT JOIN web_user wu 
+		    ON wu.`id` = wof.`user_id` 
+		WHERE wof.`order_type` = 'depth' 
+		  AND wof.`is_delete` = 0 
+		<if test=" nickName != null and nickName !='' ">
+			and wu.`nickname` like CONCAT('%', #{nickName},'%')
+		</if>
+		<if test=" orderCode != null and orderCode !='' ">
+			and wof.order_code  = #{orderCode}
+		</if>
+		<if test=" payOrderId != null and payOrderId !='' ">
+			and wof.pay_order_id  = #{payOrderId}
+		</if>
+		<if test=" personPhone != null and personPhone !='' ">
+			and wod.`person_phone`  = #{personPhone}
+		</if>
+		<if test=" orderState != null and orderState !='' ">
+			and wof.`order_state`  = #{orderState}
+		</if>
+		<if test=" orderTime != null and orderTime !='' ">
+			and DATE_FORMAT(wof.`create_time`, '%Y-%m-%d')  = str_to_date(#{orderTime} , '%Y-%m-%d') 
+		</if>
+		<if test=" showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 后台查询深度游订单总数 -->
+	<select id="findDepthOrderListCount" resultType="Integer">
+		SELECT 
+		  count(1)
+		FROM
+		  web_order_form wof 
+		  LEFT JOIN web_order_item woi 
+		    ON woi.`form_id` = wof.`id` 
+		  LEFT JOIN web_order_depth wod 
+		    ON wod.`order_from_id` = wof.`id` 
+		  LEFT JOIN web_depth wd 
+		    ON wd.`id` = woi.`goods_id` 
+		  LEFT JOIN web_user wu 
+		    ON wu.`id` = wof.`user_id` 
+		WHERE wof.`order_type` = 'depth' 
+		  AND wof.`is_delete` = 0 
+		<if test=" nickName != null and nickName !='' ">
+			and wu.`nickname` like CONCAT('%', #{nickName},'%')
+		</if>
+		<if test=" orderCode != null and orderCode !='' ">
+			and wof.order_code  = #{orderCode}
+		</if>
+		<if test=" payOrderId != null and payOrderId !='' ">
+			and wof.pay_order_id  = #{payOrderId}
+		</if>
+		<if test=" personPhone != null and personPhone !='' ">
+			and wod.`person_phone`  = #{personPhone}
+		</if>
+		<if test=" orderState != null and orderState !='' ">
+			and wof.`order_state`  = #{orderState}
+		</if>
+		<if test=" orderTime != null and orderTime !='' ">
+			and DATE_FORMAT(wof.`create_time`, '%Y-%m-%d')  = str_to_date(#{orderTime} , '%Y-%m-%d') 
+		</if>
+	</select>
+	
+	<!-- 获取深度游退款列表 -->
+	<select id="findDepthRefundList" resultType="PageData">
+		SELECT 
+		  wof.id as orderId,
+		  wd.`name`,
+		  wof.`order_code`,
+		  wof.`pay_order_id`,
+		  wu.`id` AS userId,
+		  wu.`nickname`,
+		  wod.`person_phone`,
+		  woi.`real_price`,
+		  wof.`pay_type`,
+		  wor.`create_time`,
+		  wor.`person_name`,
+		  wor.`bank_name`,
+		  wor.`bank_no`,
+		  wor.`finish_time`,
+		  wof.`order_state`,
+		  wor.id as refundId,
+		  wor.is_check
+		FROM
+		  web_order_form wof 
+		  INNER JOIN web_order_refund wor 
+		  	ON wor.`form_id` = wof.`id`
+		  	AND wor.state = 'ADD'
+		  INNER JOIN web_order_item woi 
+    		ON woi.`form_id` = wof.`id` 
+		  INNER JOIN web_order_depth wod 
+		    ON wod.`order_from_id` = wof.`id` 
+		  INNER JOIN web_depth wd 
+		    ON wd.`id` = woi.`goods_id` 
+		  INNER JOIN web_user wu 
+		    ON wu.`id` = wof.`user_id` 
+		WHERE wof.`is_delete` = 0
+		<if test=" depthName != null and depthName !='' ">
+			and wd.`name` like CONCAT('%', #{depthName},'%')
+		</if>
+		<if test=" orderCode != null and orderCode !='' ">
+			and wof.order_code  = #{orderCode}
+		</if>
+		<if test=" payOrderId != null and payOrderId !='' ">
+			and wof.pay_order_id  = #{payOrderId}
+		</if>
+		<if test=" orderState != null and orderState !='' ">
+			and wof.`order_state` in (${orderState})
+		</if>
+		<if test=" personName != null and personName !='' ">
+			and wor.`person_name` like CONCAT('%', #{personName},'%')
+		</if>
+		<if test=" bankName != null and bankName !='' ">
+			and wor.`bank_name`  = #{bankName}
+		</if>
+		<if test=" bankNo != null and bankNo !='' ">
+			and wor.`bank_no`  = #{bankNo}
+		</if>
+		<if test=" showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 获取深度游退款列表 -->
+	<select id="findDepthRefundListCount" resultType="Integer">
+		SELECT 
+		  count(1)
+		FROM
+		  web_order_form wof 
+		  INNER JOIN web_order_refund wor 
+		  	ON wor.`form_id` = wof.`id`
+		  	AND wor.state = 'ADD'
+		  INNER JOIN web_order_item woi 
+    		ON woi.`form_id` = wof.`id` 
+		  INNER JOIN web_order_depth wod 
+		    ON wod.`order_from_id` = wof.`id` 
+		  INNER JOIN web_depth wd 
+		    ON wd.`id` = woi.`goods_id` 
+		  INNER JOIN web_user wu 
+		    ON wu.`id` = wof.`user_id` 
+		WHERE wof.`is_delete` = 0
+		<if test=" depthName != null and depthName !='' ">
+			and wd.`name` like CONCAT('%', #{depthName},'%')
+		</if>
+		<if test=" orderCode != null and orderCode !='' ">
+			and wof.order_code  = #{orderCode}
+		</if>
+		<if test=" payOrderId != null and payOrderId !='' ">
+			and wof.pay_order_id  = #{payOrderId}
+		</if>
+		<if test=" orderState != null and orderState !='' ">
+			and wof.`order_state` in (${orderState})
+		</if>
+		<if test=" personName != null and personName !='' ">
+			and wor.`person_name` like CONCAT('%', #{personName},'%')
+		</if>
+		<if test=" bankName != null and bankName !='' ">
+			and wor.`bank_name`  = #{bankName}
+		</if>
+		<if test=" bankNo != null and bankNo !='' ">
+			and wor.`bank_no`  = #{bankNo}
+		</if>
+	</select>
+	
+	<!-- 检验是否可以退款 -->
+	<select id="checkExamine" resultType="Integer">
+		select count(1) from web_order_form where order_state = 'REFUNDING' and id = #{orderId}
+	</select>
+	
+	<!-- 更新审核状态为已审核 -->
+	<update id="updateCheck">
+		UPDATE 
+		  web_order_refund wor 
+		SET
+		  wor.`is_check` = 0
+		<!-- 如果退款完成，则修改退款完成时间 -->
+		<if test=" state != null and state !='' and state == 'REFUNDED' ">
+			, wor.`finish_time` = NOW() 
+		</if>
+		WHERE wor.`id` = #{refundId}
+		  AND wor.`is_check` = 1 
+	</update>
+	
+	<!-- 新增一条审核记录 -->
+	<insert id="addExamine">
+		insert into web_order_examine
+		(create_time, form_id, reason, result)
+		values
+		(NOW(), #{orderId}, #{reason}, #{result})
+	</insert>
+	
+	<select id="findRefundInfo" resultType="PageData">
+		SELECT 
+		  wu.`nickname`,
+		  wor.`person_name`,
+		  wod.`person_phone`,
+		  wor.`bank_name`,
+		  wor.`bank_no`, 
+		  wof.order_code
+		FROM
+		  web_order_refund wor 
+		  INNER JOIN web_order_form wof 
+		    ON wof.`id` = wor.`form_id` 
+		  INNER JOIN web_order_depth wod 
+		    ON wod.`order_from_id` = wof.`id` 
+		  INNER JOIN web_user wu 
+		    ON wu.`id` = wof.`user_id` 
+		WHERE wor.`form_id` = #{orderId}
+		  and wor.state = 'ADD'
+	</select>
+	
+	<select id="findExamineList" resultType="PageData">
+		SELECT 
+		  woe.create_time,
+		  woe.reason,
+		  woe.result
+		FROM
+		  web_order_examine woe 
+		WHERE woe.form_id = #{orderId}
+		order by woe.create_time desc
+	</select>
+	
+</mapper>

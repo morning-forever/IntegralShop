@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarDatePriceMapper">
+
+	<select id="findPriceList" resultType="pageData">
+		SELECT TRUNCATE(price,2) AS price
+		,DATE_FORMAT(`date`,'%m月%d日(周%w)') AS `date`
+		,`date` as dateO 
+		FROM `web_car_date_price` 
+		WHERE car_id=#{id} 
+		AND `date`&gt;=#{startTime} 
+		AND `date`&lt;#{endTime}
+	</select>
+	
+	<select id="findListByDate" resultType="pageData">
+		SELECT 
+		  id,
+		  UNIX_TIMESTAMP(`date`) as dt,
+		  TRUNCATE(price, 2) AS price 
+		FROM
+		  `web_car_date_price` 
+		WHERE car_id = #{id} 
+		<if test="startTime != null and startTime != '' ">
+			AND DATE_FORMAT(`date`, '%Y-%m-%d') &gt;= str_to_date(#{startTime} , '%Y-%m-%d')
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			AND DATE_FORMAT(`date`, '%Y-%m-%d') &lt;= str_to_date(#{endTime} , '%Y-%m-%d')
+		</if>
+		order by date 
+	</select>
+	
+	<insert id="saveDatePrice">
+		INSERT INTO `web_car_date_price`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		car_id=#{fromId},
+		`date`=#{date},
+		price=#{price}
+	</insert>
+	
+	<delete id="deleteDatePrice">
+		delete from `web_car_date_price` where car_id = #{fromId}
+	</delete>
+	
+	<select id="findListById" resultType="pageData">
+		SELECT price,UNIX_TIMESTAMP(`date`) AS `time` FROM `web_car_date_price`
+		WHERE car_id=#{id}
+	</select>
+
+</mapper>

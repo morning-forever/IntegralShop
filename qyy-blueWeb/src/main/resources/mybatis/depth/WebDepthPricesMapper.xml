@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebDepthPricesMapper">
+   
+   <!-- 查询价格列表 -->
+   <select id="findPricesList" resultType="PageData">
+	   	SELECT 
+		  wdp.`id`,
+		  wdp.`adult_price`,
+		  wdp.`child_price`,
+		  UNIX_TIMESTAMP(wdp.`price_time`) as price_time,
+		  DATE_FORMAT(wdp.`price_time`, '%Y-%m-%d') AS dateFormat,
+		  wdp.`is_odds` 
+		FROM
+		  web_depth_prices wdp 
+		WHERE wdp.`depth_id` = #{depthId}
+		<!-- <if test="depthId != null and depthId != '' ">
+			AND wdp.`depth_id` = #{depthId}
+		</if> -->
+		<if test="priceTime != null and priceTime != '' ">
+			AND DATE_FORMAT(wdp.`price_time`, '%Y-%m-%d') = str_to_date(#{priceTime} , '%Y-%m-%d')
+		</if>
+		<if test="startTime != null and startTime != '' ">
+			AND DATE_FORMAT(wdp.`price_time`, '%Y-%m-%d') &gt; str_to_date(#{startTime} , '%Y-%m-%d')
+		</if>
+		<if test="endTime != null and endTime != '' ">
+			AND DATE_FORMAT(wdp.`price_time`, '%Y-%m-%d') &lt;= str_to_date(#{endTime} , '%Y-%m-%d')
+		</if>
+   </select>
+   
+   <!-- 新增深度游id 对应的日期价格 -->
+   <insert id="insert">
+   		insert into web_depth_prices
+   		(create_time, adult_price, child_price, price_time, is_odds, depth_id)
+   		values
+   		(NOW(), #{adultPrice}, #{childPrice}, #{priceTime}, #{isOdds}, #{depthId})
+   </insert>
+   
+   <!-- 根据深度游id 删除日期价格 -->
+   <delete id="delete">
+   		delete from web_depth_prices where depth_id = #{depthId}
+   </delete>
+	
+</mapper>

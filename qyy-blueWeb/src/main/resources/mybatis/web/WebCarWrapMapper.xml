@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarWrapMapper">
+
+	<sql id="listFind">
+		SELECT * FROM(
+		SELECT 
+		  wc.id,
+		  wc.car_card,
+		  wc.brand_id,
+		  wc.sys_id,
+		  wc.car_year,
+		  wc.car_configure,
+		  wc.counts,
+		  wc.is_shelves,
+		  wc.car_type,
+		  wc.create_time,
+		  wcdp.price,
+		  wca.`seating`,
+		  wct.`car_type` AS carType,
+		  wcb.`brand`,
+		  wcs.`sys`,
+		  IFNULL(cu.pic_url,'uploadFiles/uploadImgs/zanwutupian.jpg') AS picUrl 
+		FROM
+		  web_car wc 
+		  LEFT JOIN web_car_date_price wcdp 
+		    ON wcdp.car_id = wc.`id` 
+		   	AND DATE_FORMAT(wcdp.date, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d')
+		  LEFT JOIN web_car_wrap wca 
+		    ON wca.`car_id` = wc.`id` 
+		  LEFT JOIN web_car_type_ct wctc 
+		    ON wctc.`car_id` = wc.`id` 
+		  LEFT JOIN web_car_type wct 
+		    ON wct.`type_type` = 'wrap' 
+		    AND wct.`id` = wctc.`car_type_id` 
+		  LEFT JOIN web_car_brand wcb 
+		    ON wcb.`brand_type` = 'wrap' 
+		    AND wcb.`id` = wc.`brand_id` 
+		  LEFT JOIN web_car_sys wcs 
+      		ON wcs.`id` = wc.sys_id
+      	  LEFT JOIN common_upload cu 
+			ON cu.pic_from = 'carWrap' 
+			AND cu.pic_type = 'banner' 
+			AND cu.from_id = wc.id 
+		WHERE wc.car_type = 'wrap'
+		  AND wc.state = 'ADD'
+		  AND wc.is_shelves = 0 
+		<if test="id != null and id != '' ">
+			and wc.`id` = #{id}
+		</if>
+		<if test="wrapNum != null and wrapNum != '' ">
+			and wc.counts >= #{wrapNum}
+		</if>
+		<if test="seating != null and seating != '' ">
+			and wca.`seating` = #{seating}
+		</if>
+		<if test="carTypes != null and carTypes != '' ">
+			and INSTR(#{carTypes}, wct.`id`) > 0 
+		</if>
+		<if test="carBrands != null and carBrands != '' ">
+			and INSTR(#{carBrands}, wc.`brand_id`) > 0 
+		</if>
+		<if test="priceStart != null and priceStart != '' ">
+			and wcdp.price &gt;= #{priceStart}
+		</if>
+		<if test="priceEnd != null and priceEnd != '' ">
+			and wcdp.price &lt;= #{priceEnd}
+		</if>
+		) as tb
+		GROUP BY id
+		<if test="orderBy != null and orderBy != '' and orderBy == 'time'">
+			order by create_time desc
+		</if>
+		<if test="orderBy != null and orderBy != '' and orderBy == 'price'">
+			order by price asc
+		</if>
+	</sql>
+	
+	<!-- 得到包车类型 -->
+	<select id="getWrapTypeList" parameterType="PageData" resultType="PageData">
+		SELECT 
+		  wcw.seating 
+		FROM
+		  web_car_wrap wcw,
+		  web_car wc 
+		WHERE wcw.`car_id` = wc.`id` 
+		  AND wc.`car_type` = 'wrap' 
+		  AND wc.`state`='ADD'
+		GROUP BY seating  
+	</select>
+	
+	<!-- 得到车类型 -->
+	<select id="getCarTypeList" parameterType="PageData" resultType="PageData">
+		SELECT 
+		  wct.`id`,
+		  wct.`car_type` 
+		FROM
+		  web_car_type wct 
+		WHERE wct.`type_type` = 'wrap' 
+	</select>
+	
+	<!-- 得到车品牌 只显示有车系的品牌-->
+	<select id="getBrandTypeList" parameterType="PageData" resultType="PageData">
+		SELECT 
+		  wcb.`id`,
+		  wcb.`brand` 
+		FROM
+		  web_car_brand wcb 
+		  INNER JOIN web_car_sys wcs 
+		    ON wcs.`brand_id` = wcb.`id` 
+		WHERE wcb.`brand_type` = 'wrap' 
+		GROUP BY wcb.`id`   
+	</select>
+	
+	<!-- 查询包车列表 -->
+	<select id="getCarWrapList" parameterType="PageData" resultType="PageData">
+		<include refid="listFind"></include>
+		LIMIT ${limistStart},${pageSize}
+	</select>
+	
+	<!-- 根据id查询包车信息 -->
+	<select id="getCarWrapListTotal" parameterType="PageData" resultType="Long">
+		select count(*) from (
+		<include refid="listFind"></include>
+		) as count
+	</select>
+	
+	<select id="getCarWrapById" parameterType="PageData" resultType="PageData">
+		<include refid="listFind"></include>
+	</select>
+	
+	<insert id="insertWrapInfo">
+		insert into web_car_wrap_info(create_time, start_time, end_time, start_city_id, start_addr_detail, car_id,day_price)
+		values (NOW(), #{startTime}, #{endTime}, #{fromCityId}, #{fromAddrDetail}, #{carId},#{dayPrice})
+	</insert>
+	
+	<select id="findLastWrapInfoId" resultType="Long">
+		SELECT id FROM web_car_wrap_info ORDER BY id DESC LIMIT 0, 1
+	</select>
+	
+	<insert id="insertWrapRoute">
+		insert into web_car_wrap_route(create_time, start_addr_id, end_addr_id, wrap_info_id, rank)
+		values (NOW(), #{startAddrId}, #{endAddrId}, #{wrapInfoId}, #{rank})
+	</insert>
+	
+	<select id="findAdminWrapList" resultType="PageData">
+		SELECT 
+		  wc.`id`,
+		  IFNULL(cu.pic_url,'uploadFiles/uploadImgs/zanwutupian.jpg') AS url,
+		  wcb.`brand`,
+		  wcs.`sys`,
+		  wc.`car_year` AS `year`,
+		  wcw.`seating`,
+		  wc.`counts`,
+		  wcdp.`price`,
+		  wc.`is_shelves` 
+		FROM
+		  `web_car` AS wc 
+		  LEFT JOIN `common_upload` AS cu 
+		    ON cu.`from_id` = wc.`id` 
+		    AND cu.`pic_from` = 'carWrap' 
+		    AND cu.`pic_type` = 'banner' 
+		  LEFT JOIN `web_car_brand` AS wcb 
+		    ON wc.`brand_id` = wcb.`id` 
+		    AND wcb.`brand_type` = 'wrap' 
+		  LEFT JOIN `web_car_sys` AS wcs 
+		    ON wc.`sys_id` = wcs.`id` 
+		  AND wcs.`brand_id` = wcb.`id` 
+		  LEFT JOIN `web_car_wrap` AS wcw
+		    ON wc.`id` = wcw.`car_id`
+		  LEFT JOIN `web_car_date_price` AS wcdp 
+		    ON wc.`id` = wcdp.`car_id` 
+		    AND DATE_FORMAT(wcdp.date, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d') 
+		WHERE wc.`car_type` = 'wrap' 
+		  AND wc.state = 'ADD'
+		<if test="brandId != null and brandId != '' ">
+			and wc.`brand_id` = #{brandId}
+		</if>
+		<if test="sysId != null and sysId != '' ">
+			and wc.`sys_id` = #{sysId}
+		</if>
+		<if test="seating != null and seating != '' ">
+			and wcw.`seating` = #{seating}
+		</if>
+		<if test="price != null and price != '' ">
+			and wcdp.`price` = #{price}
+		</if>
+		GROUP BY id
+	</select>
+	
+	<select id="findAdminWrapNum" resultType="Integer">
+		SELECT 
+		  COUNT(1) 
+		FROM
+		  `web_car` AS wc 
+		  LEFT JOIN `web_car_brand` AS wcb 
+		    ON wc.`brand_id` = wcb.`id` 
+		    AND wcb.`brand_type` = 'wrap' 
+		  LEFT JOIN `web_car_sys` AS wcs 
+		    ON wc.`sys_id` = wcs.`id` 
+		    AND wcs.`brand_id` = wcb.`id`  
+		  LEFT JOIN `web_car_wrap` AS wcw 
+		    ON wc.`id` = wcw.`car_id` 
+		  LEFT JOIN `web_car_date_price` AS wcdp 
+		    ON wc.`id` = wcdp.`car_id` 
+		    AND DATE_FORMAT(wcdp.date, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d') 
+		WHERE wc.`car_type` = 'wrap'  
+		  AND wc.state = 'ADD'
+		<if test="brandId != null and brandId != '' ">
+			and wc.`brand_id` = #{brandId}
+		</if>
+		<if test="sysId != null and sysId != '' ">
+			and wc.`sys_id` = #{sysId}
+		</if>
+		<if test="seating != null and seating != '' ">
+			and wcw.`seating` = #{seating}
+		</if>
+		<if test="price != null and price != '' ">
+			and wcdp.`price` = #{price}
+		</if>
+	</select>
+	
+	<update id="updateCarShelves">
+		update `web_car` set is_shelves = #{is_shelves} where INSTR(#{ids},id) > 0
+	</update>
+	
+	<!-- 物理删除 -->
+	<update id="deleteCar">
+		update `web_car` set state = 'DELETE' where INSTR(#{ids},id) > 0
+	</update>
+	
+	<select id="findAdminCarWrapById" resultType="PageData">
+		select * from
+		(SELECT 
+		  wc.`id`,
+		  IFNULL(cu.pic_url,'uploadFiles/uploadImgs/zanwutupian.jpg') AS url,
+		  wc.`brand_id`,
+		  wcb.`brand`,
+		  wc.`sys_id`,
+		  wcs.`sys`,
+		  wc.`car_year` AS `year`,
+		  wcr.`seating`,
+		  wc.`counts`,
+		  wcdp.`price`,
+		  wc.`is_shelves`,
+		  wc.`car_configure`
+		FROM
+		  `web_car` AS wc 
+		  LEFT JOIN `common_upload` AS cu 
+		    ON cu.`from_id` = wc.`id` 
+		    AND cu.`pic_from` = 'carWrap' 
+		    AND cu.`pic_type` = 'banner' 
+		  LEFT JOIN `web_car_brand` AS wcb 
+		    ON wc.`brand_id` = wcb.`id` 
+		    AND wcb.`brand_type` = 'wrap' 
+		  LEFT JOIN `web_car_sys` AS wcs 
+		    ON wc.`sys_id` = wcs.`id` 
+		  AND wcs.`brand_id` = wcb.`id` 
+		  LEFT JOIN `web_car_wrap` AS wcr 
+		    ON wc.`id` = wcr.`car_id` 
+		  LEFT JOIN `web_car_date_price` AS wcdp 
+		    ON wc.`id` = wcdp.`car_id` 
+		    AND DATE_FORMAT(wcdp.date, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d') 
+		WHERE wc.`car_type` = 'wrap'
+		group by id) temp
+		where temp.id = #{id}
+	</select>
+	
+	<insert id="insertSeat">
+		insert into web_car_wrap 
+		(create_time, seating, car_id)
+		values
+		(NOW(), #{seating}, #{carId})
+	</insert>
+	
+	<update id="updateSeat">
+		update web_car_wrap set
+		<if test="carId != null and carId != '' ">
+			car_id = #{carId}
+		</if>
+		<if test="seating != null and seating != '' ">
+			, seating = #{seating}
+		</if>
+		where car_id = #{carId}
+	</update>
+	
+	<select id="findOrderMes" resultType="pageData">
+		SELECT 
+		  wof.`id`,
+		  wof.`order_code`,
+		  wcwi.`start_time`,
+		  wcwi.`end_time`,
+		  woi.`goods_count`,
+		  wcb.`brand`
+		FROM
+		  `web_order_form` AS wof 
+		  LEFT JOIN `web_order_item` AS woi 
+		    ON wof.`id` = woi.`form_id` 
+		  LEFT JOIN web_car_wrap_info AS wcwi 
+		    ON wcwi.`id` = woi.`goods_id` 
+		  LEFT JOIN `web_car` AS wc 
+		    ON wc.id = wcwi.`car_id` 
+		  LEFT JOIN `web_car_brand` AS wcb 
+		    ON wc.`brand_id` = wcb.`id` 
+		WHERE wof.`order_type` = 'carWrap' 
+		  AND wof.`id` = #{id} 
+		LIMIT 1 
+	</select>
+	
+</mapper>

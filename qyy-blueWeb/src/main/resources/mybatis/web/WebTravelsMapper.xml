@@ -1,0 +1,502 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebTravelsMapper">
+
+	<select id="findIndexMasterList" resultType="map">
+		SELECT wu.`id`,wu.`nickname`,wu.`head_img`,COUNT(wt.`id`) AS `count`
+		FROM `web_user` AS wu 
+		LEFT JOIN `web_travels` AS wt ON wu.`id`=wt.`user_id` AND wt.`travel_type`=2
+		WHERE wu.`is_master`=0
+		GROUP BY wu.`id`
+		ORDER BY `count` DESC
+		LIMIT 0,5
+	</select>
+	
+	<select id="findRecommendStrategyList" resultType="map">
+		SELECT wt.`id`,wt.`title`,wti.`context` AS url,COUNT(wtr.`id`) AS replyCount
+		FROM `web_recommend` AS wr
+		JOIN `web_travels` AS wt ON wr.`from_id`=wt.`id` AND wt.`state`='ADD'
+    	AND wr.`state` = 'ADD' 
+		LEFT JOIN `web_travels_item` AS wti ON wt.`id`=wti.`travel_id` AND wti.`item_type`='imgs' 
+		AND wti.`is_cover`=0
+		LEFT JOIN `web_travels_reply` AS wtr ON wt.`id`=wtr.`reply_id` AND wtr.`root_id`=0
+		WHERE wr.`from_table`='web_travels' AND wr.`from_type`=#{travelType}
+		GROUP BY wt.`id`
+		ORDER BY wr.`order_number`
+		LIMIT 0,6
+	</select>
+	
+	<sql id="findStrategySql">
+		SELECT wt.`id`,wt.`title`,wti.`context` AS img,wwti.`context`,COUNT(wtr.`id`) AS countReply,wt.`travel_type`,
+		wu.`id` AS userId,wu.`nickname`,pwul.`level_desc`,wu.`is_master`,wu.`head_img`,wt.`create_time`,wt.`praise`,
+		wc.`id` AS cityId,wc.`name` AS city,wt.`browse`,wt.`examine_state`,wt.`top`,
+		IFNULL(collectionResult.count,0) AS collectionCount
+		FROM `web_travels` AS wt
+		LEFT JOIN `web_travels_item` AS wti ON wt.`id`=wti.`travel_id` AND wti.`is_cover`=0 
+		AND wti.`item_type`='imgs'
+		LEFT JOIN `web_travels_item` AS wwti ON wt.`id`=wwti.`travel_id` AND wwti.`item_type`='word'
+		LEFT JOIN `web_travels_reply` AS wtr ON wtr.`reply_id`=wt.`id` AND wtr.`root_id`=0 AND wtr.`state`='ADD'
+		LEFT JOIN `web_user` AS wu ON wt.`user_id`=wu.`id`
+		LEFT JOIN `web_user_level` AS wul ON wul.`id`=wu.`user_level_id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		LEFT JOIN `web_citys` AS wc ON wt.`at_addr`=wc.`id`
+		LEFT JOIN (SELECT wuc.`from_id`,COUNT(*) AS `count` FROM `web_user_collection` AS wuc WHERE wuc.`from_table`='web_travels' GROUP BY wuc.`from_id`) AS collectionResult
+		ON collectionResult.`from_id`=wt.`id`
+		WHERE  wt.`state`='ADD' 
+		<if test=" examine_state !=null and examine_state !='' ">
+			AND wt.`examine_state`=0
+		</if>
+		<if test=" travelType !=null and travelType !='' ">
+			AND wt.`travel_type`=#{travelType}
+		</if>
+		<if test=" title !=null and title !='' ">
+			AND wt.`title` LIKE '%${title}%'
+		</if>
+		<if test=" addrId !=null and addrId !=''">
+			AND wt.`at_addr` IN (${addrId})
+		</if>
+		<if test=" personal ==0 ">
+			AND wt.`user_id`=#{userId}
+		</if>
+		<if test=" nickName !=null and nickName !='' ">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		GROUP BY wt.`id`
+		ORDER BY top
+		<if test=" orderType == 0">
+			,wt.`create_time` DESC
+		</if>
+		<if test=" orderType == 1">
+			,countReply DESC
+		</if>
+	</sql>
+	
+	<select id="findStrategyList" resultType="map">
+		<include refid="findStrategySql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findStrategyCount" resultType="int">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findStrategySql"></include>
+		) AS countResult
+	</select>
+	
+	<!-- 查询招募玩伴的SQL
+	比较复杂，由于前端页面需要的数据为游记的主题，再加上游记的子节点的第一个段落，封面，以及第1，第2张图片
+	所以首先联表查询出游记主体，第一个段落和封面，成为第一个结果集
+	然后用结果集再和子节点表进行联表，查询出每一个游记的图片，通过GROUP_CONCAT方法将所有图片按逗号分隔，传递到前端
+	(这里没有控制图片的数量，需要前端来进行控制，只显示前两张)
+	最后由于还需要计算回复数目，用于排序最热游记，将之前的结果集在进行一次联表，联回复表，统计每条的回复数 -->
+	
+	<sql id="findPlayerSql">
+		SELECT countResult.*,COUNT(wtr.`id`) AS countReply
+		FROM (
+		SELECT item.*,GROUP_CONCAT(iwti.`context`) AS imgs
+		FROM (
+		SELECT wt.`id`,wt.`at_addr`,wt.`title`,wwti.`context`,cwti.`context` AS cover,wt.`create_time`,wt.`praise`
+		,MAX(wp.`id`) AS isPraise,wu.`id` AS userId,wu.`nickname`,wu.`head_img`,IF(wt.`user_id`=#{userId},0,1) AS isEdit,wt.`top`
+		FROM `web_travels` AS wt
+		LEFT JOIN `web_travels_item` AS wwti ON wt.`id`=wwti.`travel_id` 
+		AND wwti.`item_type`='word'
+		LEFT JOIN `web_travels_item` AS cwti ON wt.`id`=cwti.`travel_id` 
+		AND cwti.`item_type`='imgs' AND cwti.`is_cover`=0
+		LEFT JOIN `web_praise` AS wp ON wp.`form_id`=wt.`id` AND wp.`web_user_id`=#{userId}
+		AND wp.`form_table`=#{form_table}
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wt.`user_id`
+		WHERE wt.`travel_type`=3 AND wt.`state`='ADD' AND wt.`examine_state`=0
+		<if test=" personal ==0 ">
+			AND wt.`user_id`=#{userId}
+		</if>
+		GROUP BY wt.`id`
+		) AS item
+		LEFT JOIN `web_travels_item` AS iwti ON item.`id`=iwti.`travel_id` 
+		AND iwti.`item_type`='imgs' AND iwti.`is_cover`=1
+		WHERE 1=1
+		<if test=" addrId !=null and addrId !=''">
+			AND item.`at_addr` in (${addrId})
+		</if>
+		GROUP BY item.id
+		) AS countResult
+		LEFT JOIN `web_travels_reply` AS wtr ON wtr.`reply_id`=countResult.`id` AND wtr.`root_id`=0
+		GROUP BY countResult.id
+		ORDER BY top
+		<if test=" orderType == 1">
+			,countResult.`create_time` DESC
+		</if>
+		<if test=" orderType == 2">
+			,countReply DESC
+		</if>
+	</sql>
+	
+	<select id="findPlayerList" resultType="map">
+		<include refid="findPlayerSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findPlayerCount" resultType="double">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findPlayerSql"></include>
+		) AS countResult
+	</select>
+	
+	<insert id="saveTravels" useGeneratedKeys="true" keyProperty="travelsId">
+		INSERT INTO `web_travels`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		title=#{title},
+		travel_type=#{travelType},
+		at_addr=#{atAddr},
+		user_id=#{userId},
+		<if test="price !='' and price !=null">
+			price=#{price},
+		</if>
+		concluding_remark=#{concludingRemark}
+	</insert>
+	
+	<insert id="saveTravelsItem">
+		INSERT INTO `web_travels_item`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		item_type=#{itemsType},
+		context=#{items},
+		travel_id=#{travelsId}
+	</insert>
+	
+	<update id="setTravelsCover" >
+		UPDATE `web_travels_item`
+		SET update_time=NOW(),
+		is_cover=0
+		WHERE travel_id=#{travelsId} AND item_type='imgs' AND context=#{coverImg}
+	</update>
+	
+	<select id="findTravelsDetial" resultType="map">
+		SELECT wt.`id`,wu.`id` AS userId,wu.`nickname`,wu.`head_img`,
+		pwul.`level_desc`,pwul.`level_name` as p_level_name,wul.`level_name`,wt.`title`,wt.`travel_type`,wt.`create_time`,
+		COUNT(wtr.`id`) AS countReply,wt.`praise`,IFNULL(wp.`id` ,0)AS isPraise,wt.`concluding_remark`,wt.`price`,
+		IF(wt.`user_id`=#{userId},0,1) AS isDelete,
+		IFNULL(collectionResult.count,0) AS collectionCount,wt.`browse`,
+		wt.`at_addr`,IFNULL(wc.`name`,'') AS areaName,
+		wti.`context` AS cover,
+		IFNULL(wuc.id,0) AS isCollection
+		FROM `web_travels` AS wt
+		LEFT JOIN `web_user` AS wu ON wt.`user_id`=wu.`id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		LEFT JOIN `web_travels_reply` AS wtr ON wt.`id`=wtr.`reply_id` AND wtr.`root_id`=0 AND wtr.`state`='ADD'
+		LEFT JOIN `web_praise` AS wp ON wt.`id`=wp.`form_id`
+		AND wp.`form_table`=#{form_table} AND wp.`web_user_id`=#{userId}
+		LEFT JOIN `web_citys` AS wc ON wc.`id`=wt.`at_addr`
+		LEFT JOIN (SELECT wuc.`from_id`,COUNT(*) AS `count` FROM `web_user_collection` AS wuc WHERE wuc.`from_table`='web_travels' GROUP BY wuc.`from_id`) AS collectionResult
+		ON collectionResult.`from_id`=wt.`id`
+		LEFT JOIN `web_user_collection` AS wuc ON wuc.`from_id`=wt.`id` AND wuc.`user_id`=#{userId} AND wuc.`from_table`='web_travels'
+		LEFT JOIN `web_travels_item` AS wti ON wti.`travel_id`=wt.`id` AND wti.`item_type`='imgs' AND wti.`is_cover`=0 
+		WHERE wt.`id`=#{travelsId}
+		AND wt.`state`='ADD'
+		GROUP BY wt.`id`
+	</select>
+	
+	<update id="updateBrowse">
+		UPDATE `web_travels` SET browse=browse+1 WHERE id=#{travelsId}
+	</update>
+	
+	<select id="findTravelsDetialList" resultType="map">
+		SELECT wti.`id`,wti.`item_type`,wti.`context`,wti.`is_cover`
+		FROM `web_travels_item` AS wti
+		WHERE wti.`travel_id`=#{travelsId}
+	</select>
+	
+	<update id="praiseAdd">
+		UPDATE `web_travels`
+		SET update_time=NOW(),
+		praise=praise+1
+		WHERE id=#{travelsId}
+	</update>
+	
+	<update id="replyPraiseAdd">
+		UPDATE `web_travels_reply`
+		SET praise=praise+1
+		WHERE id=#{replyId}
+	</update>
+	
+	<select id="checkDeleteTravels" resultType="int">
+		SELECT id
+		FROM `web_travels`
+		WHERE id=#{travelsId} AND user_id=#{userId}
+	</select>
+	
+	<update id="deleteTravels">
+		UPDATE `web_travels`
+		SET state='DEL'
+		WHERE id IN (${travelsId})
+	</update>
+	
+	<update id="updateTravels">
+		UPDATE `web_travels`
+		SET update_time=NOW(),
+		title=#{title},
+		at_addr=#{atAddr},
+		<if test="price !='' and price !=null">
+			price=#{price},
+		</if>
+		concluding_remark=#{concludingRemark},
+		examine_state=2
+		WHERE id=#{travelsId}
+	</update>
+	
+	<delete id="deleteTravelsItem">
+		DELETE FROM  `web_travels_item` WHERE travel_id=#{travelsId}
+	</delete>
+	
+	<sql id="findTravelsReplySql">
+		SELECT wtr.`id`,wu.`id` AS userId,wu.`nickname`,wu.`head_img`,
+		pwul.`level_desc` AS `level`,pwul.`level_name` AS p_level_name,wul.`level_name` AS badgeNumber,
+		wtr.`create_time`,wtr.`content`,
+		COUNT(cwtr.`id`) AS replyCount,
+		wtr.`praise`,IFNULL(wp.`id` ,0)AS isPraise,
+		wu.`is_master`
+		FROM `web_travels_reply` AS wtr
+		LEFT JOIN `web_travels_reply` AS cwtr ON cwtr.`root_id`=wtr.`id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wtr.`reply_user_id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		LEFT JOIN `web_praise` AS wp ON wp.`form_id`=wtr.`id` AND wp.`web_user_id`=#{userId} 
+		AND wp.`form_table`=#{form_table}
+		WHERE wtr.`root_id`=0 AND wtr.`reply_id`=#{travelsId} AND wtr.`state`='ADD'
+		<if test=" title !=null and title !=''">
+			AND wtr.`content` LIKE '%${title}%'
+		</if>
+		<if test=" nickName !=null and nickName !=''">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		GROUP BY wtr.`id`
+	</sql>
+	
+	<select id="findTravelsReplyList" resultType="map">
+		<include refid="findTravelsReplySql"></include>
+		<if test=" startLine !=null ">
+		LIMIT #{startLine},#{showLine}
+		</if>
+	</select>
+	
+	<select id="findTravelsReplyCount" resultType="float">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findTravelsReplySql"></include>
+		) AS countResult
+	</select>
+	
+	<select id="findTravelSecondartReplyList" statementType="CALLABLE" resultType="map">
+		CALL groupByTravelsTop(#{groupTop},#{ids});
+	</select>
+	
+	<insert id="addReply">
+		INSERT INTO `web_travels_reply`
+		SET create_time=NOW(),
+		content=#{content},
+		user_id=#{toUserId},
+		reply_id=#{replyId},
+		reply_user_id=#{userId},
+		root_id=#{rootId}
+	</insert>
+	
+	<select id="findSecondaryReplyListAll" resultType="map">
+		SELECT wtr.`id`,wu.`id` AS userId,wu.`nickname`,wu.`head_img` AS userHeadImg,wtr.`create_time`,
+		wtr.`content`,towu.`id` AS toUserId,towu.`nickname` AS toUserNickName,
+		wtr.`root_id` AS rootId,wtr.`reply_id` AS replyId
+		FROM `web_travels_reply` AS wtr
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wtr.`reply_user_id`
+		LEFT JOIN `web_user` AS towu ON towu.`id`=wtr.`user_id`
+		WHERE wtr.`root_id`=#{replyId}
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findTravelsCity" resultType="map">
+		SELECT wc.`id`,wc.`name`
+		FROM `web_travels`  AS wt
+		JOIN `web_citys` AS wc ON wt.`at_addr`=wc.`id` 
+		<if test=" travelType!=null and travelType !=''">
+			AND wt.`travel_type`=#{travelType}
+		</if>
+		AND wt.`state`='ADD'
+		GROUP BY wc.`id`
+	</select>
+	
+	<sql id="WebMasterSql">
+		SELECT wt.`id`,cwti.`context` AS cover,wu.`id` as userId,wu.`nickname`,countTravels.count,wt.`title`,wt.`create_time`
+		FROM `web_travels` AS wt
+		JOIN `web_user` AS wu ON wt.`user_id`=wu.`id`
+		LEFT JOIN (
+		SELECT cwt.`user_id`,COUNT(*) AS `count` FROM `web_travels` AS cwt GROUP BY cwt.`user_id`
+		) AS countTravels ON countTravels.`user_id`=wu.`id`
+		LEFT JOIN `web_travels_item` AS cwti ON cwti.`travel_id`=wt.`id` AND cwti.`item_type`='imgs' AND cwti.`is_cover`=0
+		WHERE wt.`travel_type`=2 AND wt.`examine_state`=0 AND wt.`state`='ADD'
+		<if test=" addrIds !=null and addrIds !='' ">
+			AND wt.`at_addr` IN (${addrIds})
+		</if>
+		ORDER BY top,
+		wt.`create_time` DESC
+	</sql>
+	
+	<select id="findWebMasterList" resultType="map">
+		<include refid="WebMasterSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findWebMasterCount" resultType="double">
+		SELECT count(*)
+		from (
+		<include refid="WebMasterSql"></include>
+		) as count
+	</select>
+	
+	<select id="findWebTravelsDetial" resultType="map">
+		SELECT wt.`id`,wt.`title`,wu.`id` AS userId,wu.`nickname`,wu.`head_img`,
+		pwul.`level_desc`,pwul.`level_name` AS p_level_name,wul.`level_name`,
+		wt.`create_time`,wt.`price`,wt.`travel_type`,
+		wp.`id` AS idPraise,
+		wuc.id AS isCollection,
+		IF(wt.`user_id`=#{userId},0,1) isEdit,
+		IFNULL(replyResult.count,0) AS replyCount,wt.`praise`,
+		IFNULL(collectionResult.count,0) AS collectionCount,
+		wt.`at_addr`
+		FROM `web_travels` AS wt
+		LEFT JOIN `web_user` AS wu ON wt.`user_id`=wu.`id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		LEFT JOIN (SELECT wtr.`reply_id`,COUNT(*) AS `count` FROM `web_travels_reply` AS wtr WHERE wtr.`root_id`=0 GROUP BY wtr.`reply_id`) AS replyResult 
+		ON replyResult.`reply_id`=wt.`id`
+		LEFT JOIN `web_praise` AS wp ON wp.`form_table`='web_travels' AND wp.`form_id`=wt.`id` AND wp.`web_user_id`=#{userId}
+		LEFT JOIN `web_user_collection` AS wuc ON wuc.`from_id`=wt.`id` AND wuc.`user_id`=#{userId} AND wuc.`from_table`='web_travels'
+		LEFT JOIN (SELECT wuc.`from_id`,COUNT(*) AS `count` FROM `web_user_collection` AS wuc WHERE wuc.`from_table`='web_travels' GROUP BY wuc.`from_id`) AS collectionResult
+		ON collectionResult.`from_id`=wt.`id`
+		WHERE 1=1
+		<if test=" travelType!=0 and travelType!=null ">
+			AND wt.`travel_type`=#{travelType}
+		</if>
+		AND wt.`id`=#{travelsId}
+		GROUP BY wt.`id`
+	</select>
+	
+	<select id="findWebSecondaryReplyList" resultType="map">
+		SELECT wtr.`id`,wu.`id` AS userId,wu.`nickname` AS userNickName,wu.`head_img`,wtr.`create_time`,
+		wtr.`content`,towu.`id` AS toUserId,towu.`nickname` AS toUserNickname,
+		pwul.`level_desc`,pwul.`level_name` AS p_level_name,wul.`level_name`,
+  		wtr.`root_id`
+		FROM `web_travels_reply` AS wtr
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wtr.`reply_user_id`
+		LEFT JOIN `web_user` AS towu ON towu.`id`=wtr.`user_id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		WHERE wtr.`root_id`=#{replyId}
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<sql id="findWebTravelsSql">
+		SELECT wt.`id`,wt.`title`,wwti.`context` AS word,cwti.`context` AS cover,dynamicResult.`userId` AS dynamicUserId,wt.`user_id`,dynamicResult.`type`,dynamicResult.`create_time`,
+		thisWu.`nickname` AS thisNickName,thisWu.`head_img`,wu.`nickname` AS nickName,COUNT(wtr.`id`) AS replyCount
+		FROM `web_travels` AS wt
+		LEFT JOIN (
+		SELECT *
+		FROM (
+		SELECT wp.`web_user_id` AS userId,wp.`create_time`,"praise" AS `type`,wp.`form_id`  AS travelsId
+		FROM `web_praise` AS wp WHERE wp.`form_table`='web_travels'
+		UNION
+		SELECT wtr.`reply_user_id` AS userId,wtr.`create_time`,"reply" AS `type`,wtr.`reply_id` AS travelsId
+		FROM `web_travels_reply` AS wtr WHERE wtr.`root_id`=0
+		ORDER BY create_time DESC
+		) AS groupResult GROUP BY travelsId
+		) AS dynamicResult ON wt.`id`=dynamicResult.`travelsId`
+		LEFT JOIN `web_user` AS thisWu ON wt.`user_id`=thisWu.`id`
+		LEFT JOIN `web_user` AS wu ON dynamicResult.`userId`=wu.`id`
+		LEFT JOIN `web_travels_item` AS cwti ON cwti.`travel_id`=wt.`id` AND cwti.`is_cover`=0 AND cwti.`item_type`='imgs'
+		LEFT JOIN `web_travels_item` AS wwti ON wwti.`travel_id`=wt.`id` AND wwti.`item_type`='word'
+		LEFT JOIN `web_travels_reply` AS wtr ON wt.`id`=wtr.`reply_id` AND wtr.`root_id`=0
+		WHERE wt.`travel_type`=1
+  		AND wt.`state` = 'ADD' 
+  		AND wt.`examine_state`=0
+  		<if test=" addrIds !=null and addrIds !='' ">
+  			AND wt.`at_addr` IN (${addrIds})
+  		</if>
+		GROUP BY wt.`id`
+		ORDER BY top
+		<if test=" sort== 1 ">
+			,wt.`create_time` DESC
+		</if>
+		<if test=" sort== 2 ">
+			,`replyCount` DESC
+		</if>
+	</sql>
+	
+	<select id="findWebTravelsList" resultType="map">
+		<include refid="findWebTravelsSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findWebTravelsCount" resultType="float">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findWebTravelsSql"></include>
+		) AS countResult 
+	</select>
+	
+	<select id="checkDelete" resultType="int">
+		SELECT id
+		FROM `web_travels`
+		WHERE id=#{travelsId} AND user_id=#{userId}
+	</select>
+	
+	<select id="findRecommendList" resultType="map">
+		SELECT wt.`id`,wt.`title`,wwti.`context`,iwti.`context` AS cover,wt.`price`,wu.`id` AS userId,wu.`nickname`,wu.`head_img`,wt.`travel_type`
+		FROM `web_recommend` AS wr
+		JOIN web_travels  AS wt ON wt.`id`=wr.`from_id` AND wr.`from_table`='web_travels' AND wt.`state`='ADD'
+   		AND wr.`state` = 'ADD' 
+		LEFT JOIN `web_travels_item` AS wwti ON wwti.`travel_id`=wt.`id` AND wwti.`item_type`='word'
+		LEFT JOIN `web_travels_item` AS iwti ON iwti.`travel_id`=wt.`id` AND iwti.`item_type`='imgs' AND iwti.`is_cover`=0
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wt.`user_id`
+		WHERE 1=1
+		<if test=" travelsType !=null and travelsType !=''">
+			AND wr.`from_type`=#{travelsType}
+		</if>
+		GROUP BY wt.`id`
+		ORDER BY wr.`order_number`
+		LIMIT 0,${number}
+	</select>
+	
+	<insert id="insertReason">
+		INSERT INTO `web_travels_examine`
+		SET create_time=NOW(),
+		travel_id=#{travelsId},
+		reason=#{reason},
+		result=#{status}
+	</insert>
+	
+	<update id="updateTravelsExamine">
+		UPDATE `web_travels`
+		SET examine_state=#{status}
+		WHERE id=#{travelsId}
+	</update>
+	
+	<update id="updateTop">
+		UPDATE `web_travels`
+		SET top=#{top}
+		WHERE id=#{travelsId}
+	</update>
+	
+	<select id="findExamineList" resultType="map">
+		SELECT create_time,reason,result
+		FROM `web_travels_examine`
+		WHERE travel_id=#{travelsId}
+		ORDER BY create_time DESC
+	</select>
+	
+	<update id="deleteTravelsReply">
+		UPDATE `web_travels_reply`
+		SET state='DEL'
+		WHERE id IN (${ids})
+	</update>
+	
+	
+</mapper>

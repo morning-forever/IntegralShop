@@ -1,0 +1,525 @@
+﻿@charset "utf-8";
+
+@import (reference) "common";
+@import (reference) "inner.style.less";
+
+.green {
+	color: #16cc6c !important;
+}
+.purple {
+	color: #9f8fff;
+}
+
+.i-recommend {
+	background-position: -49px -476px;
+}
+
+.w60 {
+	.inline;
+	width: 60px;
+}
+.w100 {
+	.inline;
+	width: 100px;
+}
+.spantag {
+	.border;
+	height: 38px;
+	.lh(38px);
+	.vm;
+	.tc;
+	color: #999;
+}
+
+.topictravel {
+	.l-part {
+		width: 704px;
+		.fl;
+		margin-right: -10px;
+	}
+	.r-part {
+		.fr;
+		width: 265px;
+		h4 {
+			.mb(15px);
+			color: @grey;
+		}
+		.pt(56px);
+	}
+	.list_ul {
+		li {
+			.mr(10px);
+			.price {
+				.pb(27px);
+			}
+		}
+	}
+}
+
+.ctgallwrap {
+	border-bottom: 0;
+}
+.sortwrap {
+	.border(#f4f4f4);
+	.mb(30px);
+}
+
+.topiclist {
+	.border(#ededed);
+	border-bottom: 0;
+	li {
+		.pd(22px 15px 26px 35px);
+		.rel;
+		border-bottom: 1px solid #ededed;
+		img {
+			.mr();
+		}
+		.numid {
+			.abs;
+			left:12px;
+			top:35px;
+			.f18;
+			color: #9eabbb;
+		}
+		h5 {
+			.f12;
+			color: @grey9;
+			.mb(5px);
+			height: 1.6em;
+			.ellipsis;
+		}
+		p {
+			color: @lorange;
+		}
+	}
+}
+
+.toppart {
+	color: @grey9;
+	.pd(20px 0 30px);
+}
+.i-comment {
+	width: 20px;
+	height: 19px;
+	background-position: -87px -571px;
+}
+.i-travelplan {
+	background-position: -95px -476px;
+}
+.i-colorfulpoint {
+	background-position: -141px -476px;
+}
+.i-ordernote {
+	background-position: -187px -476px;
+}
+
+.content-box {
+	.pd(30px);
+}
+
+.travelplan {
+	.alphabtn {
+		margin-left:-65px;
+		left:50%;
+		bottom: 0;
+	}
+}
+
+.list_ul {
+	&.type3 {
+		li {
+			width: 296px;
+			.border(#ededed);
+			background: #fff;
+			.mr(19px);	
+			.mb(20px);		
+			h5 {
+				.f18;
+				margin: 0 20px;
+				.lh(1.8em);
+				height: 1.8em;
+				.ellipsis;
+				color: #666;
+				.bold;
+				.pt(5px);
+			}
+			p {
+				.mg(0 20px);
+				height: 1.6em;
+				.ellipsis;
+				color: #666;
+				.pb(5px);
+			}
+			img {
+				.pointer;
+			}
+		}
+		
+	}
+}
+
+.text-box {
+	.lh(1.8em);
+	p {
+		color: #999;
+	}
+}
+
+.banner_wrapper {
+	.content {
+		left:50%;
+		top:0;
+		.ml(-500px);
+		height: 100%;
+		.swipe-part {
+			top:0;
+			right: 90px;
+		}
+		.star-level {
+			right:50px;
+			bottom: 30px;
+			.f18;
+			color: #fff;
+		}
+		.relinfo {
+			.abs;
+			left:10px;
+			bottom: 30px;
+			.f18;
+			color: #fff;
+			span {
+				.mr(20px);
+			}
+		}
+	}
+	.i-freetravel {
+		width: 41px;
+		height: 40px;
+		background-position: -279px -201px;
+	}
+
+}
+
+/* 右侧工具栏 */
+.rsidebox {
+	.abs;
+	.pd(20px 0);
+	right: 50%;
+	margin-right: -700px;
+	background: #fff;
+	width: 188px;
+	.border(#eaeaea);	
+	.fitemwrap {
+		.pl(75px);
+	}
+	.item-title {
+		.tr;
+		width: 65px;
+	}
+}
+.rsidebox.smallscreen {
+	right: 0;
+	margin-right: 0;
+
+}
+
+/* 价格包含 */
+.i-fly {
+	width: 44px;
+	height: 51px;
+	background-position: -233px -476px;
+}
+.i-hotel {
+	width: 44px;
+	height: 51px;
+	background-position: -279px -476px;
+}
+.i-p {
+	width: 44px;
+	height: 51px;
+	background-position: -325px -476px;
+}
+.i-arrow {
+	width: 38px;
+	height: 38px;
+	background-position: -338px -205px;
+}
+.box-section {
+	.pd(20px);
+	.bordert1(#eaeaea);
+	&:first-child {
+		border-top: none;
+	}
+	.l-part {
+		width: 165px;
+		.inline;
+	}
+	.r-part {
+		.inline;
+		.vm;
+		.lh(2.6em);
+		color: #666;		
+		p {
+			color: #666;
+		}
+	}
+}
+
+.viewdetail {
+	h4 {
+		color: @lorange;
+		.mb(15px);
+	}
+	p {
+		&.grey {
+			color: @grey;
+			.mb(10px);
+		}
+		.mb(20px);
+		color: @grey9;
+	}
+}
+
+/* fancybox */
+.fancybox-overlay {
+	z-index: 199999;
+}
+.fancybox-skin {
+	padding:10px !important;
+	.bradius(0);
+}
+.fancybox-opened .fancybox-skin {
+	box-shadow: 0 0 2px #333;
+	.border(#ccc);
+}
+.fancybox-close {
+	width: 20px;
+	height: 20px;
+	background: url('../images/sprites.png') -269px -569px no-repeat;
+	top:25px;
+	right: 25px;
+}
+.fancybox-nav span {
+	width: 17px;
+	height: 42px;	
+}
+.fancybox-prev span {
+	background: url('../images/sprites.png') -452px -423px no-repeat;
+}
+.fancybox-next span {
+	background: url('../images/sprites.png') -482px -423px no-repeat;
+}
+
+/* 详细行程 */
+.i-time{
+	width: 20px;
+	height: 20px;
+	background-position: -298px -569px;
+	.mr();
+}
+.i-time-s{
+	width: 15px;
+	height: 15px;
+	background-position: -345px -572px;
+	.mr();
+}
+.i-train, .i-public , .i-boat , .i-walk , .i-food, .i-photo {
+	width: 44px;
+	height: 51px;
+}
+.i-train{
+	background-position: -371px -476px;
+}
+.i-public{
+	background-position: -417px -476px;
+}
+.i-boat{
+	background-position: -463px -476px;
+}
+.i-walk{
+	background-position: -249px -256px;
+}
+.i-food{
+	background-position: -295px -256px;
+}
+.i-photo{	
+	background-position: -202px -256px;
+}
+.plandetail {
+	.rel;
+	.steptag_list {
+		.abs;
+		left:40px;
+		top:10px;
+		width: 115px;
+		.tc;
+		.border(#e2e2e2);
+		border-bottom: 0;
+		li {
+			height: 36px;
+			.lh(36px);
+			.borderb1(#e2e2e2);
+			color: #999;
+			&.active {
+				background: @lorange;
+				color: #fff;
+			}
+		}
+	}
+	.r-content {
+		.mg(20px 0 60px 300px);
+		border-left:3px solid #ececec;
+		.step , .step-cont {
+			.rel;
+			.ml(-31px);
+			min-height: 140px;
+		}
+		.endstep {
+			min-height: 60px;
+		}
+		.l-part {
+			width: 58px;
+			height: 58px;
+			background: #fff;
+			.pd(10px 0);
+			.tc;
+			.abs;
+			left: 0;
+			top:0;
+		}
+		.r-part {
+			.ml(80px);			
+			width: 246px;
+			color: #666;
+		}
+		.roundspan {
+			.inline;
+			width: 58px;
+			height: 58px;
+			background: @lorange;
+			color: #fff;
+			.lh(58px);
+			.tc;
+			border-radius: 50%;
+		}
+		.endspan {
+			.inline;
+			width: 124px;
+			height: 44px;
+			.lh(44px);
+			color: #fff;
+			background: #5d5547;
+			.bradius(22px);
+			.ml(-31px);
+		}
+		.step {
+			.r-part {
+				.pt(25px);
+
+			}
+		}
+		.step-cont {
+			.pt(9px);
+			.r-part {
+				.border(#e9e4e4);
+				.pd(14px);
+				.rel;
+				.f16;
+				p {
+					color: #666;
+				}
+				img {
+					width: 100%;
+					.mb(10px);
+				}
+				&.hasimg {
+					.pd(0);
+					width: 276px;
+					h5,p {
+						.pd(0 10px);
+					}
+					p {
+						.pb(5px);
+					}
+					.i-arrow{
+						left:-10px;
+					}
+				}
+
+			}
+		}
+		.i-arrow {
+			width: 10px;
+			height: 14px;
+			background-position: -327px -572px;
+			.abs;
+			left:-9px;
+			top:18px;
+		}
+	}
+}
+
+/* 价格查询 */
+#calendar {
+	width: 740px;
+	height: 415px;
+	margin: 0 auto;
+	.pt();
+}
+.fc-toolbar h2 {
+	.f16;
+}
+.fc-toolbar {
+	.mb(5px);
+}
+.cellstyle {
+	background: none;
+	border: none;
+	color: #ffb126;
+}
+.statespan {
+	.f12;
+	.pd(3px 5px);
+	.lh(1.2em);
+	.inline;
+	left:0;
+	top:-24px;
+	&.state1 {
+		color: #fff;
+		background: #c7c2c2;
+	}
+	&.state2 {
+		color: #fff;
+		background: #81bc10;
+	}
+}
+.fc-event {
+	background: none;
+	color: @lorange;
+	border: none;
+	.rel;
+	.f14;
+	&:hover {
+		color: @lorange;
+	}
+	.statespan {
+		.abs;
+	}
+	&.selected {
+		color: #fff;
+	}
+}
+.fc-ltr .fc-basic-view .fc-day-number {
+	.f16;
+	&.selected {
+		color: #fff;
+	}
+}
+.fc-day {
+	&.selected {
+		background: @lorange;
+	}
+}
+
+
+

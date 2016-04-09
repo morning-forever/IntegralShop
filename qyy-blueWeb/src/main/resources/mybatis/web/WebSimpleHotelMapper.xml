@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebSimpleHotelMapper">
+
+	<!-- 返回酒店列表 -->
+	<select id="findList" parameterType="PageData" resultType="PageData">
+		SELECT wsh.id,wsh.`names`,wc.`name`,wsh.addr_detail addrDetail,wsh.prices,wshs.star_detail starDetail
+		FROM
+		web_simple_hotel wsh
+		LEFT JOIN web_simple_hotel_star wshs ON wsh.star_id = wshs.id
+		LEFT JOIN web_citys wc ON
+		wsh.addr_id = wc.id
+		LEFT JOIN web_citys wc1 ON wc.parent_id = wc1.id
+		WHERE 1 = 1
+		<if test="hotelName != null and hotelName != ''">
+			AND wsh.`names` LIKE CONCAT(CONCAT('%',#{hotelName}),'%')
+		</if>
+		<if test="addrId != null and addrId != '' ">
+			AND wsh.addr_id = #{addrId}
+		</if>
+		<if test="starId != null and starId != '' ">
+			AND wsh.star_id = #{starId}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+		;
+	</select>
+
+	<!-- 查询条数 -->
+	<select id="pageListTotalCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		FROM web_simple_hotel wsh
+		LEFT JOIN web_simple_hotel_star wshs ON wsh.star_id = wshs.id
+		LEFT
+		JOIN web_citys wc ON wsh.addr_id = wc.id
+		LEFT JOIN web_citys wc1 ON wc.parent_id = wc1.id
+		WHERE 1 = 1
+		<if test="hotelName != null and hotelName != ''">
+			AND wsh.`names` LIKE CONCAT(CONCAT('%',#{hotelName}),'%')
+		</if>
+		<if test="addrId != null and addrId != '' ">
+			AND wsh.addr_id = #{addrId}
+		</if>
+		<if test="starId != null and starId != '' ">
+			AND wsh.star_id = #{starId}
+		</if>
+	</select>
+
+	<!-- 查询详情 -->
+	<select id="hotelDetail" parameterType="PageData" resultType="PageData">
+		SELECT id,`names`,addr_id
+		addrId,addr_detail addrDetail,star_id starId,summary ,prices
+		FROM web_simple_hotel wsh
+		WHERE id = #{id};
+	</select>
+
+	<!-- 添加酒店信息 -->
+	<insert id="addHotel" parameterType="PageData">
+		INSERT web_simple_hotel
+		(create_time,`names`,addr_id,addr_detail,star_id,summary,prices)
+		VALUES
+		(NOW(),#{names},#{addrId},#{addrDetail},#{starId},#{summary},#{prices});
+	</insert>
+	
+	<!-- 获取id-->
+	<select id="findId" parameterType="PageData" resultType="Integer">
+		SELECT id
+		FROM web_simple_hotel
+		WHERE `names` = #{names} 
+		AND addr_id = #{addrId} 
+		AND addr_detail = #{addrDetail} 
+		AND star_id = #{starId} 
+		AND summary = #{summary} 
+		AND prices = #{prices}
+		ORDER BY create_time DESC LIMIT 0,1;
+	</select>
+
+	<!-- 更新酒店信息 -->
+	<update id="modHotel" parameterType="PageData" useGeneratedKeys="true" keyProperty="id">
+		UPDATE web_simple_hotel SET
+		`names` = #{names},
+		addr_id = #{addrId},
+		addr_detail = #{addrDetail},
+		star_id = #{starId},
+		prices = #{prices},
+		summary = #{summary}
+		where id = #{id}
+	</update>
+	
+	<!-- 酒店星级 -->
+	<select id="starList" resultType="PageData">
+		SELECT id,star_key starKey,star_detail starDetail FROM web_simple_hotel_star ORDER BY star_key DESC;
+	</select>
+	
+	<select id="cityList" resultType="PageData">
+		SELECT id,`name`,ctype,parent_id parentId FROM web_citys WHERE id IN (SELECT addr_id FROM web_simple_hotel GROUP BY addr_id);
+	</select>
+	
+	<!-- 删除一条酒店信息 -->
+	<delete id="delHotel" parameterType="PageData">
+		DELETE FROM web_simple_hotel WHERE id = #{id} ;
+	</delete>
+	
+	<!-- 检查路线中是否使用过类型下某值 -->
+	<select id="checkIsUsed" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_simple_line WHERE at_where_type =#{whereType} AND at_where_id = #{whereId} ;
+	</select>
+	
+
+</mapper>

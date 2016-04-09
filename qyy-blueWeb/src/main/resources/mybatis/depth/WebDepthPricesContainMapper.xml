@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebDepthPricesContainMapper">
+   
+   <!-- 查询价格包含列表 -->
+   <select id="findPricesContainList" resultType="PageData">
+	   	SELECT 
+		  wdpc.`contain_type`,
+		  wdpc.`from_addr`,
+		  wdpc.`to_addr`,
+		  wdpc.`check_day`,
+		  wdpc.`check_hotel`,
+		  wdpc.`visit`,
+		  wdpc.`remark` 
+		FROM
+		  web_depth_prices_contain wdpc 
+		WHERE wdpc.`depth_id` = #{depthId}
+   </select>
+   
+   <!-- 新增价格包含 -->
+   <insert id="addPriceContain">
+   		insert into web_depth_prices_contain
+   		(create_time, contain_type, from_addr, to_addr, check_day, check_hotel, visit, remark, depth_id)
+   		values
+   		(NOW(), #{containType}, #{fromAddr}, #{toAddr}, #{checkDay}, #{checkHotel}, #{visit}, #{remark}, #{depthId})
+   </insert>
+   
+   <!-- 删除价格包含 -->
+   <delete id="deletePriceContain">
+   		delete from web_depth_prices_contain where depth_id = #{depthId}
+   </delete>
+	
+</mapper>

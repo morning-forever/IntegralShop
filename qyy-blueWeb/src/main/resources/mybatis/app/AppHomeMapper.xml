@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AppHomeMapper">
+	
+	<delete id="delsCode" parameterType="java.util.Map">
+		DELETE FROM web_validate WHERE vtype = #{type} AND vphone =#{phone};
+	</delete>
+	
+	<select id="getBannerList" resultType="PageData">
+		SELECT
+		whb.`id`,whb.`banner_img` FROM web_home_banner AS whb
+		WHERE whb.`state`='ADD' AND whb.`banner_where` IN (1,3)
+		AND whb.`banner_type`=#{type}
+		ORDER BY whb.banner_order ASC
+	</select>
+
+	<select id="findCarRuleList" parameterType="PageData"
+		resultType="PageData">
+		SELECT depict,rule_type ruleType FROM web_car_rule where
+		state = 'ADD';
+	</select>
+
+	<select id="findStoreByCityId" resultType="PageData">
+		SELECT
+		id,store,addr_detail,link_tel,CONCAT(open_start,'-',open_end) AS
+		open_time
+		FROM `web_car_addrs`
+		WHERE `city_id`=#{cityId}
+		AND addr_type=#{type}
+	</select>
+
+
+	<select id="findCarRentList" resultType="PageData">
+		SELECT * FROM(
+		SELECT wa.`id`,IF(wa.`counts`=0,1,0) AS
+		isFull,wcr.`gearbox`,wcb.`brand`,wcr.`seating`,cu.`pic_url`,IFNULL(wcdp.`price`,0)
+		AS price
+		FROM `web_car` AS wa
+		JOIN `web_car_rent` AS wcr ON wcr.`car_id`=wa.`id`
+		JOIN `web_car_type_ct`
+		AS wctc ON wctc.`car_id`=wa.`id`
+		JOIN `web_car_brand` AS wcb ON
+		wcb.`id`=wa.`brand_id`
+		LEFT JOIN `web_car_date_price` AS wcdp ON
+		wcdp.`car_id`=wa.`id` AND wcdp.`date` = DATE_FORMAT(NOW(), '%Y-%m-%d')
+		LEFT JOIN `web_car_rent_addr_ct` AS wcrac ON wcrac.`rent_id`=wcr.`id`
+		LEFT JOIN `web_car_addrs` AS wca ON wcrac.`car_addrs_id`=wca.`id`
+		LEFT JOIN `common_upload` AS cu ON wa.`id`=cu.`from_id` AND cu.`pic_from`='carRent'
+		<if test=" priceId != null and priceId != '' "><!-- 价格区间表联表 -->
+			LEFT JOIN `web_price_search` AS wps ON wps.`id`=#{priceId}
+		</if>
+		WHERE wa.`is_shelves`=0 AND wa.`state`='ADD'
+		<if test=" typeId != null and typeId != '' "><!-- 类型搜索 -->
+			AND wctc.`car_type_id` IN (${typeId})
+		</if>
+		<if test=" brandId != null and brandId != '' "><!-- 品牌搜索 -->
+			AND wcb.`id` IN (${brandId})
+		</if>
+		<if test=" priceId != null and priceId != '' "><!-- 价格区间搜索 -->
+			AND wcdp.`price` &lt; IFNULL(wps.`price_end`,9999999)
+			AND wcdp.`price` &gt;= IFNULL(wps.`price_start`,0)
+		</if>
+		<!-- 地点查询 -->
+		AND ( 2=1 OR wca.`id`=#{getStoreId} OR wca.`id`=#{loseStoreId} )
+		ORDER
+		BY cu.`create_time` DESC
+		) AS result
+		GROUP BY result.id
+		<if test=" priceSort != '' and priceSort !=null ">
+			ORDER BY price ${priceSort}
+		</if>
+		LIMIT ${limistStart},${pageSize}
+	</select>
+
+	<select id="findCarWrapList" parameterType="PageData" resultType="PageData">
+		SELECT * FROM(
+		SELECT 
+		  wc.id,
+		  wcdp.price,
+		  cu.`pic_url`,
+		  wca.`seating`,
+		  wcb.`brand`  
+		FROM
+		  web_car wc 
+		  LEFT JOIN web_car_date_price wcdp 
+		    ON wcdp.car_id = wc.`id` 
+		   	AND DATE_FORMAT(wcdp.date, '%Y-%m-%d') = DATE_FORMAT(NOW(), '%Y-%m-%d')
+		  LEFT JOIN web_car_wrap wca 
+		    ON wca.`car_id` = wc.`id` 
+		  LEFT JOIN web_car_type_ct wctc 
+		    ON wctc.`car_id` = wc.`id` 
+		  LEFT JOIN web_car_type wct 
+		    ON wct.`type_type` = 'wrap' 
+		    AND wct.`id` = wctc.`car_type_id` 
+		  LEFT JOIN web_car_brand wcb 
+		    ON wcb.`brand_type` = 'wrap' 
+		    AND wcb.`id` = wc.`brand_id` 
+		  LEFT JOIN web_car_sys wcs 
+      		ON wcs.`id` = wc.sys_id
+      	  LEFT JOIN `common_upload` AS cu ON wc.`id`=cu.`from_id` AND cu.`pic_from`='carWrap'
+		 <!-- 价格区间表联表 -->
+		 <if test=" priceId != null and priceId != '' ">
+			LEFT JOIN `web_price_search` AS wps ON wps.`id`=#{priceId}
+		</if> 
+		WHERE wc.car_type = 'wrap'
+		  AND wc.state = 'ADD'
+		  AND wc.is_shelves = 0
+		<if test="wrapNum != null and wrapNum != '' ">
+			and wc.counts >= #{wrapNum}
+		</if>
+		<if test="seating != null and seating != '' ">
+			and wca.`seating` = #{seating}
+		</if>
+		<if test="carTypes != null and carTypes != '' ">
+			and INSTR(#{carTypes}, wct.`id`) > 0
+		</if>
+		<if test="carBrands != null and carBrands != '' ">
+			and INSTR(#{carBrands}, wc.`brand_id`) > 0
+		</if>
+		<if test=" priceId != null and priceId != '' "><!-- 价格区间搜索 -->
+			AND wcdp.`price` &lt; IFNULL(wps.`price_end`,9999999)
+			AND wcdp.`price` &gt;= IFNULL(wps.`price_start`,0)
+		</if>
+		) AS result
+		GROUP BY result.id
+		<if test="sortFlag != null and sortFlag != '' and sortFlag == 'price' ">
+			order by price
+		</if>
+		LIMIT ${startLine},${showLine}
+	</select>
+
+	<select id="findCarBusList" resultType="PageData">
+		select cb.id,c.seating,cb.use_count,truncate(cb.use_count/c.seating * 100,2) as ple,
+		cu.pic_url,cr.price,cr.from_time,cr.to_time,br.brand
+		,wc.`name` as from_addr,wc2.`name` as to_addr
+		FROM web_car_route cr
+		LEFT JOIN web_car_bus cb ON cr.bus_id = cb.id
+		LEFT JOIN web_car c ON c.id = cb.car_id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id
+		LEFT JOIN common_upload cu ON cu.from_id = cb.car_id
+		LEFT JOIN web_car_addrs ca ON ca.id = cr.from_addr_id
+		LEFT JOIN web_car_addrs ca2 ON ca2.id = cr.to_addr_id
+		LEFT JOIN web_citys wc ON wc.id = ca.city_id
+		LEFT JOIN web_citys wc2 ON wc2.id = ca2.city_id
+		WHERE cu.pic_from = 'bus' AND cu.pic_type = 'cover'
+		AND cr.is_shelves = 0 AND cr.`state`='ADD' AND c.`state`='ADD'
+		<if test="departureTime != null and departureTime != ''">
+			AND TIME_FORMAT(cr.from_time,'%H:%i') >= TIME_FORMAT(#{departureTime},'%H:%i')
+		</if>
+		<if test="getStoreId != null and getStoreId != ''">
+			and cr.from_addr_id = #{getStoreId}
+		</if>
+		<if test="loseStoreId != null and loseStoreId != ''">
+			and cr.to_addr_id = #{loseStoreId}
+		</if>
+		<if test="sortFlag = 1">
+			order by cb.use_count
+		</if>
+		<if test="showLine != null and showLine != ''">
+			limit #{startLine} , #{showLine}
+		</if>
+	</select>
+
+	<select id="findCarCarpoolList" parameterType="PageData"
+		resultType="PageData">
+		SELECT wcc.id, wcc.pool_dss poolDss, DATE_FORMAT(wcc.start_time
+		,'%Y-%m-%d %H:%i:00') startTime
+		,wc1.`name` from_addr,wc2.`name`
+		to_addr
+		,UNIX_TIMESTAMP(wcc.start_time) - UNIX_TIMESTAMP(NOW())
+		diffTime
+		,max_price maxPrice ,min_price minPrice
+		,is_closed isClosed
+		FROM web_car_carpool wcc
+		LEFT JOIN web_citys wc1 ON wcc.start_city_id =
+		wc1.id
+		LEFT JOIN web_citys wc2 ON wcc.end_city_id = wc2.id
+		WHERE 1 = 1
+		<if test="startTime != null and startTime !='' ">
+			AND wcc.start_time > #{startTime}
+		</if>
+		<if test="getStoreId != null and getStoreId != '' ">
+			AND wcc.start_addr_id = #{getStoreId}
+		</if>
+		<if test="loseStoreId != null and loseStoreId != '' ">
+			AND wcc.end_addrs_id = #{loseStoreId}
+		</if>
+		<if test=" sortFlag =1 ">
+			ORDER BY wcc.start_time
+		</if>
+		<if test="startLine !=null and startLine != '' ">
+			LIMIT ${startLine},${showLine}
+		</if>
+	</select>
+
+	<select id="findPriceList" resultType="PageData">
+		SELECT TRUNCATE(price,2)
+		AS price
+		,DATE_FORMAT(`date`,'%w') AS `week`
+		,DATE_FORMAT(`date`,'%Y年%m月%d日') AS `date`
+		,`date` AS dateO
+		FROM `web_car_date_price`
+		WHERE car_id=#{id}
+		AND `date`&gt;=#{startTime}
+		AND `date`&lt;#{endTime}
+	</select>
+
+	<insert id="insertValidateCode">
+		INSERT INTO `web_validate`
+		SET create_time=NOW(),
+		vcode=#{code},
+		vphone=#{phone},
+		deadline=600000,
+		vtype=#{type}
+	</insert>
+	
+	<select id="getCodeByPhone" resultType="PageData">
+		SELECT id,create_time,vcode FROM `web_validate`
+		WHERE `vtype`=#{type} AND  `vphone`=#{phone}
+		order by create_time desc
+		limit 1
+	</select>
+
+	<insert id="insertWebUser" useGeneratedKeys="true" keyProperty="userId">
+		INSERT INTO `web_user`
+		SET create_time=NOW(),
+		nickname=#{nickName},
+		phone=#{phone}
+	</insert>
+
+</mapper>

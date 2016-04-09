@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="CommonUploadMapper">
+
+	<!-- 返回图片列表 -->
+	<select id="findList" parameterType="PageData" resultType="PageData">
+		SELECT id,pic_url picUrl,pic_from
+		picFrom,pic_type picType,from_id fromId
+		FROM common_upload
+		WHERE
+		pic_from =#{from}
+		AND pic_type =#{type}
+		AND from_id = ${fromId};
+	</select>
+	
+	<select id="findPathList" parameterType="PageData" resultType="String">
+		SELECT pic_url picUrl
+		FROM common_upload
+		WHERE
+		pic_from =#{from}
+		AND pic_type =#{type}
+		AND from_id = ${fromId};
+	</select>
+
+	<!-- 查询条数 -->
+	<select id="pageListTotalCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		FROM common_upload
+		WHERE
+		pic_from =#{from}
+		AND pic_type =#{type}
+		AND from_id = ${fromId};
+	</select>
+
+	<!-- 删除所有相关图片信息 -->
+	<delete id="delPics" parameterType="PageData">
+		DELETE FROM common_upload
+		WHERE 1 = 1
+		<if test="from != null and from != ''">
+			AND pic_from =#{from}
+		</if>
+		<if test="type != null and type != ''">
+			AND pic_type =#{type}
+		</if>
+		<if test="fromId != null and fromId != ''">
+			AND from_id = ${fromId}
+		</if>
+	</delete>
+
+	<!-- 添加上传信息 -->
+	<insert id="addUpload" parameterType="PageData">
+		INSERT common_upload
+		(create_time,pic_url,pic_from,pic_type,from_id)
+		VALUES
+		(NOW(),#{picUrl},#{from},#{type},#{fromId});
+	</insert>
+
+	<resultMap type="AdminMenu" id="menuResultMap">
+		<id column="id" property="id" />
+		<result column="menu_key" property="menuKey" />
+		<result column="menu_name" property="menuName" />
+		<result column="is_root" property="isRoot" />
+		<result column="is_parent" property="isParent" />
+		<result column="parent_key" property="parentKey" />
+		<result column="menu_icon" property="menuIcon" />
+		<result column="menu_path" property="menuPath" />
+		<result column="menu_type" property="menuType" />
+		<result column="menu_order" property="menuOrder" />
+	</resultMap>
+
+	<insert id="savePhotoUrl" parameterType="pageData">
+		INSERT INTO `common_upload` SET create_time=NOW(),pic_url=#{picUrl},pic_type=#{picType},from_id=#{fromId},pic_from=#{picFrom}
+	</insert>
+	
+	<delete id="deleteAllPhoto" parameterType="pageData">
+		DELETE FROM `common_upload` WHERE from_id=#{fromId}
+	</delete>
+	
+	<select id="findAllPhoto" parameterType="long" resultType="pageData">
+		SELECT pic_url FROM `common_upload` WHERE pic_from='merch' AND  from_id=#{id}   LIMIT 5
+	</select>
+	
+	<select id="findGoodsPhoto" resultType="String"> 
+		SELECT pic_url FROM `common_upload` WHERE from_id=#{id} AND pic_from=#{goodsType}
+	</select>
+
+	<select id="findPhotos" resultType="pageData">
+		SELECT pic_url FROM `common_upload` 
+		WHERE from_id=#{id} 
+		AND pic_from=#{picFrom}
+		AND pic_type=#{picType}
+		LIMIT #{number}
+	</select>
+</mapper>

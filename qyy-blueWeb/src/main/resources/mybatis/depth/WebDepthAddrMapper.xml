@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebDepthAddrMapper">
+   
+   <!-- 新增深度游所在地 -->
+   <insert id="insert">
+   		insert into web_depth_addr_ct 
+   		(create_time, addr_id, depth_id)
+   		values
+   		(NOW(), #{addrId}, #{depthId})
+   </insert>
+   
+   <!-- 删除深度游所在地 -->
+   <delete id="delete">
+   		delete from web_depth_addr_ct where depth_id = #{depthId}
+   </delete>
+	
+</mapper>

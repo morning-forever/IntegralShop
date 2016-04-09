@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebDepthPointMapper">
+	
+	<!-- 根据深度游id获取亮点列表 -->
+	<select id="getPointListByDepthId" resultType="PageData">
+		SELECT 
+		  wdp.`id`,
+		  wdp.`scenic_name`,
+		  wdp.`point_name`,
+		  IFNULL(
+		    cu.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS picUrl 
+		FROM
+		  web_depth_point_ct wdpc 
+		  LEFT JOIN web_depth_point wdp 
+		    ON wdp.`id` = wdpc.`point_id`
+		  LEFT JOIN common_upload cu 
+		    ON cu.pic_from = 'depthPoint' 
+		    AND cu.pic_type = 'cover'
+		    AND cu.from_id = wdp.id   
+		WHERE wdpc.`depth_id` = #{depthId} 
+	</select>
+	
+	<!-- 获取亮点明细 -->
+	<select id="getPointById" resultType="PageData">
+		SELECT 
+		  wdp.`id`,
+		  wc1.`id` AS provinceId,
+  		  wc2.`id` AS cityId,
+		  CONCAT(wc1.`name`, wc2.`name`) AS city,
+		  wdp.`addr_detail`,
+		  wdp.`scenic_name`,
+		  wdp.`point_name`,
+		  wdp.`click_num`,
+		  wdp.`tour_hour`,
+		  wdp.`tour_minute`,
+		  wdp.`summary`,
+		  wdp.`traffic`,
+		  IFNULL(wdp.`attention_1`,'') as attention_1,
+		  IFNULL(wdp.`attention_2`,'') as attention_2,
+		  wdp.`attention_3`,
+		  IFNULL(wdp.`feature`,'') as feature,
+		  wdp.`other_1`,
+		  wdp.`other_2`,
+		  wdp.`other_3`,
+		  IFNULL(
+		    cu.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS picUrl  
+		FROM
+		  web_depth_point wdp 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wdp.`at_addr_id` 
+		  LEFT JOIN common_upload cu 
+		    ON cu.pic_from = 'depthPoint' 
+		    AND cu.pic_type = 'cover'
+		    AND cu.from_id = wdp.id   
+		WHERE wdp.`id` = #{id}  
+	</select>
+	
+	<!-- 修改点击量+1 -->
+	<update id="updateClickNum">
+		UPDATE web_depth_point wdp SET wdp.`click_num`  = wdp.`click_num` + 1 where id = #{pointId};
+	</update>
+	
+	<!-- 后台获取亮点列表 -->
+	<select id="getAdminPointList" resultType="PageData">
+		SELECT 
+		  wdp.`id`,
+		  <if test="depthId != null and depthId != '' ">
+		  wdpc.id as pointCtId,
+		  </if>
+		  wdp.`scenic_name`,
+		  wdp.`point_name`,
+		  wc2.`name` AS city,
+		  wdp.`addr_detail`,
+		  wdp.`tour_hour`,
+		  wdp.`tour_minute` 
+		FROM
+		  web_depth_point wdp 
+		  <if test="depthId != null and depthId != '' ">
+		  LEFT JOIN web_depth_point_ct wdpc 
+    		ON wdpc.`point_id` = wdp.`id` 
+    	  </if>
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wdp.`at_addr_id` 
+		WHERE wdp.state = 'ADD' 
+		<if test="depthId != null and depthId != '' ">
+			and wdpc.`depth_id` = #{depthId}
+		</if>
+		<if test="scenicName != null and scenicName != '' ">
+			and wdp.`scenic_name` like CONCAT(CONCAT('%', #{scenicName}),'%')
+		</if>
+		<if test="pointName != null and pointName != '' ">
+			and wdp.`point_name` like CONCAT(CONCAT('%', #{pointName}),'%')
+		</if>
+		<if test="cityId != null and cityId != '' ">
+			and wdp.`at_addr_id` = #{cityId}
+		</if>
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 后台获取亮点列表 总数 -->
+	<select id="getAdminPointListCount" resultType="Integer">
+		SELECT 
+		  count(1)
+		FROM
+		  web_depth_point wdp 
+		  <if test="depthId != null and depthId != '' ">
+		  LEFT JOIN web_depth_point_ct wdpc 
+    		ON wdpc.`point_id` = wdp.`id` 
+    	  </if>
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wdp.`at_addr_id` 
+		WHERE wdp.state = 'ADD' 
+		<if test="depthId != null and depthId != '' ">
+			and wdpc.`depth_id` = #{depthId}
+		</if>
+		<if test="scenicName != null and scenicName != '' ">
+			and wdp.`scenic_name` like CONCAT(CONCAT('%', #{scenicName}),'%')
+		</if>
+		<if test="pointName != null and pointName != '' ">
+			and wdp.`point_name` like CONCAT(CONCAT('%', #{pointName}),'%')
+		</if>
+		<if test="cityId != null and cityId != '' ">
+			and wdp.`at_addr_id` = #{cityId}
+		</if>
+	</select>
+	
+	<!-- 新增一个亮点 -->
+	<insert id="addPoint" useGeneratedKeys="true" keyProperty="pointId">
+		insert into web_depth_point
+		(create_time, scenic_name, point_name, at_addr_id, addr_detail, tour_hour, tour_minute, summary, traffic, feature, 
+		attention_1, attention_2, attention_3, other_1, other_2, other_3)
+		values
+		(NOW(), #{scenicName}, #{pointName}, #{cityId}, #{addrDetail}, #{tourHour}, #{tourMinute}, #{summary}, #{traffic}, #{feature},
+		#{attention1}, #{attention2}, #{attention3}, #{other1}, #{other2}, #{other3})
+	</insert>
+	
+	<!-- 更新一个亮点 -->
+	<update id="updatePoint">
+		update web_depth_point set 
+			update_time = NOW(), 
+			scenic_name = #{scenicName}, 
+			point_name = #{pointName}, 
+			at_addr_id = #{cityId}, 
+			addr_detail = #{addrDetail}, 
+			tour_hour = #{tourHour}, 
+			tour_minute = #{tourMinute}, 
+			summary = #{summary}, 
+			attention_1 = #{attention1}, 
+			attention_2 = #{attention2}, 
+			attention_3 = #{attention3},
+			traffic = #{traffic}, 
+			feature = #{feature}, 
+			other_1 = #{other1}, 
+			other_2 = #{other2}, 
+			other_3 = #{other3}
+		where id = #{pointId}
+	</update>
+	
+	<!-- 新增深度游对应的亮点 -->
+	<insert id="addPointCt">
+		insert into web_depth_point_ct 
+		(create_time, depth_id, point_id)
+		values
+		(NOW(), #{depthId}, #{pointId})
+	</insert>
+	
+	<!-- 检查该深度游是否有此亮点 -->
+	<select id="checkIsHave" resultType="Integer">
+		select count(1) from web_depth_point_ct where depth_id = #{depthId} and point_id in (${pointIds})
+	</select>
+	
+	<!-- 删除深度游对应的亮点 -->
+	<delete id="deletePointCt">
+		delete from web_depth_point_ct where id = #{pointCtId}
+	</delete>
+	
+	<!-- 非物理删除删除 -->
+	<update id="deletePoint">
+		update web_depth_point set state = 'DELETE' where id = #{pointId}
+	</update>
+	
+</mapper>

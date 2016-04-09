@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MerchHotelLocMapper">
+	
+	<!-- 后台酒店位置分页查询 -->
+	<select id="getAdminLocList" parameterType="PageData" resultType="PageData">
+		SELECT 
+		  mhl.id,
+		  mhl.loc,
+		  mhl.addr_id,
+		  wc1.`id` AS provinceId,
+		  wc2.`id` AS cityId,
+		  wc1.name province,
+		  wc2.name city
+		FROM
+		  `merch_hotel_loc` mhl 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = mhl.`addr_id` 
+		WHERE mhl.`level` = 1  
+		<if test="provinceId != null and provinceId != '' ">
+			AND wc1.id = #{provinceId}
+		</if>
+		<if test="cityId != null and cityId != ''">
+			AND wc2.id = #{cityId}
+		</if>
+		<if test="locId != null and locId != ''">
+			AND mhl.id = #{locId}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<!-- 后台酒店位置数量查询 -->
+	<select id="getAdminLocNum" resultType="Integer">
+		SELECT 
+		  COUNT(1)
+		FROM
+		  `merch_hotel_loc` mhl 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = mhl.`addr_id` 
+		WHERE mhl.`level` = 1 
+		<if test=" provinceId != null and provinceId != '' ">
+			AND wc1.id = #{provinceId}
+		</if>
+		<if test="cityId != null and cityId != ''">
+			AND wc2.id = #{cityId}
+		</if>
+		<if test="loc != null and loc != ''">
+			AND mhl.loc = #{loc}
+		</if>
+	</select>
+	
+	<!-- 根据城市来筛选酒店位置 -->
+	<select id="getListByCityId" parameterType="PageData" resultType="PageData">
+		SELECT 
+		  mhl.id,
+		  mhl.loc,
+		  mhl.addr_id
+		FROM
+		  `merch_hotel_loc` mhl 
+		WHERE mhl.addr_id = #{cityId}
+		  AND mhl.`level` = 1 
+	</select>
+	
+	<!-- 查询酒店位置详情 -->
+	<select id="getLocById" parameterType="Long" resultType="PageData">
+		SELECT 
+		  mhl.id,
+		  mhl.loc,
+		  mhl.addr_id,
+		  wc1.`id` AS provinceId,
+		  wc2.`id` AS cityId,
+		  wc1.name province,
+		  wc2.name city
+		FROM
+		  `merch_hotel_loc` mhl 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city'
+		    AND wc2.id = mhl.`addr_id`  
+		WHERE mhl.`level` = 1 
+		<if test="_parameter != null and _parameter > 0">
+			and mhl.`id` = #{_parameter}
+		</if>
+	</select>
+	
+	<!-- 更新 酒店位置 -->
+	<update id="updateLoc" >
+		update merch_hotel_loc set update_time = NOW()
+		<if test="loc != null and loc != '' ">
+			, loc = #{loc}
+		</if>
+		<if test="cityId != null and cityId != '' ">
+			, addr_id = #{cityId}
+		</if>
+		where id = #{locId}
+	</update>
+
+	<!-- 删除酒店位置 -->
+	<delete id="deleteLoc">
+		delete from merch_hotel_loc where id = #{id}
+	</delete>
+
+	<!-- 新增酒店位置 -->
+	<insert id="insertLoc">
+		insert into merch_hotel_loc (create_time, loc, addr_id)
+		value(NOW(), #{loc}, #{cityId});
+	</insert>
+	
+	<!-- 后台酒店具体位置分页查询 -->
+	<select id="getAdminLocDetailList" parameterType="PageData" resultType="PageData">
+		SELECT 
+		  mhl2.id,
+		  mhl1.`id` AS locId,
+		  mhl1.`loc` AS loc,
+		  mhl2.loc AS locDetail,
+		  wc1.`id` AS provinceId,
+		  wc2.`id` AS cityId,
+		  wc1.name province,
+		  wc2.name city 
+		FROM
+		  `merch_hotel_loc` mhl2 
+		  INNER JOIN `merch_hotel_loc` mhl1 
+		    ON mhl1.`id` = mhl2.`parent_id` 
+		    AND mhl1.`level` = 1 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = mhl1.`addr_id` 
+		WHERE mhl2.`level` = 2  
+		<if test="provinceId != null and provinceId != '' ">
+			AND wc1.id = #{provinceId}
+		</if>
+		<if test="cityId != null and cityId != ''">
+			AND wc2.id = #{cityId}
+		</if>
+		<if test="locId != null and locId != ''">
+			AND mhl1.`id` = #{locId}
+		</if>
+		<if test="locDetId != null and locDetId != ''">
+			AND mhl2.id = #{locDetId}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<!-- 后台酒店具体位置数量查询 -->
+	<select id="getAdminLocDetailNum" resultType="Integer">
+		SELECT 
+		  COUNT(1)
+		FROM
+		  `merch_hotel_loc` mhl2 
+		  INNER JOIN `merch_hotel_loc` mhl1 
+		    ON mhl1.`id` = mhl2.`parent_id` 
+		    AND mhl1.`level` = 1 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = mhl1.`addr_id` 
+		WHERE mhl2.`level` = 2 
+		<if test="provinceId != null and provinceId != '' ">
+			AND wc1.id = #{provinceId}
+		</if>
+		<if test="cityId != null and cityId != ''">
+			AND wc2.id = #{cityId}
+		</if>
+		<if test="locId != null and locId != ''">
+			AND mhl1.`id` = #{locId}
+		</if>
+		<if test="locDetId != null and locDetId != ''">
+			AND mhl2.id = #{locDetId}
+		</if>
+		<if test="locDetail != null and locDetail != ''">
+			AND mhl2.loc = #{locDetail}
+		</if>
+	</select>
+	
+	<!-- 根据位置来筛选具体位置 -->
+	<select id="getListByLocId" parameterType="PageData" resultType="PageData">
+		SELECT 
+		  mhl2.id,
+		  mhl1.`id` AS locId,
+		  mhl1.`loc` AS loc,
+		  mhl2.loc AS locDetail
+		FROM
+		  `merch_hotel_loc` mhl2 
+		  INNER JOIN `merch_hotel_loc` mhl1 
+		    ON mhl1.`id` = mhl2.`parent_id` 
+		    AND mhl1.`level` = 1 
+		WHERE mhl2.`parent_id` = #{locId}
+		  AND mhl2.`level` = 2 
+	</select>
+	
+	<!-- 查询酒店具体位置详情 -->
+	<select id="getLocDetailById" parameterType="Long" resultType="PageData">
+		SELECT 
+		  mhl2.id,
+		  mhl1.`id` AS locId,
+		  mhl1.`loc` AS loc,
+		  mhl2.loc AS locDetail,
+		  wc1.`id` AS provinceId,
+		  wc2.`id` AS cityId,
+		  wc1.name province,
+		  wc2.name city 
+		FROM
+		  `merch_hotel_loc` mhl2 
+		  INNER JOIN `merch_hotel_loc` mhl1 
+		    ON mhl1.`id` = mhl2.`parent_id` 
+		    AND mhl1.`level` = 1 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = mhl1.`addr_id` 
+		WHERE mhl2.`level` = 2
+		<if test="_parameter != null and _parameter > 0">
+			and mhl2.id = #{_parameter}
+		</if>
+	</select>
+	
+	<!-- 更新 酒店具体位置 -->
+	<update id="updateLocDetail" >
+		update merch_hotel_loc set update_time = NOW()
+		<if test="locDetail != null and locDetail != '' ">
+			, loc = #{locDetail}
+		</if>
+		<if test="cityId != null and cityId != '' ">
+			, addr_id = #{cityId}
+		</if>
+		<if test="locId != null and locId != '' ">
+			, parent_id = #{locId}
+		</if>
+		where id = #{locDetId}
+	</update>
+
+	<!-- 新增酒店具体位置 -->
+	<insert id="insertLocDetail">
+		insert into merch_hotel_loc (create_time, loc, addr_id, parent_id, level)
+		value(NOW(), #{locDetail}, #{cityId}, #{locId}, #{level});
+	</insert>
+	
+	
+	<!-- ===========王冠中更新================= -->
+	
+	<select id="findLocation" resultType="pageData">
+		SELECT id,loc
+		FROM `merch_hotel_loc`
+		WHERE 1=1
+		<if test=" cityId !=null and cityId !='' ">
+			AND addr_id=#{cityId}
+		</if>
+		<if test=" parentId !=null ">
+			AND parent_id=#{parentId}
+		</if>
+		
+	</select>
+	
+	<insert id="saveLocCt">
+		INSERT INTO `merch_hotel_loc_ct`
+		SET create_time=NOW(),merch_user_id=#{merchId},merch_hotel_loc_id=#{locId}
+	</insert>
+	
+	<delete id="removeOldLocCt">
+		DELETE FROM `merch_hotel_loc_ct` WHERE merch_user_id=#{merchId}
+	</delete>
+	
+	<select id="findMerchHotelLocList" resultType="map">
+		SELECT wc.`parent_id` AS provinceId ,wc.`id` AS cityId,pmhl.`id` AS typeId,mhl.`id` AS locationId
+		FROM `merch_hotel_loc_ct` AS mhlc
+		LEFT JOIN `merch_hotel_loc` AS mhl ON mhlc.`merch_hotel_loc_id`=mhl.`id`
+		LEFT JOIN `merch_hotel_loc` AS pmhl ON pmhl.`id`=mhl.`parent_id`
+		LEFT JOIN `web_citys` AS wc ON wc.`id`=mhl.`addr_id`
+		WHERE mhlc.`merch_user_id`=#{merchId}
+	</select>
+	
+</mapper>

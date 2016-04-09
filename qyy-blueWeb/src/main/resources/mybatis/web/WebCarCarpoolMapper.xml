@@ -1,0 +1,324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarCarpoolMapper">
+
+	<!-- list列表 -->
+	<select id="pageList" parameterType="PageData" resultType="PageData">
+		SELECT wcc.id, wcc.pool_dss poolDss, DATE_FORMAT(wcc.start_time ,'%Y-%m-%d %H:%i:00') startTime
+		,CONCAT(wc1.`name`,'-',wc2.`name`) seAddr
+		,UNIX_TIMESTAMP(wcc.start_time) - UNIX_TIMESTAMP(NOW()) diffTime
+		,max_price maxPrice ,min_price minPrice
+		,is_closed isClosed
+		FROM web_car_carpool wcc
+		LEFT JOIN web_citys wc1 ON wcc.start_city_id = wc1.id
+		LEFT JOIN web_citys wc2 ON wcc.end_city_id = wc2.id
+		WHERE 1 = 1
+		
+		<if test="startTime != null and startTime !='' ">
+			AND wcc.start_time > #{startTime}
+		</if>
+		
+		<if test="fromAddrId != null and fromAddrId != '' ">
+			AND wcc.start_addr_id = #{fromAddrId}
+		</if>
+
+		<if test="toAddrId != null and toAddrId != '' ">
+			AND wcc.end_addrs_id = #{toAddrId}
+		</if>
+
+		<if test="startAddrDetail != null and startAddrDetail != '' ">
+			AND wcc.start_addr_detail LIKE CONCAT('%', #{startAddrDetail} ,'%')
+		</if>
+		ORDER BY wcc.start_time
+		<if test=" startTimeOrder !=null and startTimeOrder !='' ">
+			${startTimeOrder}
+		</if>
+		<if test="limistStart !=null and limistStart != '' ">
+			LIMIT ${limistStart},${pageSize}
+		</if>
+		;
+	</select>
+
+	<select id="pageListCount" resultType="long">
+		SELECT COUNT(*)
+		FROM web_car_carpool wcc
+		LEFT JOIN web_citys wc1 ON wcc.start_city_id = wc1.id
+		LEFT JOIN web_citys wc2 ON wcc.end_city_id = wc2.id
+		WHERE 1 = 1
+		<if test="startTime != null and startTime !='' ">
+			AND wcc.start_time > #{startTime}
+		</if>
+		<if test="fromAddrId != null and fromAddrId != '' ">
+			AND wcc.start_addr_id = #{fromAddrId}
+		</if>
+
+		<if test="toAddrId != null and toAddrId != '' ">
+			AND wcc.end_addrs_id = #{toAddrId}
+		</if>
+		<if test="startAddrDetail != null and startAddrDetail != '' ">
+			AND wcc.start_addr_detail LIKE CONCAT('%', #{startAddrDetail} ,'%')
+		</if>
+	</select>
+	
+	<!-- 详情 -->
+	<select id="carpoolDetail" parameterType="PageData" resultType="PageData" >
+		SELECT wcc.id, wcc.pool_dss poolDss
+		, DATE_FORMAT(wcc.start_time ,'%Y-%m-%d %H:%i:00') startTime
+		,FROM_UNIXTIME((UNIX_TIMESTAMP(wcc.start_time) - 60*60*2),'%Y-%m-%d %H:%i:%s') closeTime
+		,wc1.`name` startCity ,wc2.`name` endCity
+		,stca.store stStore,stca.addr_detail stAddrDetail
+		,edca.store edStore,edca.addr_detail edAddrDetail
+		,UNIX_TIMESTAMP(wcc.start_time) - UNIX_TIMESTAMP(NOW()) diffTime
+		,max_price maxPrice ,min_price minPrice
+		,is_closed isClosed,remark,publish_name publishName,publish_phone publishPhone,publish_user_id publishUserId
+		,wcc.start_city_id startCityId,wcc.start_addr_id startAddrId
+		,wcc.end_city_id endCityId ,wcc.end_addrs_id endAddrId
+		FROM web_car_carpool wcc
+		LEFT JOIN web_citys wc1 ON wcc.start_city_id = wc1.id
+		LEFT JOIN web_citys wc2 ON wcc.end_city_id = wc2.id
+		LEFT JOIN web_car_addrs stca ON stca.id = wcc.start_addr_id 
+		LEFT JOIN web_car_addrs edca ON edca.id = wcc.end_addrs_id
+		WHERE wcc.id = #{id};
+	</select>
+	
+	<select id="getIsTimeout" resultType="Integer">
+		SELECT (UNIX_TIMESTAMP(wcc.start_time) - UNIX_TIMESTAMP(NOW()) - 60*60*2) &lt; 0 FROM web_car_carpool wcc WHERE id =#{id};
+	</select>
+
+	<!-- 发起一个拼车 -->
+	<insert id="addCarpool" parameterType="PageData" useGeneratedKeys="true" keyProperty="insertPK">
+		INSERT INTO
+		web_car_carpool(start_time,start_city_id,start_addr_id,end_city_id,end_addrs_id,remark
+		,publish_user_id,publish_name,publish_phone,publish_card_type,publish_card,bank_name,bank_card
+		,max_price,min_price)
+		VALUES(#{startTime},#{startCityId},#{startAddrId},#{endCityId},#{endAddrsId},#{remark}
+		,#{publishUserId},#{publishName},#{publishPhone},#{publishCardType},#{publishCard},#{bankName},#{bankCard},#{maxPrice},#{minPrice});
+	</insert>
+
+	<update id="updatePoolDss" parameterType="PageData">
+		UPDATE web_car_carpool SET pool_dss = (pool_dss+#{goodsCount}) WHERE id =#{id};
+	</update>
+
+	<update id="updateIsClosed" parameterType="PageData">
+		UPDATE web_car_carpool SET is_closed = 0 WHERE
+		id =#{id};
+	</update>
+	
+	<!-- 根据地区id查询拼车中的地点 -->
+	<select id="findAddrByCountyId" parameterType="PageData" resultType="PageData">
+		SELECT id,store FROM web_car_addrs WHERE area = #{countyId} AND addr_type = #{addrType};
+	</select>
+	
+	<!-- 后台路线 列表-->
+	<select id="findAdminCarpoolList" parameterType="PageData" resultType="PageData">
+		SELECT wccact.id, wccact.mileage ,wccact.is_shelves isShelves
+		,fcwc.`name` fromCity, fcnwc.`name` fromCounty,fwca.store fromStore
+		,tcwc.`name` toCity, tcnwc.`name` toCounty,twca.store toStore
+		
+		FROM web_car_carpool_addr_ct wccact 
+		LEFT JOIN web_car_addrs fwca ON fwca.id = wccact.from_addr_id
+		INNER JOIN web_citys fcwc ON fcwc.id = fwca.city_id
+		INNER JOIN web_citys fcnwc ON fcnwc.id = fwca.area
+		
+		LEFT JOIN web_car_addrs twca ON twca.id = wccact.to_addr_id
+		INNER JOIN web_citys tcwc ON tcwc.id = twca.city_id
+		INNER JOIN web_citys tcnwc ON tcnwc.id = twca.area
+		WHERE 1=1
+		<if test=" fromAddrId != null and fromAddrId != '' ">
+			AND wccact.from_addr_id = #{fromAddrId}
+		</if>
+		<if test=" toAddrId != null and toAddrId != '' ">
+			AND wccact.to_addr_id = #{toAddrId}
+		</if>
+		<if test=" mileage != null and mileage != '' ">
+			AND wccact.mileage = #{mileage}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+		;
+	</select>
+	
+	<select id="findAdminCarpoolListCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		
+		FROM web_car_carpool_addr_ct wccact 
+		LEFT JOIN web_car_addrs fwca ON fwca.id = wccact.from_addr_id
+		INNER JOIN web_citys fcwc ON fcwc.id = fwca.city_id
+		INNER JOIN web_citys fcnwc ON fcnwc.id = fwca.area
+		LEFT JOIN web_car_addrs twca ON twca.id = wccact.to_addr_id
+		INNER JOIN web_citys tcwc ON tcwc.id = twca.city_id
+		INNER JOIN web_citys tcnwc ON tcnwc.id = twca.area
+		WHERE 1=1
+		<if test=" fromAddrId != null and fromAddrId != '' ">
+			AND wccact.from_addr_id = #{fromAddrId}
+		</if>
+		<if test=" toAddrId != null and toAddrId != '' ">
+			AND wccact.to_addr_id = #{toAddrId}
+		</if>
+		<if test=" mileage != null and mileage != '' ">
+			AND wccact.mileage > #{mileage}
+		</if>
+		;
+	</select>
+	
+	<select id="findDetailAllIdByAddrCtId" parameterType="PageData" resultType="PageData">
+		SELECT wccact.id, wccact.mileage ,wccact.is_shelves isShelves
+		,fcwc.id fromCityId, fcnwc.id fromCountyId,fwca.id fromStoreId
+		,tcwc.id toCityId, tcnwc.id toCountyId,twca.id toStoreId
+		
+		FROM web_car_carpool_addr_ct wccact 
+		LEFT JOIN web_car_addrs fwca ON fwca.id = wccact.from_addr_id
+		INNER JOIN web_citys fcwc ON fcwc.id = fwca.city_id
+		INNER JOIN web_citys fcnwc ON fcnwc.id = fwca.area
+		
+		LEFT JOIN web_car_addrs twca ON twca.id = wccact.to_addr_id
+		INNER JOIN web_citys tcwc ON tcwc.id = twca.city_id
+		INNER JOIN web_citys tcnwc ON tcnwc.id = twca.area
+		WHERE wccact.id = #{id};
+	</select>
+	
+	
+	<!-- 是否存在 -->
+	<select id="checkCarAddrHave" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_car_carpool_addr_ct 
+		WHERE from_addr_id = #{fromAddrId} AND to_addr_id = #{toAddrId}
+		<if test=" id != null and id != '' and id != 0 ">
+			AND id != #{id}
+		</if>
+	</select>
+	<!-- 插入线路 -->
+	<insert id="insertCarAddrCt" parameterType="PageData">
+		INSERT INTO web_car_carpool_addr_ct
+		(create_time,from_addr_id,to_addr_id,mileage,is_shelves)
+		VALUES
+		(NOW(),#{fromAddrId},#{toAddrId},#{mileage},#{isShelves});
+	</insert>
+	<!-- 更新线路 -->
+	<update id="updateCarAddrCt" parameterType="PageData">
+		UPDATE web_car_carpool_addr_ct 
+		SET 
+		from_addr_id = #{fromAddrId} 
+		,to_addr_id = #{toAddrId}
+		,mileage = #{mileage} 
+		,is_shelves = #{isShelves}
+		WHERE id = #{id};
+	</update>
+	
+	<!-- 更新上下架状态 -->
+	<update id="updateOnOffLine" parameterType="PageData">
+		UPDATE web_car_carpool_addr_ct 
+		SET 
+		is_shelves = #{isShelves}
+		WHERE id = #{id};
+	</update>
+	
+	<!-- 删除此路线 -->
+	<delete id="deleteCarAddrCt" parameterType="PageData">
+		DELETE FROM web_car_carpool_addr_ct WHERE id = #{id};
+	</delete>
+	
+	<select id="checkIsUsed" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_car_carpool 
+		WHERE start_addr_id =#{fromStoreId} AND end_addrs_id = #{toStoreId};
+	</select>
+	
+	<!-- #############################以下是价格  ########################################## -->
+	<select id="findPriceList" parameterType="PageData" resultType="PageData">
+		SELECT wccp.id,CONCAT(wccp.seat_st,'-',wccp.seat_ed) seatsd,wccp.price,wccp.unit
+		,wccp.seat_st seatSt,wccp.seat_ed seatEd
+		,wcs.sys
+		,wcb.brand
+		FROM web_car_carpool_price wccp
+		INNER JOIN web_car_sys wcs ON wcs.id = wccp.car_sys_id
+		INNER JOIN web_car_brand wcb ON wcb.id = wcs.brand_id AND brand_type = 'wrap'
+		WHERE 1=1 
+		
+		<if test=" carSysId != null and carSysId != '' and carSysId != 0 ">
+			AND wccp.car_sys_id = #{carSysId}
+		</if>
+		
+		<if test=" seatSt != null and seatSt != '' and seatSt != 0 ">
+			AND wccp.seat_st &gt;= #{seatSt}
+		</if>
+		
+		<if test=" seatEd != null and seatEd != '' and seatEd != 0 ">
+			AND wccp.seat_ed &lt;= #{seatEd}
+		</if>
+	 	<if test=" price != null and price != '' and price != 0 ">
+			AND price &gt;= #{price}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+		;
+	</select>
+	
+	<select id="findPriceListCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		FROM web_car_carpool_price wccp
+		INNER JOIN web_car_sys wcs ON wcs.id = wccp.car_sys_id
+		INNER JOIN web_car_brand wcb ON wcb.id = wcs.brand_id AND brand_type = 'wrap'
+		WHERE 1=1 
+		
+		<if test=" carSysId != null and carSysId != '' and carSysId != 0 ">
+			AND wccp.car_sys_id = #{carSysId}
+		</if>
+		
+		<if test=" seatSt != null and seatSt != '' and seatSt != 0 ">
+			AND wccp.seat_st &gt;= #{seatSt}
+		</if>
+		
+		<if test=" seatEd != null and seatEd != '' and seatEd != 0 ">
+			AND wccp.seat_ed &lt;= #{seatEd}
+		</if>
+	 	<if test=" price != null and price != '' and price != 0 ">
+			AND price &gt;= #{price}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+		;
+	</select>
+	
+	<!-- 添加价格 -->
+	<insert id="insertAddrPrice" parameterType="PageData">
+		INSERT INTO web_car_carpool_price
+		(update_time,car_sys_id,seat_st,seat_ed,price)
+		VALUES
+		(NOW(),#{carSysId},#{seatSt},#{seatEd},#{price});
+	</insert>
+	
+	<!-- 更新价格 -->
+	<update id="updateAddrPrice" parameterType="PageData">
+		UPDATE web_car_carpool_price
+		SET
+		update_time = NOW()
+		,car_sys_id = #{carSysId}
+		,seat_st = #{seatSt}
+		,seat_ed = #{seatEd}
+		,price = #{price}
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 检查是否已经添加这个车系的价格 -->
+	<select id="checkCarSysIsHave" resultType="Integer" parameterType="PageData">
+		SELECT COUNT(*) FROM web_car_carpool_price WHERE car_sys_id = #{carSysId} 
+		<if test=" id != null and id != '' and id != 0 ">
+			AND id != #{id}
+		</if>
+		;
+	</select>
+	
+	<!-- 返回详细信息 -->
+	<select id="findAddrPriceDetail" parameterType="PageData" resultType="PageData">
+		SELECT wccp.id,wccp.seat_st seatSt,seat_ed seatEd,wccp.price,wccp.unit
+		,wcs.id carSysId ,wcs.sys
+		,wcs.brand_id brandId ,wcb.brand
+		FROM web_car_carpool_price wccp
+		INNER JOIN web_car_sys wcs ON wcs.id = wccp.car_sys_id
+		INNER JOIN web_car_brand wcb ON wcb.id = wcs.brand_id AND brand_type = 'wrap'
+		WHERE wccp.id = #{id}
+	</select>
+	
+	<!-- delete价格信息 -->
+	<delete id="deleteAddrPrice" parameterType="PageData">
+		DELETE FROM web_car_carpool_price WHERE id = #{id}
+	</delete>
+	
+	
+</mapper>

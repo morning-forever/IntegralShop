@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarRentMapper">
+
+
+	<sql id="listFind">
+		SELECT * FROM(
+		SELECT wa.`id`,wcr.`gearbox`,wcb.`brand`,wcr.`seating`,cu.`pic_url`,wcdp.`price`
+		FROM `web_car` AS wa 
+		JOIN `web_car_rent` AS wcr ON wcr.`car_id`=wa.`id`
+		JOIN `web_car_type_ct` AS wctc ON wctc.`car_id`=wa.`id`
+		JOIN `web_car_brand` AS wcb ON wcb.`id`=wa.`brand_id`
+		JOIN `web_car_date_price` AS wcdp ON wcdp.`car_id`=wa.`id` AND wcdp.`date` = DATE_FORMAT(NOW(), '%Y-%m-%d') 
+		LEFT JOIN `web_car_rent_addr_ct` AS wcrac ON wcrac.`rent_id`=wcr.`id`
+		LEFT JOIN `web_car_addrs` AS wca ON wcrac.`car_addrs_id`=wca.`id`
+		LEFT JOIN `common_upload` AS cu ON wa.`id`=cu.`from_id` AND cu.`pic_from`='carRent'
+		<if test=" serchPrice != null and serchPrice != '' "><!-- 价格区间表联表 -->
+			LEFT JOIN `web_price_search` AS wps ON wps.`id`=#{serchPrice}
+		</if>
+		WHERE wa.`is_shelves`=0 AND wa.`state`='ADD'
+		<if test=" typeId != null and typeId != '' "><!-- 类型搜索 -->
+			AND wctc.`car_type_id` IN (${typeId})
+		</if>
+		<if test=" brandId != null and brandId != '' "><!-- 品牌搜索 -->
+			AND wcb.`id` IN (${brandId})
+		</if>
+		<if test=" serchPrice != null and serchPrice != '' "><!-- 价格区间搜索 -->
+			AND wcdp.`price` &lt; IFNULL(wps.`price_end`,9999999)
+			AND wcdp.`price` &gt;= IFNULL(wps.`price_start`,0)
+		</if>
+		
+		<!-- 地点查询 -->
+		
+		<if test=" areaSerchFlag "><!-- 判断是否有选择租车还车地点 -->
+		
+		AND ( 2=1
+		<if test=" getStoreId != null and getStoreId != '' ">
+			OR wca.`id`=#{getStoreId}
+		</if>
+		<if test=" loseStoreId != null and loseStoreId != '' ">
+			OR wca.`id`=#{loseStoreId}
+		</if>
+		)
+		
+		</if>
+		
+		ORDER BY cu.`create_time` DESC
+		) AS result
+		GROUP BY result.id
+	</sql>
+
+	<select id="findCarRentList" resultType="pageData">
+		<include refid="listFind"></include>
+		<if test=" sort != '' and sort !=null ">
+			ORDER BY price ${sort}
+		</if>
+		LIMIT ${limistStart},${pageSize}
+	</select>
+	
+	<select id="finCarRentListTotal" resultType="long">
+		select count(*) from (
+		<include refid="listFind"></include>
+		) as count
+	</select>
+	
+	<select id="findCarRentDetialById" resultType="pageData">
+		SELECT wc.`id`,wct.`car_type`,wcb.`brand`,wcs.`sys`,wc.`car_year`,wc.`car_configure`,wcr.`seating`,wcr.`door`,wcr.`fuel`,wcr.`gearbox`,
+		wcr.`outputs`,wcr.`fuel_grade`,wcr.`drives`,wcr.`air_form`,wcr.`skylight`,wcr.`fuel_tankage`,wcr.`voice_box`,wcr.`chair`,
+		wcr.`radar`,wcr.`gasbag`,wcr.`dvdcd`,wcr.`gps`,wcdp.`price`,cu.`pic_url`
+		FROM `web_car` AS wc
+		JOIN `web_car_rent` AS wcr ON wc.`id`=wcr.`car_id`
+		JOIN `web_car_brand` AS wcb ON wcb.`id`=wc.`brand_id`
+		JOIN `web_car_sys` AS wcs ON wcs.`id`=wc.`sys_id`
+		LEFT JOIN `web_car_type_ct` AS wctc ON wctc.`car_id`=wc.`id`
+		LEFT JOIN `web_car_type` AS wct ON wct.`id`=wctc.`car_type_id`
+		LEFT JOIN `web_car_date_price` AS wcdp ON wcdp.`car_id`=wc.`id` AND DATE_FORMAT(NOW(),'%Y-%m-%d')=wcdp.`date`
+		LEFT JOIN `common_upload` AS cu ON wc.`id`=cu.`from_id` AND cu.`pic_from`='carRent'
+		WHERE wc.`id`=#{id}
+		GROUP BY wc.`id`
+		LIMIT 1
+	</select>
+	
+	<sql id="adminList">
+		SELECT wc.`id`,cu.`pic_url` AS url,wcb.`brand`,wcs.`sys`,wc.`car_year` AS `year`,
+		wcr.`seating`,wc.`counts`,
+		wcdp.`price`,city.`name` AS city,county.`name` AS county,wca.`store`,wc.`is_shelves`
+		FROM `web_car` AS wc
+		LEFT JOIN `common_upload` AS cu ON cu.`from_id`=wc.`id` AND cu.`pic_from`='carRent' AND cu.`pic_type`='detial'
+		LEFT JOIN `web_car_brand` AS wcb ON wc.`brand_id`=wcb.`id` AND wcb.`brand_type`='rent'
+		LEFT JOIN `web_car_sys` AS wcs ON wc.`sys_id`=wcs.`id`
+		LEFT JOIN `web_car_rent` AS wcr ON wc.`id`=wcr.`car_id`
+		LEFT JOIN `web_car_date_price` AS wcdp ON wc.`id`=wcdp.`car_id` AND wcdp.`date`=DATE_FORMAT(NOW(),'%Y-%m-%d')
+		LEFT JOIN `web_car_rent_addr_ct` AS wcrac ON wcr.`id`=wcrac.`rent_id`
+		LEFT JOIN `web_car_addrs` AS wca ON wcrac.`car_addrs_id`=wca.`id`
+		LEFT JOIN `web_citys` AS city ON city.`id`=wca.`city_id`
+		LEFT JOIN `web_citys` AS county ON county.`id`=wca.`area`
+		WHERE wc.`car_type`='rent' AND wc.`state`='ADD'
+		<if test=" brandId !=null and brandId != '' ">
+			AND wc.`brand_id`=#{brandId}
+		</if>
+		<if test=" sysId !=null and sysId != '' ">
+			AND wc.`sys_id`=#{sysId}
+		</if>
+		<if test=" seating !=null and seating != '' ">
+			AND wcr.`seating`=#{seating}
+		</if>
+		<if test=" price !=null and price != '' ">
+			AND wcdp.`price`=#{price}
+		</if>
+		GROUP BY wc.`id`
+	</sql>
+	
+	<select id="findAdminRentList" resultType="pageData">
+		<include refid="adminList"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findAdminRentListCount" resultType="long">
+		SELECT count(*)
+		FROM(
+		<include refid="adminList"></include>
+		) as `result`
+	</select>
+	
+	<update id="deletesCarRent">
+		UPDATE `web_car` SET state='DELETE' WHERE id IN (${ids}) AND car_type=#{type}
+	</update>
+	
+	<update id="changeStatus">
+		UPDATE `web_car` SET is_shelves=#{status} WHERE id in (${ids}) AND car_type=#{type}
+	</update>
+
+	<insert id="saveCar"  useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO `web_car`
+		SET state='ADD',
+		create_time=NOW(),
+		update_time=NOW(),
+		brand_id=#{brandId},
+		sys_id=#{sysId},
+		car_year=#{carYear},
+		car_configure=#{carConfigure},
+		counts=#{counts},
+		is_shelves=#{isShelves},
+		car_type='rent'
+	</insert>
+	
+	<insert id="saveCarRent" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO `web_car_rent`
+		SET create_time=NOW(),
+		car_id=#{carId},
+		coach=#{coach},
+		seating=#{seating},
+		door=#{door},
+		fuel=#{fuel},
+		gearbox=#{gearbox},
+		outputs=#{outputs},
+		fuel_grade=#{fuelGrade},
+		drives=#{drives},
+		air_form=#{airForm},
+		skylight=#{skylight},
+		fuel_tankage=#{fuelTankage},
+		voice_box=#{voiceBox},
+		chair=#{chair},
+		radar=#{radar},
+		gasbag=#{gasbag},
+		dvdcd=#{dvdcd},
+		gps=#{gps}
+	</insert>
+	
+	<select id="findCarRentById" resultType="pageData">
+		SELECT wc.`id`,wcr.`id` AS rentId,wc.`brand_id`,wc.`sys_id`,wc.`car_year`,wc.`car_configure`,wcr.`coach`,wc.`counts`,wc.`is_shelves`,
+		wcr.`seating`,wcr.`door`,wcr.`fuel`,wcr.`gearbox`,wcr.`outputs`,wcr.`fuel_grade`,wcr.`drives`,wcr.`air_form`,wcr.`skylight`,
+		wcr.`fuel_tankage`,wcr.`voice_box`,wcr.`chair`,wcr.`radar`,wcr.`gasbag`,wcr.`dvdcd`,wcr.`gps`
+		FROM `web_car` AS wc
+		LEFT JOIN `web_car_rent` AS wcr ON wc.`id`=wcr.`car_id`
+		WHERE wc.`id`=#{id}
+	</select>
+	
+	<update id="updateWebCar">
+		UPDATE `web_car` SET
+		update_time=NOW(),
+		brand_id=#{brandId},
+		sys_id=#{sysId},
+		car_year=#{carYear},
+		car_configure=#{carConfigure},
+		counts=#{counts},
+		is_shelves=#{isShelves}
+		WHERE id=#{id}
+	</update>
+	
+	<update id="updateWebCarRent">
+		UPDATE `web_car_rent`
+		SET coach=#{coach},
+		seating=#{seating},
+		door=#{door},
+		fuel=#{fuel},
+		gearbox=#{gearbox},
+		outputs=#{outputs},
+		fuel_grade=#{fuelGrade},
+		drives=#{drives},
+		air_form=#{airForm},
+		skylight=#{skylight},
+		fuel_tankage=#{fuelTankage},
+		voice_box=#{voiceBox},
+		chair=#{chair},
+		radar=#{radar},
+		gasbag=#{gasbag},
+		dvdcd=#{dvdcd},
+		gps=#{gps}
+		WHERE id=#{id}
+	</update>
+	
+	<select id="findOrderInfo" resultType="pageData">
+		SELECT wof.`id`,wof.`order_code`,wori.`start_date`,woi.`real_price`,wcb.`brand`,wcs.`sys`,wct.`car_type`,wcr.`outputs`,wcr.`gearbox`,wca.`store`
+		FROM `web_order_form` AS wof 
+		LEFT JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		LEFT JOIN `web_order_rent_info` AS wori ON wori.`order_form_id`=wof.`id`
+		LEFT JOIN `web_car` AS wc ON wc.`id`=woi.`goods_id`
+		LEFT JOIN `web_car_rent` AS wcr ON wc.`id`=wcr.`car_id`
+		LEFT JOIN `web_car_brand` AS wcb ON wc.`brand_id`=wcb.`id`
+		LEFT JOIN `web_car_sys` AS wcs ON wc.`sys_id`=wcs.`id`
+		LEFT JOIN `web_car_type_ct` AS wctc ON wctc.`car_id`=wc.`id`
+		LEFT JOIN `web_car_type` AS wct ON wctc.`car_type_id`=wct.`id`
+		LEFT JOIN `web_car_addrs`AS wca ON wca.`id`=wori.`get_store_id`
+		WHERE wof.`order_type`='carRent'
+		AND wof.`id`=#{id}
+		LIMIT 1
+	</select>
+
+</mapper>

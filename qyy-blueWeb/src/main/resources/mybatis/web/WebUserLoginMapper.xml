@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebUserLoginMapper">
+
+	<select id="getDetail" resultType="PageData">
+		select
+		user_id,update_time,login_id,login_pwd,login_ip,login_prev_ip,login_prev_time
+		from web_user_login where
+		user_id = #{userId}
+	</select>
+
+	<update id="loginSuccess">
+		update web_user_login set update_time = now(),login_ip = #{loginIp},
+		login_prev_ip =
+		#{loginPrevIp},login_prev_time = #{loginPrevTime}
+		where user_id = #{userId}
+	</update>
+
+	<update id="updatePassword" parameterType="PageData">
+		update web_user_login set login_pwd = #{password}
+		,update_time =now() where user_id = #{userId}
+	</update>
+
+	<insert id="insertLogin" parameterType="PageData">
+		INSERT web_user_login
+		(create_time,user_id,login_id,login_pwd)
+		VALUES 
+		(NOW(),#{userId},#{nickName},#{loginPwd})
+		;
+	</insert>
+	
+	<select id="checkPhoneOnly" resultType="long">
+		SELECT COUNT(*)
+		FROM `web_user`
+		WHERE phone=#{phone}
+	</select>
+
+</mapper>

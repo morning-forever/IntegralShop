@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AppVersionMapper">
+	
+	
+	<select id="findAppNewVersion" parameterType="String" resultType="PageData">
+		SELECT id,app_sys appSys,client_issue_version issueVersion,client_size clientSize
+		,update_type updateType,client_url clientUrl,issue_channle issueChannle,version_type versionType
+		,app_desc appDesc,update_desc updateDesc
+		FROM admin_app_version
+		WHERE app_sys = #{type}
+		ORDER BY update_time DESC LIMIT 0,1;
+	</select>
+	
+	<select id="findVersionList" parameterType="PageData" resultType="PageData">
+		SELECT aav.id,DATE_FORMAT(aav.create_time,'%Y-%m-%d %H:%i:%s') createTime,app_sys appSys,app_desc appDesc
+		,client_issue_version issueVersion,au.username
+		,client_size clientSize ,client_url clientUrl
+		,update_type updateType ,update_desc updateDesc 
+		,issue_channle issueChannle ,version_type versionType
+		FROM admin_app_version aav
+		LEFT JOIN admin_user au ON au.id = aav.user_id 
+		WHERE 1 = 1 
+		<if test=" issueVersion !=null and issueVersion != '' ">
+			AND client_issue_version = #{issueVersion}
+		</if>
+		<if test=" appSys !=null and appSys != '' ">
+			AND app_sys = #{appSys}
+		</if>
+		<if test=" updateType !=null and updateType != '' ">
+			AND update_type = #{updateType}
+		</if>
+		<if test=" updateType == 1 ">
+			AND version_type = 1
+		</if>
+		<if test=" updateType == 0">
+			AND version_type = 0
+		</if>
+		ORDER BY aav.create_time
+		LIMIT ${startLine},${showLine}
+	</select>
+	
+	<select id="findVersionListCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		FROM admin_app_version
+		WHERE 1 = 1 
+		<if test=" issueVersion !=null and issueVersion != '' ">
+			AND client_issue_version = #{issueVersion}
+		</if>
+		<if test=" appSys !=null and appSys != '' ">
+			AND app_sys = #{appSys}
+		</if>
+		<if test=" updateType !=null and updateType != '' ">
+			AND update_type = #{updateType}
+		</if>
+		<if test=" updateType == 1 ">
+			AND version_type = 1
+		</if>
+		<if test=" updateType == 0">
+			AND version_type = 0
+		</if>
+	</select>
+	
+	<select id="detail" parameterType="PageData" resultType="PageData">
+		SELECT aav.id,DATE_FORMAT(aav.create_time,'%Y-%m-%d %H:%i:%s') createTime ,app_sys appSys,app_desc appDesc
+		,client_issue_version issueVersion,au.username
+		,client_size clientSize ,client_url clientUrl
+		,update_type updateType ,update_desc updateDesc 
+		,issue_channle issueChannle ,version_type versionType
+		FROM admin_app_version aav
+		LEFT JOIN admin_user au ON au.id = aav.user_id 
+		WHERE aav.id = #{id}
+	</select>
+	
+	<update id="updateVersion" parameterType="PageData">
+		UPDATE admin_app_version SET 
+		update_time = NOW(),
+		app_sys = #{appSys},
+		client_issue_version=#{issueVersion},
+		client_size=#{clientSize},
+		client_url=#{clientUrl},
+		app_desc=#{appDesc},
+		update_desc=#{updateDesc},
+		user_id=#{userId}
+		WHERE id = #{id}
+	</update>
+	
+	<insert id="addVersion" parameterType="PageData">
+		INSERT admin_app_version 
+		(create_time,app_sys,client_issue_version,client_size,update_type,client_url,version_type,app_desc,update_desc,user_id)
+		VALUES (NOW(),#{appSys},#{issueVersion},#{clientSize},1,#{clientUrl},0,#{appDesc},#{updateDesc},#{userId});
+	</insert>
+	
+	<select id="checkVersion" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM admin_app_version 
+		WHERE app_sys = #{appSys} AND client_issue_version = #{issueVersion}
+		<if test=" id != null and id != '' ">
+			AND id != #{id}
+		</if>
+		;
+	</select>
+	
+	<delete id="delVersion" parameterType="PageData">
+		DELETE FROM admin_app_version WHERE id = #{id};
+	</delete>
+	
+	<select id="selectVersionList" parameterType="PageData" resultType="PageData">
+		SELECT client_issue_version issueVersion FROM admin_app_version
+		GROUP BY client_issue_version;
+	</select>
+	
+	
+</mapper>

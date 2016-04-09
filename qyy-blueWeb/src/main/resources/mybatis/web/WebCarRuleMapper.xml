@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarRuleMapper">
+
+	<!-- 返回index页面的规则信息 -->
+	<select id="findList" parameterType="PageData" resultType="PageData">
+		SELECT depict,rule_type ruleType FROM
+		web_car_rule;
+	</select>
+
+	<select id="findRuleByType" parameterType="PageData" resultType="PageData">
+		SELECT id,depict,back_depict backDepict ,reminder ,rule_type ruleType
+		,timeout_depict timeoutDepict, apply_depict applyDepict FROM web_car_rule
+		where
+		rule_type = #{type};
+	</select>
+
+	<!-- 更新规则 -->
+	<update id="updateCarRule" parameterType="PageData">
+		UPDATE web_car_rule 
+		SET 
+		update_time=NOW(),depict = #{depict},back_depict =#{backDepict}
+		,reminder=#{reminder}
+		<if test="timeoutDepict !=null and timeoutDepict != '' ">
+			,timeout_depict=#{timeoutDepict}
+		</if>
+		<if test="applyDepict != null and applyDepict != '' ">
+			,apply_depict =#{applyDepict}
+		</if>
+		WHERE
+		<if test="ruleType != null and ruleType != '' ">
+			rule_type = #{ruleType}
+		</if>
+	</update>
+
+
+
+
+</mapper>

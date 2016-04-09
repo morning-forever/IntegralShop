@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebComplaintMapper">
+	
+	<sql id="listSql">
+		SELECT wc.`id`,wu.`id` as userId,wu.`head_img`,wc.`content`,wu.`nickname`,wc.`create_time`,wc.`browse`,
+		IF(wc.`user_id`=#{userId},0,1) AS isDelete,pwul.`level_desc`,wu.`is_master`,COUNT(wcm.`id`) AS replyCount
+		FROM `web_complaint` AS wc
+		LEFT JOIN `web_user` AS wu ON wc.`user_id`=wu.`id`
+		LEFT JOIN `web_complaint_ment` AS wcm ON wc.`id`=wcm.`reply_id` AND wcm.`root_id`=0
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		WHERE wc.`state`='ADD'
+		<if test=" title !='' and title !=null">
+			AND wc.`content` LIKE '%${title}%'
+		</if>
+		<if test=" nickName !='' and nickName !=null">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		<if test=" personal ==0 ">
+			AND wc.`user_id`=#{userId}
+		</if>
+		GROUP BY wc.`id`
+		<if test=" orderType ==0">
+			ORDER BY create_time DESC
+		</if>
+		<if test=" orderType ==1">
+			ORDER BY replyCount DESC
+		</if>
+	</sql>
+	
+	<select id="findList" resultType="map">
+		<include refid="listSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findCount" resultType="float">
+		SELECT COUNT(*)
+		FROM(
+		<include refid="listSql"></include>
+		) AS countResult
+	</select>
+	
+	<select id="findComplaintDetial" resultType="map">
+		SELECT wc.`id`,wc.`state`,wu.`id` as userId,wu.`nickname`,wu.`head_img`,wu.`is_master`,
+		wul.`level_name` AS badgeNumber,pwul.`level_desc` AS `level`,pwul.`level_name` AS p_level_name,
+		wc.`content`,IF(wc.`user_id`=#{userId},0,1) AS isDelete,COUNT(wcm.`id`) AS replyCount,
+		wc.`create_time`,wc.`browse`
+		FROM `web_complaint` AS wc 
+		LEFT JOIN `web_user` AS wu ON wc.`user_id`=wu.`id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		LEFT JOIN `web_complaint_ment` AS wcm ON wc.`id`=wcm.`reply_id` AND wcm.`root_id`=0
+		WHERE wc.`id`=#{complaintId}
+		HAVING `state`='ADD'
+	</select>
+	
+	<update id="updateBrowse">
+		UPDATE `web_complaint` SET browse=browse+1 WHERE id=#{complaintId}
+	</update>
+	
+	
+	<sql id="findReplySql">
+		SELECT wcm.`id`,wu.`id` as userId,wu.`nickname`,wu.`head_img`,wul.`level_name` AS badgeNumber,
+		pwul.`level_desc` AS `level`,pwul.`level_name` AS p_level_name,wcm.`create_time`,wcm.`content`,wcm.`praise`,IFNULL(wp.`id` ,0)AS isPraise,
+		COUNT(cwcm.`id`) AS replyCount,wu.`is_master`
+		FROM `web_complaint_ment` AS wcm
+		LEFT JOIN `web_complaint_ment` AS cwcm ON wcm.`id`=cwcm.`root_id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wcm.`reply_user_id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		LEFT JOIN `web_praise` AS wp ON wp.`form_table`='web_complaint_ment' AND wp.`web_user_id`=#{userId} AND wp.`form_id`=wcm.`id`
+		WHERE wcm.`root_id`=0 AND wcm.`reply_id`=#{complaintId}
+		AND wcm.`state`='ADD'
+		<if test=" title !=null and title !='' ">
+			AND wcm.`content` LIKE '%${title}%'
+		</if>
+		<if test=" nickName !=null and nickName !='' ">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		GROUP BY wcm.`id`
+	</sql>
+	
+	<select id="findReplyList" resultType="map">
+		<include refid="findReplySql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findReplyCount" resultType="float">
+		SELECT COUNT(*)
+		FROM(
+		<include refid="findReplySql"></include>
+		) AS countResult
+	</select>
+	
+	
+	<select id="findSecondaryList" statementType="CALLABLE" resultType="map">
+		CALL groupByTop2(${groupTop},#{ids});
+	</select>
+	
+	<insert id="addComplaint">
+		INSERT INTO `web_complaint`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		content=#{content},
+		user_id=#{userId}
+	</insert>
+	
+	<insert id="addComplaintReply">
+		INSERT INTO `web_complaint_ment`
+		SET create_time=NOW(),
+		content=#{content},
+		user_id=#{toUserId},
+		reply_id=#{toComplaintId},
+		reply_user_id=#{userId},
+		root_id=#{rootId}
+	</insert>
+	
+	<select id="checkDelete" resultType="long">
+		SELECT id
+		FROM `web_complaint`
+		WHERE user_id=#{userId} AND id=#{complaintId}
+	</select>
+	
+	<update id="deleteComplaint">
+		UPDATE `web_complaint` SET state='DEL' WHERE id IN (${complaintId})
+	</update>
+	
+	<update id="praiseAdd">
+		UPDATE `web_complaint_ment` SET praise=praise+1 WHERE id=#{replyId} AND root_id=0
+	</update>
+	
+	<select id="findAllSecondaryList" resultType="map">
+		SELECT wcm.`id`,wu.`id` AS userId,wu.`nickname` AS userNickName,wu.`head_img` AS userHeadImg,wcm.`create_time`,
+		wcm.`content`,towu.`id` AS toUserId,towu.`nickname` AS toUserNickName,
+		pwul.`level_desc`,pwul.`level_name` AS p_level_name,wul.`level_name`,
+		wcm.`root_id` AS rootId,wcm.`reply_id` AS replyId
+		FROM `web_complaint_ment` AS wcm
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wcm.`reply_user_id`
+		LEFT JOIN `web_user` AS towu ON towu.`id`=wcm.`user_id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		WHERE wcm.`root_id`=#{replyId}
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+</mapper>

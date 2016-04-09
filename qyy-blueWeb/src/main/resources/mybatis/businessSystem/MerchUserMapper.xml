@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MerchUserMapper">
+
+	<resultMap type="merchUser" id="merchUserResultMap">
+		<id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="udpate_time" property="udpateTime" />
+		<result column="logo" property="logo" />
+		<result column="shortname" property="shortname" />
+		<result column="at_addr" property="atAddr" />
+		<result column="addr_detail" property="addrDetail" />
+		<result column="summary" property="summary" />
+		<result column="merch_type" property="merchType" />
+		<result column="service_type" property="serviceType" />
+		<result column="brand" property="brand" />
+		<result column="star_level" property="starLevel" />
+		<result column="theme" property="theme" />
+		<result column="admin_id" property="adminId" />
+	</resultMap>
+	
+	<update id="updateMerchUser" parameterType="pageData">
+		UPDATE `merch_user` SET 
+		update_time=NOW()
+		<if test="logo != null and logo != '' ">
+			,logo=#{logo}
+		</if>
+		<if test="shortname != null and shortname != '' ">
+			,shortname=#{shortname}
+		</if>
+		<if test="atAddr != null and atAddr != '' ">
+			,at_addr=#{atAddr}
+		</if>
+		<if test="addrDetail != null and addrDetail != '' ">
+			,addr_detail=#{addrDetail}
+		</if>
+		<if test="summary != null and summary != '' ">
+			,summary=#{summary}
+		</if>
+		<if test="merchType != null and merchType != '' ">
+			,merch_type=#{merchType}
+		</if>
+		<if test="serviceType != null and serviceType != '' ">
+			,service_type=#{serviceType}
+		</if>
+		<if test="brand != null and brand != '' ">
+			,brand=#{brand}
+		</if>
+		<if test="starLevel != null and starLevel != '' ">
+			,star_level=#{starLevel}
+		</if>
+		<if test="theme != null and theme != '' ">
+			,theme=#{theme}
+		</if>
+		,facilities=#{facilities}
+		WHERE admin_id=#{id}
+	</update>
+	
+	<select id="findMerchUser" parameterType="pageData" resultMap="merchUserResultMap">
+		SELECT * FROM `merch_user` WHERE admin_id=#{id} limit 1
+	</select>
+	
+	<select id="findMerchUserList" parameterType="pageData" resultType="pageData">
+		SELECT 
+		  au.`username`,
+		  mu.`id`,
+		  mu.`at_addr`,
+		  mu.`addr_detail`,
+		  mu.`summary`,
+		  mu.`service_type`,
+		  mu.`facilities`,
+		  mb.`brand_name`,
+		  mt.`name` AS theme_name,
+		  hs.`star_detail` AS star_name,
+		  ml.`link_name`,
+		  ml.`link_phone`,
+		  ml.`link_merch_tel`,
+		  mr.`name` AS cater_name,
+		  me.`name` AS equip_name 
+		FROM
+		  `merch_user` mu 
+		  LEFT JOIN `merch_linkman` ml 
+		    ON mu.`id` = ml.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		  LEFT JOIN merch_brand mb 
+		    ON mb.`id` = mu.`brand` 
+		  LEFT JOIN merch_theme mt 
+		    ON mt.`id` = mu.`theme` 
+		  LEFT JOIN web_simple_hotel_star hs 
+		    ON hs.`id` = mu.`star_level` 
+		  LEFT JOIN merch_restaurant mr 
+		    ON mr.`id` = mu.`service_type` 
+		  LEFT JOIN merch_equip me 
+		    ON me.`id` = mu.`service_type` 
+		WHERE mu.is_delete = 0 
+		<if test="username != null and username != '' ">
+			and au.`username` like CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="linkPhone != null and linkPhone != '' ">
+			and link_phone = #{linkPhone}
+		</if>
+		<if test="addrDetail != null and addrDetail != '' ">
+			and addr_detail like CONCAT(CONCAT('%', #{addrDetail}),'%')
+		</if>
+		<if test="merchType != null and merchType != '' ">
+			and merch_type = #{merchType}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+
+	<select id="getResultNum" resultType="Integer">
+		SELECT 
+		  COUNT(1)
+		FROM
+		  `merch_user` mu 
+		  LEFT JOIN `merch_linkman` ml 
+		    ON mu.`id` = ml.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		WHERE mu.is_delete = 0 
+		<if test="username != null and username != '' ">
+			and au.`username` like CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="linkPhone != null and linkPhone != '' ">
+			and link_phone = #{linkPhone}
+		</if>
+		<if test="addrDetail != null and addrDetail != '' ">
+			and addr_detail like CONCAT(CONCAT('%', #{addrDetail}),'%')
+		</if>
+		<if test="merchType != null and merchType != '' ">
+			and merch_type = #{merchType}
+		</if>
+	</select>
+	
+	<select id="findById" parameterType="pageData" resultType="pageData">
+		SELECT 
+		  au.`username`,
+		  mu.`id`,
+		  mu.`logo`,
+		  mu.`at_addr`,
+		  mu.`addr_detail`,
+		  mu.`summary`,
+		  mu.`service_type`,
+		  mu.`facilities`,
+		  mb.`brand_name`,
+		  mt.`name` AS theme_name,
+		  hs.`star_detail` AS star_name,
+		  ml.`link_name`,
+		  ml.`link_phone`,
+		  ml.`link_merch_tel`,
+		  mr.`name` AS cater_name,
+		  me.`name` AS equip_name 
+		FROM
+		  `merch_user` mu 
+		  LEFT JOIN `merch_linkman` ml 
+		    ON mu.`id` = ml.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		  LEFT JOIN merch_brand mb 
+		    ON mb.`id` = mu.`brand` 
+		  LEFT JOIN merch_theme mt 
+		    ON mt.`id` = mu.`theme` 
+		  LEFT JOIN web_simple_hotel_star hs 
+		    ON hs.`id` = mu.`star_level` 
+		  LEFT JOIN merch_restaurant mr 
+		    ON mr.`id` = mu.`service_type` 
+		  LEFT JOIN merch_equip me 
+		    ON me.`id` = mu.`service_type` 
+		WHERE mu.is_delete = 0  
+		<if test="id != null and id != '' ">
+			and mu.`id` = #{id}
+		</if>
+	</select>
+	
+	<!-- 物理删除 -->
+	<update id="updateDeleteStatus" parameterType="pageData">
+		update merch_user set is_delete = 1 where id = #{id}
+	</update>
+	
+	<select id="findMerchUserById" parameterType="pageData" resultType="pageData">
+		SELECT 
+		  au.`username`,
+		  mu.`id`,
+		  mu.`logo`,
+		  mu.`merch_type`,
+		  mu.`at_addr`,
+		  mu.`addr_detail`,
+		  mu.`summary`,
+		  mu.`service_type`,
+		  mu.`facilities`,
+		  ml.`link_name`,
+		  ml.`link_phone`,
+		  ml.`link_merch_tel`
+		FROM
+		  `merch_user` mu 
+		  LEFT JOIN `merch_linkman` ml 
+		    ON mu.`id` = ml.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		WHERE mu.is_delete = 0  
+		<if test="id != null and id != '' ">
+			and mu.`id` = #{id}
+		</if>
+	</select>
+	
+</mapper>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MerchBrandMapper">
+	
+	<resultMap type="MerchBrand" id="MerchBrandMap">
+		<id column="id" property="id" />
+		<result column="brand_name" property="name" />
+	</resultMap>
+	
+	<select id="allList" resultMap="MerchBrandMap">
+		SELECT id, brand_name FROM `merch_brand`
+	</select>
+	
+	<select id="getAdminBrandList" resultType="PageData">
+		SELECT id, brand_name FROM `merch_brand` where 1=1
+		<if test="brandId != null and brandId != '' ">
+			and id = #{brandId}
+		</if>
+		<if test="brandName != null and brandName != '' ">
+			and brand_name = #{brandName}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="getAdminResultNum" resultType="Integer">
+		SELECT COUNT(1) FROM `merch_brand` where 1=1
+		<if test="brandId != null and brandId != '' ">
+			and id = #{brandId}
+		</if>
+		<if test="brandName != null and brandName != '' ">
+			and brand_name = #{brandName}
+		</if>
+	</select>
+	
+	<select id="getById" parameterType="Long" resultType="PageData">
+		select id, brand_name from `merch_brand` where 1 = 1 
+		<if test="_parameter != null and _parameter > 0">
+			and id = #{_parameter}
+		</if>
+	</select>
+	
+	<!-- 更新 -->
+	<update id="update" >
+		update merch_brand set
+		<if test="brandId != null and brandId != ''">
+			id = #{brandId}
+		</if>
+		<if test="brandName != null and brandName != '' ">
+			,brand_name = #{brandName}
+		</if>
+		where id = #{id}
+	</update>
+
+	<delete id="delete">
+		delete from merch_brand where id = #{id}
+	</delete>
+
+	<insert id="insert">
+		insert into merch_brand (brand_name)
+		value(#{brandName});
+	</insert>
+	
+	
+</mapper>

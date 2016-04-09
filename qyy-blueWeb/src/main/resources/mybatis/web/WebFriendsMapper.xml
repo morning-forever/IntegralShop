@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebFriendsMapper">
+	
+	<select id="finaFriendsList" parameterType="PageData" resultType="PageData">
+		SELECT 
+		id,friend_name friendName,friend_link friendLink,friend_cover friendCover 
+		FROM web_friends ORDER BY friend_order;
+	</select>
+	
+	
+	
+	
+	
+</mapper>

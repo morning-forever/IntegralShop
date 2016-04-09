@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebSearchMapper">
+	
+	<select id="searchOfHome" parameterType="PageData" resultType="Search">
+		SELECT t.* FROM (
+		SELECT wd.id, wd.create_time createTime,cu.pic_url picUrl , wd.`name` title , wd.adult_price price , 'depth' type ,wd.state FROM web_depth wd 
+		LEFT JOIN common_upload cu ON cu.from_id = wd.id AND cu.pic_from = 'depth' AND cu.pic_type = 'appCover'
+		UNION
+		SELECT wq.id,wq.create_time createTime,cu.pic_url picUrl, wq.content title, NULL price, 'question' type ,wq.state FROM web_question wq 
+		LEFT JOIN common_upload cu ON cu.from_id = wq.id AND cu.pic_from = 'question' AND cu.pic_type = 'appCover'
+		UNION
+		SELECT wt.id,wt.create_time createTime,wti.context picUrl, wt.title ,NULL price ,CONCAT('travels',wt.travel_type) type ,wt.state FROM web_travels wt 
+		LEFT JOIN web_travels_item wti ON wti.travel_id = wt.id AND wti.is_cover = 0
+		UNION
+		SELECT wc.id,wc.create_time createTime,cu.pic_url picUrl,wc.content title, NULL price, 'complaint' type ,wc.state  FROM web_complaint wc 
+		LEFT JOIN common_upload cu ON cu.from_id = wc.id AND cu.pic_from = 'complaint' AND cu.pic_type = 'appCover'
+		) t  WHERE t.state ='ADD'
+		<if test="title != null and title != '' ">
+			AND t.title LIKE CONCAT('%',#{title},'%')
+		</if>
+		ORDER BY t.createTime DESC
+		LIMIT ${startLine},${showLine};
+	</select>
+	
+	
+	<select id="searchByFromType" parameterType="PageData" resultType="Search">
+		SELECT t.* FROM (
+		SELECT wd.id, wd.create_time createTime,cu.pic_url picUrl , wd.`name` title , wd.adult_price price , 'depth' type ,wd.state FROM web_depth wd 
+		LEFT JOIN common_upload cu ON cu.from_id = wd.id AND cu.pic_from = 'depth' AND cu.pic_type = 'appCover'
+		where wd.`is_shelves` = 0
+		UNION
+		SELECT wq.id,wq.create_time createTime,cu.pic_url picUrl, wq.content title, NULL price, 'question' type ,wq.state FROM web_question wq 
+		LEFT JOIN common_upload cu ON cu.from_id = wq.id AND cu.pic_from = 'question' AND cu.pic_type = 'appCover'
+		UNION
+		SELECT wt.id,wt.create_time createTime,wti.context picUrl, wt.title ,NULL price ,CONCAT('travels',wt.travel_type) type ,wt.state FROM web_travels wt 
+		LEFT JOIN web_travels_item wti ON wti.travel_id = wt.id AND wti.is_cover = 0
+		UNION
+		SELECT wc.id,wc.create_time createTime,cu.pic_url picUrl,wc.content title, NULL price, 'complaint' type ,wc.state  FROM web_complaint wc 
+		LEFT JOIN common_upload cu ON cu.from_id = wc.id AND cu.pic_from = 'complaint' AND cu.pic_type = 'appCover'
+		) t  WHERE t.state ='ADD'
+		<if test="fromType !=null and fromType != '' ">
+		AND type in (${fromType})
+		</if>
+		<if test="title != null and title != '' ">
+		AND t.title LIKE CONCAT('%',#{title},'%')
+		</if>
+		ORDER BY t.createTime DESC
+		LIMIT ${startLine},${showLine};
+	</select>
+	
+	<select id="searchByFromTypeCount" parameterType="PageData" resultType="Long">
+		SELECT COUNT(t.id) FROM (
+		SELECT wd.id, wd.create_time createTime,cu.pic_url picUrl , wd.`name` title , wd.adult_price price , 'depth' type ,wd.state FROM web_depth wd 
+		LEFT JOIN common_upload cu ON cu.from_id = wd.id AND cu.pic_from = 'depth' AND cu.pic_type = 'appCover'
+		UNION
+		SELECT wq.id,wq.create_time createTime,cu.pic_url picUrl, wq.content title, NULL price, 'question' type ,wq.state FROM web_question wq 
+		LEFT JOIN common_upload cu ON cu.from_id = wq.id AND cu.pic_from = 'question' AND cu.pic_type = 'appCover'
+		UNION
+		SELECT wt.id,wt.create_time createTime,wti.context picUrl, wt.title ,NULL price ,CONCAT('travels',wt.travel_type) type ,wt.state FROM web_travels wt 
+		LEFT JOIN web_travels_item wti ON wti.travel_id = wt.id AND wti.is_cover = 0
+		UNION
+		SELECT wc.id,wc.create_time createTime,cu.pic_url picUrl,wc.content title, NULL price, 'complaint' type ,wc.state  FROM web_complaint wc 
+		LEFT JOIN common_upload cu ON cu.from_id = wc.id AND cu.pic_from = 'complaint' AND cu.pic_type = 'appCover'
+		) t  WHERE t.state ='ADD'
+		<if test="title != null and title != '' ">
+			AND t.title LIKE CONCAT('%',#{title},'%')
+		</if>
+		<if test="fromType !=null and fromType != '' ">
+			AND type in (${fromType})
+		</if>
+	</select>
+	
+	
+	
+	
+</mapper>

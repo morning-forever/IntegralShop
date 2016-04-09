@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AdminUserMapper">
+
+	<resultMap type="AdminLogin" id="loginResultMap">
+		<id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="udpate_time" property="udpateTime" />
+		<result column="login_id" property="loginId" />
+		<result column="login_pwd" property="loginPwd" />
+		<result column="admin_type" property="adminType" />
+		<result column="admin_id" property="adminId" />
+		
+	</resultMap>
+	
+	<resultMap type="AdminUser" id="userResultMap">
+	    <id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="udpate_time" property="udpateTime" />
+		<result column="username" property="username" />
+		<result column="phone" property="phone" />
+		<result column="account_state" property="accountState" />
+		<result column="role_key" property="roleKey" />
+	    <result column="role_name" property="roleName" />
+	    <result column="menu_keys" property="menuKeys" />
+	    <result column="menu_right_model" property="menuRightModel" />
+	
+	</resultMap>
+
+	<select id="getByLoginName" parameterType="String" resultMap="loginResultMap">
+		select
+        id,state,create_time,udpate_time,login_id,login_pwd,admin_type,admin_id
+		from admin_login
+		where 1 = 1 and state != 'DEL' AND
+		login_id = #{loginName}
+	</select>
+	
+	<select id="findUser" parameterType="Long" resultMap="userResultMap">
+	     select a.id,a.state,a.create_time,a.update_time,a.username,a.phone,a.account_state,a.role_key,b.role_name,b.menu_keys,b.menu_right_model
+	     from admin_user as a left join admin_role as b on b.role_key=a.role_key
+	     where 1=1 and a.state != 'DEL'
+	     and a.id=#{adminId}
+	</select>
+
+	<select id="getByUserId" parameterType="Long" resultType="PageData">
+		SELECT id,username,phone,account_state accountState,role_key roleKey 
+		FROM admin_user
+		WHERE id = #{userId} and state != 'DEL'
+	</select>
+	
+	<select id="findLoginByUserId" parameterType="PageData" resultType="PageData">
+		SELECT id,login_id loginId,login_pwd loginPwd,admin_type adminType,admin_id adminId 
+		FROM admin_login 
+		WHERE admin_id = #{userId} and state != 'DEL'
+		;
+	</select>
+	
+	
+	<!-- 登录时候更新 -->
+	<update id="updateLoginIp" parameterType="pageData">
+		update admin_user
+		set
+		last_login_ip = #{loginIp}
+		where
+		user_id = #{userId}
+	</update>
+	
+	<update id="updateUser" parameterType="PageData">
+		UPDATE `admin_user` SET 
+		update_time=NOW()
+		<if test="username != null and username != ''">
+			,username=#{username}
+		</if>
+		<if test="phone != null and phone != ''">
+			,phone=#{phone}
+		</if>
+		<if test="account_state != null and account_state != ''">
+			,account_state=#{account_state}
+		</if>
+		<if test="role_key != null and role_key != ''">
+			,role_key=#{role_key}
+		</if>
+		WHERE id=#{userId}
+	</update>
+	
+	<update id="updateLogin" parameterType="PageData">
+		UPDATE admin_login SET udpate_time = NOW()
+		<if test=" password != null and password != '' ">
+			,login_pwd = #{password}
+		</if>
+		<if test=" adminType != null and adminType != '' ">
+			,admin_type  = #{adminType}
+		</if>
+		<if test=" adminId != null and adminId != '' ">
+			,admin_id  = #{adminId}
+		</if>
+		WHERE 1 = 1 
+		<if test=" loginId != null and loginId != '' ">
+			AND login_id  = #{loginId}
+		</if>
+		
+		<if test=" userId != null and userId != '' ">
+			AND admin_id  = #{userId}
+		</if>
+	</update>
+	
+	<select id="findUserListByRoleKey" parameterType="PageData" resultType="PageData">
+		SELECT id FROM admin_user WHERE role_key = #{roleKey};
+	</select>
+	
+	
+	<select id="findUserList" parameterType="PageData" resultType="PageData">
+		SELECT 
+		au.id,au.username,au.phone,au.account_state accountState ,
+		al.login_id loginId,
+		ar.role_key roleKey,ar.role_name roleName,ar.role_state roleState
+		FROM admin_user au 
+		LEFT JOIN admin_login al ON al.admin_id = au.id
+		LEFT JOIN admin_role ar ON au.role_key = ar.role_key
+		WHERE 1 = 1 AND al.admin_type = 'admin' and au.state != 'DEL'
+		
+		<if test=" loginId != null and loginId != '' ">
+			AND al.login_id LIKE CONCAT('%',#{loginId},'%')
+		</if>
+		
+		<if test=" roleState != null and roleState != '' and roleState == 0 ">
+			AND ar.role_state = 0
+		</if>
+		
+		<if test=" roleState == 1 ">
+			AND ar.role_state = 1
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="findUserListCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		FROM admin_user au 
+		LEFT JOIN admin_login al ON al.admin_id = au.id
+		LEFT JOIN admin_role ar ON au.role_key = ar.role_key
+		WHERE 1 = 1 AND al.admin_type = 'admin' and au.state != 'DEL'
+		
+		<if test=" loginId != null and loginId != '' ">
+			AND al.login_id LIKE CONCAT('%',#{loginId},'%')
+		</if>
+		
+		<if test=" roleState != null and roleState != '' and roleState == 0 ">
+			AND ar.role_state = 0
+		</if>
+		
+		<if test=" roleState == 1 ">
+			AND ar.role_state = 1
+		</if>
+	</select>
+	
+	<insert id="addUser" parameterType="PageData" useGeneratedKeys="true" keyProperty="adminId">
+		INSERT admin_user 
+		(create_time,username,phone,account_state,role_key) 
+		VALUES 
+		(NOW(),#{username},#{phone},#{accountState},#{roleKey});
+	</insert>
+	
+	<insert id="addLogin" parameterType="PageData">
+		INSERT admin_login 
+		(create_time,login_id,login_pwd,admin_type,admin_id) 
+		VALUES 
+		(NOW(),#{loginId},#{loginPwd},'admin',#{adminId});
+	</insert>
+	
+	
+	<update id="updateDelsUser" parameterType="PageData">
+		UPDATE admin_user SET state = 'DEL' WHERE id = #{id};
+	</update>
+	
+	<update id="updateDelsUserLogin" parameterType="PageData">
+		UPDATE admin_login SET state = 'DEL' WHERE admin_id = #{adminId};
+	</update>
+	
+	
+	
+</mapper>

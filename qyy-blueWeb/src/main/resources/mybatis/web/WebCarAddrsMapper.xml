@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarAddrsMapper">
+
+	<select id="findListByType" resultType="pageData">
+		SELECT wc.`id`,wc.`name`
+		FROM `web_car_addrs` AS wca JOIN `web_citys` AS wc ON wc.`id`=wca.`city_id`
+		WHERE addr_type=#{type}
+		GROUP BY wc.`id`
+	</select>
+	
+	
+	<select id="findCountyByCityId" resultType="pageData">
+		SELECT wc.`name`,wc.`id`
+		FROM `web_car_addrs` AS wca JOIN `web_citys` AS wc ON wca.`area`=wc.`id`
+		WHERE wc.`parent_id`=#{id}
+		AND addr_type=#{type}
+		GROUP BY wc.`id`
+	</select>
+
+	<select id="findStoreByCountyId" resultType="pageData">
+		SELECT id,store,addr_detail,link_tel,CONCAT(open_start,'-',open_end) AS open_time 
+		FROM `web_car_addrs` 
+		WHERE `area`=#{id}
+		AND addr_type=#{type}
+	</select>
+	
+	<select id="findSotreNameById" resultType="String">
+		SELECT store FROM `web_car_addrs` WHERE id=#{storeId}
+	</select>
+	
+	<select id="findSotreById" resultType="pageData">
+		SELECT * FROM `web_car_addrs` WHERE id=#{storeId}
+	</select>
+	
+	<insert id="insertRentAddrCt">
+		INSERT INTO `web_car_rent_addr_ct`
+		SET create_time=NOW(),
+		rent_id=#{rentId},
+		car_addrs_id=#{store}
+	</insert>
+	
+	<select id="findStoreByCarId" resultType="pageData">
+		SELECT wca.`city_id` AS cityId,wca.`area` AS countyId,wca.`id` AS storeId
+		FROM `web_car_rent_addr_ct` AS wcrac
+		LEFT JOIN `web_car_addrs` AS wca ON wcrac.`car_addrs_id`=wca.`id`
+		WHERE wcrac.`rent_id`=#{rentId};
+	</select>
+
+	<delete id="deleteRentAddrCt">
+		DELETE FROM `web_car_rent_addr_ct` WHERE rent_id=#{rentId}
+	</delete>
+	
+	<!-- 后台加载城市列表 -->
+	<select id="findAdminCityList" parameterType="PageData" resultType="PageData">
+		SELECT cwc.id,cwc.`name` FROM web_car_addrs wca 
+		INNER JOIN web_citys cwc ON cwc.id = wca.city_id
+		<if test="type != null and type != '' ">
+			WHERE wca.addr_type = #{type}
+		</if>
+		GROUP BY cwc.id
+		;
+	</select>
+	
+	<!-- 后台获取区列表 -->
+	<select id="findAdminCountyList" parameterType="PageData" resultType="PageData">
+		SELECT ctwc.id,ctwc.`name` FROM web_car_addrs wca 
+		INNER JOIN web_citys ctwc ON ctwc.id = wca.area
+		WHERE wca.city_id = #{cityId}
+		GROUP BY ctwc.id
+		;
+	</select>
+	
+	<select id="findAdminAddrList" parameterType="PageData" resultType="PageData">
+		SELECT wca.id,wca.store FROM web_car_addrs wca 
+		WHERE wca.area =#{countyId}
+	</select>
+	
+	<!-- 后台查找地址列表 -->
+	<select id="findAddrAdminList" parameterType="PageData" resultType="PageData">
+		SELECT wca.id,cwc.`name` city ,awc.`name` county ,store ,addr_detail addrDetail ,IFNULL(link_tel,'-') linkTel
+		,IFNULL(CONCAT(open_start,'-',open_end),'-') openTime ,addr_type addrType 
+		FROM web_car_addrs wca
+		LEFT JOIN web_citys cwc ON cwc.id = wca.city_id
+		LEFT JOIN web_citys awc ON awc.id = wca.area  
+		WHERE addr_type LIKE  CONCAT('',#{addrType},'%')
+		<if test="cityId != null and cityId != '' and cityId != 0 ">
+			AND wca.city_id = #{cityId}
+		</if>
+		<if test="countyId != null and countyId != '' and countyId != 0 ">
+			AND wca.area = #{countyId}
+		</if>
+		<if test=" store != null and store != '' ">
+			AND wca.store LIKE  CONCAT('%',#{store},'%')
+		</if>
+		LIMIT ${startLine} , ${showLine}
+		;
+	</select>
+	
+	<select id="findAddrAdminListCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		FROM web_car_addrs wca
+		LEFT JOIN web_citys cwc ON cwc.id = wca.city_id
+		LEFT JOIN web_citys awc ON awc.id = wca.area  
+		WHERE addr_type LIKE  CONCAT('',#{addrType},'%')
+		<if test="cityId != null and cityId != '' and cityId != 0 ">
+			AND wca.city_id = #{cityId}
+		</if>
+		<if test="countyId != null and countyId != '' and countyId != 0 ">
+			AND wca.area = #{countyId}
+		</if>
+		<if test=" store != null and store != '' ">
+			AND wca.store LIKE  CONCAT('%',#{store},'%')
+		</if>
+		;
+	</select>
+	
+	<insert id="insertCarAddrs" parameterType="PageData">
+		INSERT INTO web_car_addrs
+		(create_time,city_id,area,store,addr_detail,link_tel,open_start,open_end,addr_type )
+		VALUES
+		(NOW(),#{cityId},#{countyId},#{store},#{addrDetail},#{linkTel},#{openStart},#{openEnd},#{addrType});
+	</insert>
+	
+	<update id="updateCarAddrs" parameterType="PageData">
+		UPDATE web_car_addrs SET 
+		update_time = NOW(),store = #{store}
+		<if test=" addrDetail != null and addrDetail != '' ">
+			,addr_detail = #{addrDetail}
+		</if>
+		<if test=" linkTel != null and linkTel != '' ">
+			,link_tel = #{linkTel}
+		</if>
+		<if test=" openStart != null and openStart != '' ">
+			,open_start =#{openStart}
+		</if>
+		
+		<if test=" openEnd != null and openEnd != '' ">
+			,open_end = #{openEnd}
+		</if>
+		WHERE id = #{id};
+	</update>
+	
+	<select id="findAddrById" parameterType="PageData" resultType="PageData">
+		SELECT wca.id,cwc.`name` city ,awc.`name` county ,store ,addr_detail addrDetail ,link_tel linkTel
+		,open_start openStart,open_end openEnd ,addr_type addrType 
+		FROM web_car_addrs wca
+		LEFT JOIN web_citys cwc ON cwc.id = wca.city_id
+		LEFT JOIN web_citys awc ON awc.id = wca.area  
+		WHERE wca.id = #{id};
+	</select>
+	
+	
+	
+	
+	
+</mapper>

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AdminMenuMapper">
+	<resultMap type="AdminMenu" id="menuResultMap">
+		<id column="id" property="id" />
+		<result column="menu_key" property="menuKey" />
+		<result column="menu_name" property="menuName" />
+		<result column="is_root" property="isRoot" />
+		<result column="is_parent" property="isParent" />
+		<result column="parent_key" property="parentKey" />
+		<result column="menu_icon" property="menuIcon" />
+		<result column="menu_path" property="menuPath" />
+		<result column="menu_type" property="menuType" />
+		<result column="menu_order" property="menuOrder" />
+	</resultMap>
+
+	<!-- ztree -->
+	<resultMap type="AdminMenu" id="menuZtreeResultMap">
+		<id column="id" property="id" />
+		<result column="menu_key" property="menuKey" />
+		<result column="menu_name" property="menuName" />
+		<result column="is_root" property="isRoot" />
+		<result column="is_parent" property="isParent" />
+		<result column="parent_key" property="parentKey" />
+		<result column="menu_icon" property="menuIcon" />
+		<result column="menu_path" property="menuPath" />
+		<result column="menu_type" property="menuType" />
+		<result column="menu_order" property="menuOrder" />
+	</resultMap>
+
+	<select id="listAllParentMenu" resultMap="menuResultMap">
+		select * from
+		admin_menu
+		where stutas != 'DEL'
+		AND is_parent = 0
+		order by menu_order
+	</select>
+
+	<select id="listSubMenuByParentKey" parameterType="String"
+		resultMap="menuResultMap">
+		select * from admin_menu
+		where stutas != 'DEL'
+		AND parent_key = #{parentKey}
+		order by menu_order
+	</select>
+
+	<select id="getMenuByKey" parameterType="pageData" resultMap="menuResultMap">
+		select * from admin_menu where menu_key = #{menuKey}
+	</select>
+
+	<select id="getListMenuByKeys" resultMap="menuResultMap">
+		select
+		*
+		from admin_menu
+		where 1 = 1 and menu_key in
+		<foreach collection="list" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		
+	</select>
+
+	<delete id="deleteMenuByKey" parameterType="String">
+		delete from
+		admin_menu
+		where menu_key = #{menuKey}
+		or parent_key = #{menuKey}
+	</delete>
+
+	<insert id="insertMenu" parameterType="AdminMenu">
+		insert into admin_menu (
+		menu_key,menu_name,
+		is_root,is_parent,parent_key,
+		menu_icon,menu_path,menu_type,
+		menu_order
+		) values (
+		#{menuKey},#{menuName},
+		#{isRoot},#{isParent},#{parentKey},
+		#{menuIcon},#{menuPath},#{menuType},
+		#{menuOrder}
+		)
+	</insert>
+
+
+	<select id="merchListAllParentMenu" resultMap="menuResultMap">
+		select * from
+		admin_menu
+		where stutas != 'DEL'
+		AND is_parent = 0
+		AND menu_type=2
+		order by menu_order
+	</select>
+
+	<select id="merchListSubMenuByParentId" parameterType="String"
+		resultMap="menuResultMap">
+		select * from admin_menu
+		where stutas != 'DEL'
+		AND parent_key = #{parentKey}
+		AND menu_type=2
+		order by menu_order
+	</select>
+	
+	<select id="getmerchListMenuByKeys" resultMap="menuResultMap">
+		select
+		*
+		from admin_menu
+		where 1 = 1 and menu_key in
+		<foreach collection="list" index="index" item="item" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		
+	</select>
+
+</mapper>

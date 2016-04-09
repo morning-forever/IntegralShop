@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebPriceSearchMapper">
+	
+	<resultMap type="WebPriceSearch" id="WebPriceSearchMap">
+		<id column="id" property="id"/>
+		<result column="state" property="state"/>
+		<result column="create_time" property="createTime"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="price_start" property="priceStart"/>
+		<result column="price_end" property="priceEnd"/>
+		<result column="depict" property="depict"/>
+		<result column="search_type" property="searchType"/>
+	</resultMap>
+	
+	<select id="getListPage" resultMap="WebPriceSearchMap">
+		SELECT * FROM `web_price_search` where 1=1
+		<if test="priceId != null and priceId != '' ">
+			and id = #{priceId}
+		</if>
+		<if test="searchType != null and searchType != '' ">
+			and search_type = #{searchType}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="getList" resultMap="WebPriceSearchMap">
+		SELECT * FROM `web_price_search` where 1=1
+		<if test="searchType != null and searchType != '' ">
+			and search_type = #{searchType}
+		</if>
+	</select>
+	
+	<select id="getResultNum" resultType="Integer">
+		SELECT COUNT(1) FROM `web_price_search` where 1=1
+		<if test="priceId != null and priceId != '' ">
+			and id != #{priceId}
+		</if>
+		<if test="searchType != null and searchType != '' ">
+			and search_type = #{searchType}
+		</if>
+		<if test="depict != null and depict != '' ">
+			and depict = #{depict}
+		</if>
+	</select>
+	
+	<select id="getById" parameterType="Long" resultMap="WebPriceSearchMap">
+		select * from `web_price_search` where 1 = 1 
+		<if test="_parameter != null and _parameter > 0">
+			and id = #{_parameter}
+		</if>
+	</select>
+	
+	<!-- 更新 -->
+	<update id="update" >
+		update web_price_search set update_time = NOW()
+		<if test="priceStart != null and priceStart != '' ">
+			,price_start = #{priceStart}
+		</if>
+		<if test="priceEnd != null and priceEnd != '' ">
+			,price_end = #{priceEnd}
+		</if>
+		<if test="depict != null and depict != '' ">
+			,depict = #{depict}
+		</if>
+		where id = #{id}
+	</update>
+
+	<delete id="delete">
+		delete from web_price_search where INSTR(#{ids},id) > 0
+	</delete>
+	
+	<insert id="insert">
+		insert into web_price_search 
+		(create_time, price_start, price_end, depict, search_type)
+		value
+		(NOW(), #{priceStart}, #{priceEnd}, #{depict}, #{searchType});
+	</insert>
+	
+	<!-- 通过类型筛选 -->
+	<select id="findListByType" resultType="pageData">
+		SELECT id,depict FROM `web_price_search` WHERE search_type = #{type}
+	</select>
+	
+</mapper>

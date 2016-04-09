@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebThreeBuildMapper">
+	
+	<select id="checkBuild" parameterType="PageData" resultType="PageData">
+		SELECT IFNULL(user_id,0) userId,build_from buildFrom,thrid_uid thridUid 
+		FROM web_three_build 
+		WHERE build_from =#{buildFrom} AND thrid_uid = #{thridUid}
+	</select>
+	
+	<select id="treeLogin" parameterType="PageData" resultType="PageData">
+		SELECT
+		wu.id,wu.state
+		,DATE_FORMAT(wu.create_time,'%Y-%m-%d %H:%i:%s') createTime
+		,DATE_FORMAT(wu.update_time,'%Y-%m-%d %H:%i:%s') updateTime
+		,wu.nickname ,IF(wu.sex=1,'男','女') sex
+		,DATE_FORMAT(wu.birthday,'%Y-%m-%d') birthday
+		,wu.at_area_id atAreaId ,aa.name areaName
+		,wu.phone,wu.email,wu.summary,wu.head_img headImg
+		,wu.user_level_id userLevelId ,wul.level_name levelName
+		,wul1.level_name parentLevelName
+		,wul.level_desc
+		levelDesc ,wul1.level_desc parentLevelDesc
+		,IF(wu.is_master=0,'达人','会员') isMaster ,wu.score,wu.is_master AS isMasterFlag
+		,third_login thirdLogin
+		,wu.is_ban isBan
+		FROM web_user wu
+		LEFT JOIN area_all aa ON aa.id = wu.at_area_id
+		LEFT JOIN
+		web_user_level wul ON wul.id
+		= wu.user_level_id
+		LEFT JOIN web_user_level wul1 ON wul1.id = wul.parent_id
+		WHERE wu.state = 'ADD' AND wu.id = #{userId}
+	</select>
+	
+	
+	<insert id="insertUserBuild" parameterType="PageData">
+		INSERT INTO web_three_build 
+		(create_time,build_from,thrid_uid,user_id)
+		VALUES
+		(NOW(),#{buildFrom},#{thridUid},#{userId});
+	</insert>
+	
+	<select id="findUserBuilds" parameterType="PageData" resultType="PageData">
+		SELECT id,user_id userId,build_from thridFrom,thrid_uid thridUid 
+		FROM web_three_build WHERE user_id = #{userId};
+	</select>
+	
+	<insert id="insertNullUser" parameterType="PageData" useGeneratedKeys="true" keyProperty="nullUserId">
+		INSERT INTO `web_user` SET create_time=NOW(),`update_time`=NOW()
+	</insert>
+	
+	<update id="bindThreeNullUser" parameterType="PageData">
+		UPDATE `web_three_build` SET `user_id`=#{userId} 
+		WHERE build_from =#{buildFrom} AND thrid_uid = #{thridUid}
+	</update>
+	
+</mapper>

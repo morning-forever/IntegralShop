@@ -1,0 +1,449 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MerchGoodsMapper">
+   
+   <resultMap type="MerchGoods" id="MerchGoodsResultMap">
+		<id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="update_time" property="updateTime" />
+		<result column="number" property="number" />
+		<result column="title" property="title" />
+		<result column="subtitle" property="subtitle" />
+		<result column="goods_type" property="goodsType" />
+		<result column="sales_volume" property="salesVolume" />
+		<result column="used_volume" property="usedVolume" />
+		<result column="reminder" property="reminder" />
+		<result column="detailed_info" property="detailedInfo" />
+		<result column="is_shelves" property="isShelves" />
+		<result column="merch_user_id" property="merchUserId" />
+	</resultMap>
+	
+	<resultMap type="MerchGoodsScenic" id="MerchGoodsScenicResultMap">
+		<id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="update_time" property="updateTime" />
+		<result column="goods_id" property="goodsId" />
+		<result column="original_price" property="originalPrice" />
+		<result column="current_price" property="currentPrice" />
+		<result column="at_area_id" property="atAreaId" />
+		<result column="addr_detail" property="addrDetail" />
+		<result column="used_explain" property="usedExplain" />
+		<result column="period_start" property="periodStart" />
+		<result column="period_end" property="periodEnd" />
+		<result column="time_start" property="timeStart" />
+		<result column="time_end" property="timeEnd" />
+		<result column="remarks" property="remarks" />
+		<result column="coupon_time" property="couponTime" />
+	</resultMap>
+	
+	<resultMap type="MerchGoodsHotel" id="MerchGoodsHotelResultMap">
+		<id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="update_time" property="updateTime" />
+		<result column="goods_id" property="goodsId" />
+		<result column="room_id" property="roomId" />
+		<result column="original_price" property="originalPrice" />
+		<result column="current_price" property="currentPrice" />
+		<result column="is_breakfast" property="isBreakfast" />
+		<result column="used_explain" property="usedExplain" />
+		<result column="notice" property="notice" />
+		<result column="room_name" property="roomName" />
+		<result column="room_number" property="roomNumber" />
+		<result column="time_start" property="timeStart" />
+		<result column="time_end" property="timeEnd" />
+	</resultMap>
+	
+	<resultMap type="MerchGoodsCater" id="MerchGoodsCaterResultMap">
+		<id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="update_time" property="updateTime" />
+		<result column="goods_id" property="goodsId" />
+		<result column="meal" property="meal" />
+		<result column="original_price" property="originalPrice" />
+		<result column="current_price" property="currentPrice" />
+	</resultMap>
+	
+	<resultMap type="MerchGoodsEquip" id="MerchGoodsEquipResultMap">
+		<id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="update_time" property="updateTime" />
+		<result column="goods_id" property="goodsId" />
+		<result column="original_price" property="originalPrice" />
+		<result column="current_price" property="currentPrice" />
+		<result column="spec" property="spec" />
+		<result column="volume" property="volume" />
+	</resultMap>
+   
+   <select id="findGoodsById" resultMap="MerchGoodsResultMap">
+		SELECT * FROM `merch_goods` WHERE id=#{id}
+   </select>
+   
+   <select id="findGoodsHotelById" resultMap="MerchGoodsHotelResultMap">
+		SELECT * FROM `merch_goods_hotel` WHERE goods_id=#{id}
+   </select>
+   
+	<select id="findGoodsScenicById" resultMap="MerchGoodsScenicResultMap">
+		SELECT * FROM `merch_goods_scenic` WHERE goods_id=#{id}		
+	</select>
+	
+	<select id="findGoodsCaterById" resultMap="MerchGoodsCaterResultMap">
+		SELECT * FROM `merch_goods_cater` WHERE goods_id=#{id}
+	</select>
+	
+	<select id="findGoodsEquipStrById" resultType="pageData">
+		SELECT 
+		GROUP_CONCAT(CAST(`spec` AS CHAR) SEPARATOR ',') spec,
+		GROUP_CONCAT(CAST(`current_price` AS CHAR) SEPARATOR ',') current_price,
+		GROUP_CONCAT(CAST(`original_price` AS CHAR) SEPARATOR ',') original_price,
+		GROUP_CONCAT(CAST(`volume` AS CHAR) SEPARATOR ',') volume
+		FROM `merch_goods_equip` WHERE goods_id=#{id} GROUP BY goods_id
+	</select>
+	
+	<!-- 景区商品列表查询 -->
+	<select id="findGoodsListByMerchId" resultType="pageData">
+		SELECT mg.`id`,mg.`number`,mg.`title`,mgs.`current_price`,mgs.`original_price`,mg.`sales_volume`,mg.`used_volume`,mg.`is_shelves`,mg.`create_time`
+		FROM `merch_goods` AS mg JOIN `merch_goods_scenic` AS mgs ON mg.`id`=mgs.`goods_id`
+		WHERE mg.`is_delete`=0
+		AND mg.`goods_type`='scenic'
+		AND mg.`merch_user_id`=#{merchId}
+		<if test=" goodsId !=null and goodsId !='' ">
+			AND mg.`number` LIKE #{goodsId}
+		</if>
+		<if test=" goodsName !=null and goodsName !='' ">
+			AND mg.`title` LIKE #{goodsId}
+		</if>
+		<if test=" status !=null and status !='' ">
+			AND mg.`is_shelves` =#{status}
+		</if>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	<select id="findGoodsNumber" resultType="long">
+		SELECT count(*)
+		FROM `merch_goods` AS mg JOIN `merch_goods_scenic` AS mgs ON mg.`id`=mgs.`goods_id`
+		WHERE mg.`is_delete`=0
+		AND mg.`goods_type`='scenic'
+		AND mg.`merch_user_id`=#{merchId}
+		<if test=" goodsId !=null and goodsId !='' ">
+			AND mg.`number` LIKE #{goodsId}
+		</if>
+		<if test=" goodsName !=null and goodsName !='' ">
+			AND mg.`title` LIKE #{goodsId}
+		</if>
+		<if test=" status !=null and status !='' ">
+			AND mg.`is_shelves` =#{status}
+		</if>
+	</select>
+	
+	<!-- 酒店商品列表查询 -->
+	<select id="findHotelGoodsByMerchId" resultType="pageData">
+		SELECT mg.`id`,mg.`number`,mg.`title`,mgh.`room_name`,mgh.`original_price`,mgh.`current_price`,mgh.`room_number`,mg.`sales_volume`,mg.`is_shelves`,mg.`create_time`
+		FROM `merch_goods` AS mg JOIN `merch_goods_hotel` AS mgh ON mg.`id`=mgh.`goods_id`
+		WHERE mg.`is_delete`=0
+		AND mg.`goods_type`='hotel'
+		AND mg.`merch_user_id`=#{merchId}
+		<if test=" goodsId !=null and goodsId !='' ">
+			AND mg.`number` LIKE #{goodsId}
+		</if>
+		<if test=" goodsName !=null and goodsName !='' ">
+			AND mg.`title` LIKE #{goodsId}
+		</if>
+		<if test=" status !=null and status !='' ">
+			AND mg.`is_shelves` =#{status}
+		</if>
+		<if test=" serchDate !=null and serchDate !='' ">
+			AND DATE_FORMAT(mg.`create_time`,'%Y-%m-%d')=#{serchDate}
+		</if>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	<select id="findHotelGoodsNumber" resultType="long">
+		SELECT count(*)
+		FROM `merch_goods` AS mg JOIN `merch_goods_hotel` AS mgh ON mg.`id`=mgh.`goods_id`
+		WHERE mg.`is_delete`=0
+		AND mg.`goods_type`='hotel'
+		AND mg.`merch_user_id`=#{merchId}
+		<if test=" goodsId !=null and goodsId !='' ">
+			AND mg.`number` LIKE #{goodsId}
+		</if>
+		<if test=" goodsName !=null and goodsName !='' ">
+			AND mg.`title` LIKE #{goodsId}
+		</if>
+		<if test=" status !=null and status !='' ">
+			AND mg.`is_shelves` =#{status}
+		</if>
+		<if test=" serchDate !=null and serchDate !='' ">
+			AND DATE_FORMAT(mg.`create_time`,'%Y-%m-%d')=#{serchDate}
+		</if>
+	</select>
+	
+	<!-- 餐饮商品列表查询 -->
+	<select id="findCaterGoodsByMerchId" resultType="pageData">
+		SELECT mg.`id`,mg.`number`,mg.`title`,mgcm.`meal`,mgc.`current_price`,mgc.`original_price`,mg.`sales_volume`,mg.`is_shelves`,mg.`create_time`
+		FROM `merch_goods` AS mg JOIN `merch_goods_cater` AS mgc ON mg.`id`=mgc.`goods_id`
+		LEFT JOIN `merch_goods_cater_meal` AS mgcm ON mgcm.`id`=mgc.`meal`
+		WHERE mg.`is_delete`=0
+		AND mg.`goods_type`='cater'
+		AND mg.`merch_user_id`=#{merchId}
+		<if test=" goodsId !=null and goodsId !='' ">
+			AND mg.`number` LIKE #{goodsId}
+		</if>
+		<if test=" goodsName !=null and goodsName !='' ">
+			AND mg.`title` LIKE #{goodsId}
+		</if>
+		<if test=" status !=null and status !='' ">
+			AND mg.`is_shelves` =#{status}
+		</if>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	<select id="findCaterGoodsNumber" resultType="long">
+		SELECT count(*)
+		FROM `merch_goods` AS mg JOIN `merch_goods_cater` AS mgc ON mg.`id`=mgc.`goods_id`
+		LEFT JOIN `merch_goods_cater_meal` AS mgcm ON mgcm.`id`=mgc.`meal`
+		WHERE mg.`is_delete`=0
+		AND mg.`goods_type`='cater'
+		AND mg.`merch_user_id`=#{merchId}
+		<if test=" goodsId !=null and goodsId !='' ">
+			AND mg.`number` LIKE #{goodsId}
+		</if>
+		<if test=" goodsName !=null and goodsName !='' ">
+			AND mg.`title` LIKE #{goodsId}
+		</if>
+		<if test=" status !=null and status !='' ">
+			AND mg.`is_shelves` =#{status}
+		</if>
+	</select>
+	
+	<!-- 装备商品列表查询 -->
+	<select id="findEquipGoodsByMerchId" resultType="pageData">
+		SELECT mg.`id`,mg.`number`,mg.`title`,
+		GROUP_CONCAT(CAST(mge.`spec` AS CHAR) SEPARATOR ';') spec,
+		GROUP_CONCAT(CAST(mge.`current_price` AS CHAR) SEPARATOR ';') current_price,
+		GROUP_CONCAT(CAST(mge.`original_price` AS CHAR) SEPARATOR ';') original_price,
+		GROUP_CONCAT(CAST(mge.`volume` AS CHAR) SEPARATOR ';') volume,
+		mg.`is_shelves`,mg.`create_time`
+		FROM `merch_goods` AS mg JOIN `merch_goods_equip` AS mge ON mg.`id`=mge.`goods_id`
+		WHERE mg.`is_delete`=0
+		AND mg.`goods_type`='equip'
+		AND mg.`merch_user_id`=#{merchId}
+		<if test=" goodsId !=null and goodsId !='' ">
+			AND mg.`number` LIKE #{goodsId}
+		</if>
+		<if test=" goodsName !=null and goodsName !='' ">
+			AND mg.`title` LIKE #{goodsId}
+		</if>
+		<if test=" status !=null and status !='' ">
+			AND mg.`is_shelves` =#{status}
+		</if>
+		GROUP BY mge.`goods_id`
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findEquipGoodsNumber" resultType="long">
+		select count(*) from (
+		SELECT mg.`id`,mg.`number`,mg.`title`,
+		GROUP_CONCAT(CAST(mge.`spec` AS CHAR) SEPARATOR ';') spec,
+		GROUP_CONCAT(CAST(mge.`current_price` AS CHAR) SEPARATOR ';') current_price,
+		GROUP_CONCAT(CAST(mge.`original_price` AS CHAR) SEPARATOR ';') original_price,
+		GROUP_CONCAT(CAST(mge.`volume` AS CHAR) SEPARATOR ';') volume,
+		mg.`is_shelves`,mg.`create_time`
+		FROM `merch_goods` AS mg JOIN `merch_goods_equip` AS mge ON mg.`id`=mge.`goods_id`
+		WHERE mg.`is_delete`=0
+		AND mg.`goods_type`='equip'
+		AND mg.`merch_user_id`=#{merchId}
+		<if test=" goodsId !=null and goodsId !='' ">
+			AND mg.`number` LIKE #{goodsId}
+		</if>
+		<if test=" goodsName !=null and goodsName !='' ">
+			AND mg.`title` LIKE #{goodsId}
+		</if>
+		<if test=" status !=null and status !='' ">
+			AND mg.`is_shelves` =#{status}
+		</if>
+		GROUP BY mge.`goods_id`
+		) as result
+	</select>
+	
+	<update id="changeGoodsStatus">
+		UPDATE `merch_goods` SET is_shelves=#{status} WHERE id IN (${ids})
+	</update>
+	
+	<update id="deleteGoods">
+		UPDATE `merch_goods` SET is_delete=1 WHERE id IN (${ids})
+	</update>
+	
+	
+	<insert id="saveGoods" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO `merch_goods`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		number=#{number},
+		title=#{title},
+		subtitle=#{subtitle},
+		goods_type=#{goodsType},
+		reminder=#{reminder},
+		detailed_info=#{detailedInfo},
+		is_shelves=#{isShelves},
+		is_delete=0,
+		merch_user_id=#{merchUserId}
+	</insert>
+	
+	<update id="updateGoods">
+		UPDATE`merch_goods` 
+		SET update_time=NOW(),
+		title=#{title},
+		subtitle=#{subtitle},
+		reminder=#{reminder},
+		detailed_info=#{detailedInfo},
+		is_shelves=#{isShelves}
+		WHERE id=#{id}
+	</update>
+	
+	<insert id="saveScenicGoods">
+		INSERT INTO `merch_goods_scenic`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		goods_id=#{goodsId},
+		original_price=#{originalPrice},
+		current_price=#{currentPrice},
+		at_area_id=#{atAreaId},
+		addr_detail=#{addrDetail},
+		used_explain=#{usedExplain},
+		period_start=#{periodStart},
+		period_end=#{periodEnd},
+		time_start=#{timeStart},
+		time_end=#{timeEnd},
+		coupon_time=#{couponTime},
+		remarks=#{remarks}
+	</insert>
+	
+	<update id="updateScenicGoods">
+		UPDATE `merch_goods_scenic`
+		SET update_time=NOW(),
+		original_price=#{originalPrice},
+		current_price=#{currentPrice},
+		at_area_id=#{atAreaId},
+		addr_detail=#{addrDetail},
+		used_explain=#{usedExplain},
+		period_start=#{periodStart},
+		period_end=#{periodEnd},
+		time_start=#{timeStart},
+		time_end=#{timeEnd},
+		coupon_time=#{couponTime},
+		remarks=#{remarks}
+		where id=#{id}
+	</update>
+	
+	<insert id="saveHotelGoods">
+		INSERT INTO `merch_goods_hotel`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		goods_id=#{goodsId},
+		original_price=#{originalPrice},
+		current_price=#{currentPrice},
+		is_breakfast=#{isBreakfast},
+		used_explain=#{usedExplain},
+		notice=#{notice},
+		room_name=#{roomName},
+		time_start=#{timeStart},
+		time_end=#{timeEnd}
+	</insert>
+	
+	<update id="updateHotelGoods">
+		UPDATE `merch_goods_hotel`
+		SET update_time=NOW(),
+		original_price=#{originalPrice},
+		current_price=#{currentPrice},
+		is_breakfast=#{isBreakfast},
+		used_explain=#{usedExplain},
+		notice=#{notice},
+		room_name=#{roomName},
+		room_number=#{roomNumber},
+		time_start=#{timeStart},
+		time_end=#{timeEnd}
+		WHERE id=#{id}
+	</update>
+	
+	<insert id="saveCaterGoods">
+		INSERT INTO `merch_goods_cater`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		meal=#{meal},
+		original_price=#{originalPrice},
+		current_price=#{currentPrice},
+		goods_id=#{goodsId}
+	</insert>
+	
+	<update id="updateCaterGoods">
+		UPDATE `merch_goods_cater`
+		SET update_time=NOW(),
+		meal=#{meal},
+		original_price=#{originalPrice},
+		current_price=#{currentPrice}
+		WHERE id=#{id}
+	</update>
+	
+	
+	<insert id="saveEquipGoods">
+		INSERT INTO `merch_goods_equip`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		spec=#{spec},
+		original_price=#{originalPrice},
+		current_price=#{currentPrice},
+		volume=#{volume},
+		goods_id=#{goodsId}
+	</insert>
+	
+	<delete id="deleteEquipGoods">
+		DELETE  FROM `merch_goods_equip` WHERE goods_id=#{id}
+	</delete>
+	
+	
+   <select id="getResultNum" resultType="Integer">
+		select count(a.id)
+		from merch_goods as a left join merch_goods_scenic as b on b.goods_id=a.id
+		left join web_citys as c on c.id=b.at_area_id
+		where 1 = 1
+		and a.goods_type='scenic'
+		<if test="name != null and name != ''">
+			and a.title like  CONCAT(CONCAT('%', #{name}),'%')
+		</if>
+	</select>
+	
+	
+	
+	<select id="findWebDepthListPage" >
+		select
+
+        a.id,a.state,a.create_time,a.update_time,a.title,a.
+        
+		from merch_goods as a left join merch_goods_scenic as b on b.goods_id=a.id
+		left join web_citys as c on c.id=b.at_area_id
+		where 1 = 1
+		<if test="name != null and name != ''">
+			and a.subject like  CONCAT(CONCAT('%', #{name}),'%')
+		</if>
+		
+		<if test="showLine != null and showLine != ''">
+			limit #{startLine} , #{showLine}
+		</if>
+	</select>
+	
+	<select id="findMerchGoodsCaterById" resultType="PageData">
+		SELECT 
+		  mgc.id,
+		  mgc.`original_price`,
+		  mgc.`current_price`,
+		  mgcm.`meal` 
+		FROM
+		  `merch_goods_cater` mgc 
+		  LEFT JOIN merch_goods_cater_meal mgcm 
+		    ON mgcm.`id` = mgc.`meal` 
+		WHERE goods_id = #{id}  
+	</select>
+	
+</mapper>

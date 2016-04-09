@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AdminRoleMapper">
+
+	<!-- 返回所有的角色信息  -->
+	<select id="findRoleAllList" parameterType="PageData" resultType="PageData">
+		SELECT id,role_key roleKey,role_name roleName,parent_key parentKey,menu_keys menuKeys
+		,menu_right_model menuRightModel,role_desc roleDesc,role_state roleState
+		FROM admin_role;
+	</select>
+	
+	<select id="findSRoleAllList" parameterType="PageData" resultType="PageData">
+		SELECT id,role_key roleKey,role_name roleName,parent_key parentKey,menu_keys menuKeys
+		,menu_right_model menuRightModel,role_desc roleDesc,role_state roleState
+		FROM admin_role WHERE parent_key IS NOT NULL;
+	</select>
+	
+	
+	<!-- 根据key查找list -->
+	<select id="findRoleListByKey" parameterType="PageData" resultType="PageData">
+		SELECT id,role_key roleKey,role_name roleName,parent_key parentKey,menu_keys menuKeys
+		,menu_right_model menuRightModel,role_desc roleDesc,role_state roleState
+		FROM admin_role
+		WHERE 1 = 1
+		<if test="parentKey != null and parentKey != '' ">
+			AND parent_key = #{parentKey}
+		</if>
+		<if test="parentKey == null and parentKey == '' ">
+			AND parent_key IS NULL
+		</if>
+	</select>
+	
+	<select id="findRoleByKeyOrId" parameterType="PageData" resultType="PageData">
+		SELECT id,role_key roleKey,role_name roleName,parent_key parentKey,menu_keys menuKeys
+		,menu_right_model menuRightModel,role_desc roleDesc,role_state roleState
+		FROM admin_role
+		WHERE 1 = 1
+		<if test="roleKey != null and roleKey != '' ">
+			AND role_key = #{roleKey}
+		</if>
+		<if test="roleId != null and roleId != '' ">
+			AND id = #{roleId}
+		</if>
+	</select>	
+	
+	<!-- 返回所有的角色信息列表 -->
+	<select id="findRoleList" parameterType="PageData" resultType="PageData">
+		SELECT id,role_key roleKey,role_name roleName,parent_key parentKey,menu_keys menuKeys
+		,menu_right_model menuRightModel,role_desc roleDesc,role_state roleState
+		FROM admin_role
+		WHERE 1=1 AND menu_right_model IN ('default' ,'none') AND parent_key IS NOT NULL
+		
+		<if test=" roleName != null and roleName != '' ">
+			AND role_name LIKE CONCAT('%',#{roleName},'%') 
+		</if>
+		
+		<if test=" roleState != null and roleState != '' ">
+			AND role_state = #{roleState}
+		</if>
+		
+		LIMIT ${startLine} , ${showLine}
+		;
+	</select>
+	
+	<select id="findRoleListCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		FROM admin_role
+		WHERE 1=1 AND menu_right_model IN ('default' ,'none') AND parent_key IS NOT NULL
+		<if test=" roleName != null and roleName != '' ">
+			AND role_name LIKE CONCAT('%',#{roleName},'%') 
+		</if>
+		<if test=" roleState != null and roleState != '' ">
+			AND role_state = #{roleState}
+		</if>
+	</select>
+	
+	<update id="updateRole" parameterType="PageData">
+		UPDATE admin_role SET
+		id = #{roleId} 
+		<if test=" roleName != null and roleName != '' ">
+		,role_name = #{roleName}
+		</if>
+		
+		<if test=" roleState != null and roleState != '' ">
+		,role_state = #{roleState}
+		</if>
+		
+		<if test=" roleDesc != null and roleDesc != '' ">
+		,role_desc=#{roleDesc}
+		</if>
+		
+		<if test=" parentKey != null and parentKey != '' ">
+		,parent_key = #{parentKey}
+		</if>
+		
+		<if test=" menuKeys != null and menuKeys != '' ">
+		,menu_keys = #{menuKeys}
+		</if>
+		
+		<if test=" menuRightModel != null and menuRightModel != '' ">
+		,menu_right_model = #{menuRightModel}
+		</if>
+		WHERE id = #{roleId}
+		;
+	</update>
+		
+	<insert id="insertRole" parameterType="PageData">
+		INSERT admin_role 
+		(role_key,role_name,parent_key,menu_keys,menu_right_model,role_desc,role_state) 
+		VALUES
+		(#{roleKey},#{roleName},#{parentKey},#{menuKeys},#{menuRightModel},#{roleDesc},#{roleState});
+	</insert>
+	
+	<select id="checkRoleUsed" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM admin_role ar
+		LEFT JOIN admin_user au ON au.role_key = ar.role_key
+		WHERE ar.role_key = #{roleKey}
+	</select>
+	
+	<delete id="delsRole" parameterType="PageData">
+		DELETE FROM admin_role WHERE id = #{roleId};
+	</delete>
+	
+	<update id="updateRoleState" parameterType="PageData">
+		UPDATE admin_role SET role_state = IF(role_state=1,0,1) WHERE id = #{roleId};
+	</update>
+	
+	
+	
+</mapper>

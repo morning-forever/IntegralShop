@@ -1,0 +1,328 @@
+﻿@charset "utf-8";
+
+@import (reference) "common";
+@import (reference) "inner.style.less";
+
+.pd10 { .pd(10px);}
+.pd20 { .pd(20px);}
+.i-order {
+	width: 15px;
+	height: 15px;
+	background-position: -458px -573px;
+}
+.i-dot {
+	width: 7px;
+	height: 7px;
+	background-position: -480px -577px;
+}
+.i-print {
+	width: 26px;
+	height: 25px;
+	background-position: -497px -566px;
+}
+.i-print-w {
+	width: 26px;
+	height: 25px;
+	background-position: -528px -566px;
+}
+.topbox {
+	border-top: 2px solid @lorange;
+}
+.tagspan {
+	width: 108px;
+	height: 37px;
+	.lh(37px);
+	.tc;
+	.inline;
+	background:url('../images/titlebg.png') 0 0 no-repeat;
+	color: #fff;
+}
+.itemwrap {
+	.pd(22px);
+	.f12;
+	.grey;
+	.item {
+		.inline;
+		min-width: 236px;
+		.mr(0);
+		.mb(5px);
+		.item-l {
+			.inline;
+			min-width: 70px;
+			.mr(5px);
+			.grey9;
+		}
+	}
+}
+
+.tab-content {
+	.time-dot {
+		.mb();
+	}
+	.day-dot {
+		background: @lorange;
+		color: #fff;
+		.pd(2px 10px);
+		.inline;
+		.mb();
+	}
+	.sectionlist {
+		.mg(0 15px 10px);
+		.rel;
+		border-left: 1px solid #d9d9d9;
+		.pd(20px 30px 0 25px);
+		.i-dot {
+			.abs;
+			left:-39px;
+			top:-3px;
+			border: 10px solid #fff;
+		}
+		.section-img {
+			.mg(0 0 20px 30px);
+		}
+		.section {
+			.rel;
+			.pb(60px);
+			h5 {
+				.f16;
+				.mb(15px);
+			}
+			p {
+				.f12;
+				&.desc {
+					.lh(2.8em);
+					color: @grey;
+				}
+			}
+		}
+	}
+
+	/* 行程计划 */
+	.plan-list {
+		.pd(0 30px 0 25px);
+		.section {
+			.pb(20px);
+			p {
+				&.desc {
+					.lh(3.2em);
+				}
+			}
+		}
+	}
+}
+
+/* 预算明细 */
+.spanbtn {
+	cursor: pointer;
+	.inline;
+	&:hover {
+		color: @lorange;
+	}
+}
+.i-check {
+	width: 18px;
+	height: 18px;
+	background-position: -378px -14px;
+	
+}
+.i-check.checked {
+	background-position: -352px -14px;
+}
+.cost-detail {
+	.border(#cccccc);
+	border-bottom: 0;
+	.f12;
+
+	tr {
+		border-bottom: 1px solid #ccc;
+		&:first-child {
+			border-right: 0;
+		}
+	}
+	th {
+		background: #e9ecf3;
+		border:0 !important;
+		color: #9eabbb;
+		font-weight: normal;
+	}
+	td {
+		border: 0 none;
+		.tc;
+		.grey;
+		.pd(15px 0);
+		&.rowspan {
+			border-right: 1px solid #ccc;
+		}
+		&:first-child {
+			.f12;
+		}
+		.item {
+			min-width: 180px;
+			.inline;
+			.mb(18px);
+			.ml(70px);
+			.i-check {
+				.mr(10px);
+			}
+		}
+	}
+}
+
+/* 线下活动 */
+.tablinks {
+	border-bottom: 2px solid #ccc;	
+	a {
+		.inline;
+		width:33.2%;
+		.tc;
+		color: @dark;
+		.pd(15px 0);
+		&.active {
+			.rel;
+			top:2px;
+			color: @lorange;
+			border-bottom: 2px solid @lorange;
+		}
+	}
+}
+
+.listwrap.type2{
+	.pd(20px 17px);
+	.mr(-16px);
+	.list_ul {
+		li {
+			.mr(16px);
+			.price {
+				.pb(0);
+			}
+			.incont {
+				.pd(10px 10px 13px);
+				min-height: 85px;
+			}
+		}
+	}
+	&.topic_list {
+		.list_ul {
+			.price {
+				.pb(27px);
+			}
+		}
+	}
+}
+
+/* 行程方案提交订单 */
+.w70 {
+	width: 70px;
+	display: inline-block;
+}
+.i-down {
+	width: 12px;
+	height: 12px;
+	background-position: -217px -101px;
+}
+.i-up {
+	width: 12px;
+	height: 12px;
+	background-position: -245px -101px;
+}
+.submit-order {
+	.day-dot {
+		.mb(15px);
+	}
+	.sectionlist {
+		margin: 0 0 20px;
+		.pd(0 30px 0 25px);
+		.section {
+			.pb(0);
+			p.desc {
+				.f16;
+				color: @dark;
+			}
+		}
+		
+	}
+}
+.expandbtn {
+	.inline;
+	border:1px solid #f4f4f4;
+	color: #999;
+	.f12;
+	.pointer;
+	.pd(2px 20px);
+	&:hover {
+		color: @lorange;
+	}
+}
+
+/* 介绍弹出层 */
+.i-hotel {
+	width: 44px;
+	height: 51px;
+	background-position: -279px -476px;
+}
+.i-p {
+	width: 44px;
+	height: 51px;
+	background-position: -325px -476px;
+}
+.i-star {
+	width: 13px;
+	height: 12px;
+	background-position: -100px -43px;
+}
+.i-pic {
+	width: 14px;
+	height: 10px;
+	background-position: -117px -44px;
+}
+.i-price {
+	width: 14px;
+	height: 14px;
+	background-position: -82px -43px;
+}
+.i-addr {
+	width: 10px;
+	height: 15px;
+	background-position: -68px -42px;
+}
+.detail_popup {
+	.rel;
+	.pd(40px 0 20px);
+	.l-icon {
+		.abs;
+		left:0;
+		top:30px;
+	}
+	.r-content {
+		.ml(75px);
+		.iicon {
+			.mr();
+		}
+		h5 {
+			.f14;
+			color: #666;
+		}
+		p {
+			color: #999;
+			&.f12 {
+				.pl(20px);
+				.mb(10px);
+			}
+		}
+		.desc {
+			.mb(15px);
+			p{
+				text-indent: 2.0em;
+			}
+		}
+		.pic-wrap {
+			.mr(-30px);
+			img {
+				.mr(15px);
+				.mb(15px);
+			}
+		}
+	}
+}
+
+

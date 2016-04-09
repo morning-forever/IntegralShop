@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebUserLevelMapper">
+	
+	<select id="findList" parameterType="PageData" resultType="PageData">
+		SELECT 
+		id,level_name levelName ,level_desc levelDesc ,require_start requireStart,require_end requireEnd ,parent_id parentId
+		FROM web_user_level
+		WHERE parent_id = ${parentId}
+		ORDER BY levelName ASC ;
+	</select>
+	
+	<update id="updateLevel" parameterType="PageData">
+		UPDATE web_user_level SET require_start = #{requireStart} ,require_end =#{requireEnd} WHERE id = #{id} 
+	</update>
+	
+	<select id="getById" parameterType="PageData" resultType="PageData">
+		SELECT 
+		id,level_name levelName ,level_desc levelDesc ,require_start requireStart,require_end requireEnd ,parent_id parentId
+		FROM web_user_level
+		WHERE id = ${id}
+	</select>
+	
+	
+	
+
+</mapper>

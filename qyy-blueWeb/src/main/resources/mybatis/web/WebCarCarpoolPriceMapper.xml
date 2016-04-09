@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarCarpoolPriceMapper">
+
+	<!-- 分页查询 -->
+	<select id="pageList" parameterType="PageData" resultType="PageData">
+
+
+	</select>
+
+	<!-- 根据类型返回最高价和最低价 -->
+	<select id="findMaxMin" parameterType="PageData" resultType="PageData">
+			SELECT MAX(price) maxPrice,MIN(price) minPrice FROM web_car_carpool_price;
+	</select>
+	<!-- 根据起止id返回路线信息 -->
+	<select id="findMileage" parameterType="PageData" resultType="Integer">
+		SELECT mileage FROM
+		web_car_carpool_addr_ct
+		WHERE is_shelves = 1 AND from_addr_id =#{fromAddrId} AND to_addr_id = #{toAddrId};
+	</select>
+	
+	
+	
+
+
+
+</mapper>

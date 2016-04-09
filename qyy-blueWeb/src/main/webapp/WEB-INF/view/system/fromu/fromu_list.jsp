@@ -1,0 +1,708 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core"%>
+<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt"%>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<base href="${system.basePath }">
+	<%@ include file="/static/inc.jsp" %>
+
+</head>
+<style type="text/css">
+.small-input{
+	width: 180px;
+}
+table.dataTable thead th{
+	padding: 10px 0px;
+	text-align: center;
+}
+.dialogBottom{
+	margin: 0 auto 5px;
+	width: 250px
+}
+</style>
+<body>
+	<div class="container-fluid" id="main-container">
+		<div id="breadcrumbs">
+			<ul class="breadcrumb">
+				<li><i class="icon-home"></i> <a href="javascript:;">当前</a><span class="divider"><i class="icon-angle-right"></i></span></li>
+				<li class="active">会员互动信息</li>
+			</ul><!--.breadcrumb-->
+		</div><!--#breadcrumbs-->
+		<div class="table-header">
+			会员互动信息
+		</div>
+		<ul class="nav nav-tabs" id="otherInfoTab">
+			<li class="active" ><a href="#tab_1">达人攻略</a></li>
+			<li ><a href="#tab_2">精彩游记</a></li>
+			<li ><a href="#tab_3">玩伴招募</a></li>
+			<li ><a href="#tab_4">问答专区</a></li>
+			<li ><a href="#tab_5">吐槽专区</a></li>
+		</ul>
+		<div class="tab-content">
+			<!-- 达人攻略 -->
+			<div class="tab-pane active" id="tab_1">
+				<div class="row-fluid">
+					<!-- <h3 class="header smaller lighter blue">会员管理</h3> -->
+					<form action="">
+						<table style="margin-left: 5px;" id="btnmenu">
+							<tbody>
+								<tr>
+									<td>
+										<span>标题:</span>
+										<input name="title" class="small-input">
+										<span>昵称:</span>
+										<input name="nickName" class="small-input">
+										<a title="搜索" href="javascript:;" target="mainFrame" class="btn btn-mini btn-success searchBtn" ><i class="icon-search"></i> 搜索</a>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<!-- <a title="评论列表" onclick="replyList(2)" href="javascript:;" target="mainFrame" class="btn btn-mini btn-info" ><i class="icon-plus"></i> 评论列表</a> -->
+										<a title="删除" onclick="doDeletes(2)" href="javascript:;" class="btn btn-mini btn-info" ><i class="icon-trash"></i> 删除</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</form>
+					<table id="table_master" type="2" class="table table-striped table-bordered table-hover">
+						<thead>
+							<tr>
+								<th class='center'>
+									<label><input type='checkbox' id="tableCheckbox" class="tableCheckbox" onchange="changeAllCheckbox()" /><span class="lbl"></span></label>
+								</th>
+								<th>ID</th>
+								<th style="width: 150px">标题</th>
+								<th>时间</th>
+								<th>昵称</th>
+								<th>等级</th>
+								<th>角色</th>
+								<th>点赞</th>
+								<th>评论</th>
+								<th>收藏</th>
+								<th>浏览</th>
+								<th>状态</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody></tbody> 
+					</table>
+				</div>
+			</div>
+			
+			<!-- 精彩游记 -->
+			<div class="tab-pane active" id="tab_2">
+				<div class="row-fluid">
+					<!-- <h3 class="header smaller lighter blue">会员管理</h3> -->
+					<form action="">
+						<table style="margin-left: 5px;" id="btnmenu">
+							<tbody>
+								<tr>
+									<td>
+										<span>标题:</span>
+										<input name="title" class="small-input">
+										<span>昵称:</span>
+										<input name="nickName" class="small-input">
+										<a title="搜索" href="javascript:;" target="mainFrame" class="btn btn-mini btn-success searchBtn" ><i class="icon-search"></i> 搜索</a>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<!-- <a title="评论列表" onclick="replyList(1)" href="javascript:;" target="mainFrame" class="btn btn-mini btn-info" ><i class="icon-plus"></i> 评论列表</a> -->
+										<a title="删除" onclick="doDeletes(1)" href="javascript:;" class="btn btn-mini btn-info" ><i class="icon-trash"></i> 删除</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</form>
+					<table id="table_travels" type="1" class="table table-striped table-bordered table-hover">
+						<thead>
+							<tr>
+								<th class='center'>
+									<label><input type='checkbox' id="tableCheckbox" class="tableCheckbox" onchange="changeAllCheckbox()" /><span class="lbl"></span></label>
+								</th>
+								<th>ID</th>
+								<th style="width: 150px">标题</th>
+								<th>时间</th>
+								<th>昵称</th>
+								<th>等级</th>
+								<th>角色</th>
+								<th>点赞数</th>
+								<th>评论数</th>
+								<th>收藏数</th>
+								<th>浏览数</th>
+								<th>状态</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody></tbody> 
+					</table>
+				</div>
+			</div>
+		
+		<!-- 玩伴招募 -->
+		<div class="tab-pane active" id="tab_3">
+				<div class="row-fluid">
+					<!-- <h3 class="header smaller lighter blue">会员管理</h3> -->
+					<form action="">
+						<table style="margin-left: 5px;" id="btnmenu">
+							<tbody>
+								<tr>
+									<td>
+										<span>标题:</span>
+										<input name="title" class="small-input">
+										<span>昵称:</span>
+										<input name="nickName" class="small-input">
+										<a title="搜索" href="javascript:;" target="mainFrame" class="btn btn-mini btn-success searchBtn" ><i class="icon-search"></i> 搜索</a>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<!-- <a title="评论列表" onclick="replyList(3)" href="javascript:;" target="mainFrame" class="btn btn-mini btn-info" ><i class="icon-plus"></i> 评论列表</a> -->
+										<a title="删除" onclick="doDeletes(3)" href="javascript:;" class="btn btn-mini btn-info" ><i class="icon-trash"></i> 删除</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</form>
+					<table id="table_friend" type="3" class="table table-striped table-bordered table-hover">
+						<thead>
+							<tr>
+								<th class='center'>
+									<label><input type='checkbox' id="tableCheckbox" class="tableCheckbox" onchange="changeAllCheckbox()" /><span class="lbl"></span></label>
+								</th>
+								<th>ID</th>
+								<th style="width: 150px">标题</th>
+								<th>时间</th>
+								<th>昵称</th>
+								<th>等级</th>
+								<th>角色</th>
+								<th>点赞数</th>
+								<th>评论数</th>
+								<th>收藏数</th>
+								<th>浏览数</th>
+								<th>状态</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody></tbody> 
+					</table>
+				</div>
+			</div>
+			
+			<!-- 问答专区 -->
+			<div class="tab-pane active" id="tab_4">
+				<div class="row-fluid">
+					<!-- <h3 class="header smaller lighter blue">会员管理</h3> -->
+					<form action="">
+						<table style="margin-left: 5px;" id="btnmenu">
+							<tbody>
+								<tr>
+									<td>
+										<span>标题:</span>
+										<input name="title" class="small-input">
+										<span>昵称:</span>
+										<input name="nickName" class="small-input">
+										<a title="搜索" href="javascript:;" target="mainFrame" class="btn btn-mini btn-success searchBtn" ><i class="icon-search"></i> 搜索</a>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<!-- <a title="评论列表" onclick="replyList(4)" href="javascript:;" target="mainFrame" class="btn btn-mini btn-info" ><i class="icon-plus"></i> 评论列表</a> -->
+										<a title="删除" onclick="doDeletes(4)" href="javascript:;" class="btn btn-mini btn-info" ><i class="icon-trash"></i> 删除</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</form>
+					<table id="table_question" type="4" class="table table-striped table-bordered table-hover">
+						<thead>
+							<tr>
+								<th class='center'>
+									<label><input type='checkbox' id="tableCheckbox" class="tableCheckbox" onchange="changeAllCheckbox()" /><span class="lbl"></span></label>
+								</th>
+								<th>ID</th>
+								<th style="width: 150px">标题</th>
+								<th>时间</th>
+								<th>昵称</th>
+								<th>等级</th>
+								<th>角色</th>
+								<th>解答数</th>
+								<th>浏览数</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody></tbody> 
+					</table>
+				</div>
+			</div>
+			
+			<!-- 吐槽专区 -->
+			<div class="tab-pane active" id="tab_5">
+				<div class="row-fluid">
+					<!-- <h3 class="header smaller lighter blue">会员管理</h3> -->
+					<form action="">
+						<table style="margin-left: 5px;" id="btnmenu">
+							<tbody>
+								<tr>
+									<td>
+										<span>标题:</span>
+										<input name="title" class="small-input">
+										<span>昵称:</span>
+										<input name="nickName" class="small-input">
+										<a title="搜索" href="javascript:;" target="mainFrame" class="btn btn-mini btn-success searchBtn" ><i class="icon-search"></i> 搜索</a>
+									</td>
+								</tr>
+								<tr>
+									<td>
+										<!-- <a title="评论列表" onclick="replyList(5)" href="javascript:;" target="mainFrame" class="btn btn-mini btn-info" ><i class="icon-plus"></i> 评论列表</a> -->
+										<a title="删除" onclick="doDeletes(5)" href="javascript:;" class="btn btn-mini btn-info" ><i class="icon-trash"></i> 删除</a>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</form>
+					<table id="table_complaint" type="5" class="table table-striped table-bordered table-hover">
+						<thead>
+							<tr>
+								<th class='center'>
+									<label><input type='checkbox' id="tableCheckbox" class="tableCheckbox" onchange="changeAllCheckbox()" /><span class="lbl"></span></label>
+								</th>
+								<th>ID</th>
+								<th style="width: 150px">标题</th>
+								<th>时间</th>
+								<th>昵称</th>
+								<th>等级</th>
+								<th>角色</th>
+								<th>评论数</th>
+								<th>浏览数</th>
+								<th>操作</th>
+							</tr>
+						</thead>
+						<tbody></tbody> 
+					</table>
+				</div>
+			</div>
+			
+			
+		</div>
+
+
+
+
+	</div>
+	<!-- #main-content -->
+	<div class="modal fade" id="examineModal" tabindex="-1" role="dialog" aria-labelledby="addBrandModalLabel" aria-hidden="true" style="display: none;">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+						<span aria-hidden="true">&times; </span>
+					</button>
+				</div>
+				<input type="hidden" name="travelsId" id="examineTravelsId">
+				<input type="hidden" name="type" id="type">
+				<div class="modal-body">
+					<div class="form-group">
+						<table style="margin-left: 5px;margin: 0 auto;" id="btnmenu">
+							<tr>
+								<td>
+									审核备注：<textarea id="reason" name="reason" style="width: 400px;height: 80px" placeholder="填写审核失败原因"></textarea>
+								</td>
+							</tr>
+						</table>
+					</div>
+				</div>
+				<div class="dialogBottom">
+				<a title="通过" onclick="submitExamine(0)" href="javascript:;" class="btn btn-mini btn-success"><i class="icon-ok"></i> 通过</a>
+				<a title="未通过" onclick="submitExamine(1)" href="javascript:;" class="btn btn-mini btn-danger"><i class="icon-remove"></i> 未通过</a>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<%@ include file="/static/foot.jsp" %>
+</body>
+<script type="text/javascript" src="static/js/jquery.form.js"></script>
+<script type="text/javascript" src="static/js/daterangepicker.min.js"></script>
+<!--定义操作列按钮模板-->
+<script id="tpl" type="text/x-handlebars-template">
+{{#each func}}
+<a class="btn btn-mini btn-{{this.type}}" href="javascript:;" title="{{this.name}}" target="mainFrame" onclick="{{this.fn}}"><i class="icon-{{this.icon}}"></i></a>
+{{/each}}
+</script>
+<script type="text/javascript">
+var tpl = $("#tpl").html();
+//预编译模板
+var template = Handlebars.compile(tpl);
+
+var typeStrArr=["table_travels","table_master","table_friend","table_question","table_complaint"];
+
+$(document).ready(function(){
+	
+	//初始化时间插件
+	$('.mydate-picker').datepicker();
+	
+	//初始化Tab页
+
+    $('#otherInfoTab a').click(function(e) {
+        e.preventDefault();//阻止a链接的跳转行为
+        $(this).tab('show');//显示当前选中的链接及关联的content
+    });
+    $('#otherInfoTab a').click();
+    $('#otherInfoTab a:first').click();
+    
+    $("#examineModal").modal("hide");
+
+    initMainList("table_master");
+    initMainList("table_travels");
+    initMainList("table_friend");
+    
+    initOtherMainList("table_question");
+    initOtherMainList("table_complaint");
+	
+	
+	$(".searchBtn").click(function(){
+		var json='{';
+		
+		var valueArr=decodeURIComponent($(this).parents("form").serialize(),true).split("&");
+		for(var i=0;i<valueArr.length;i++){
+			var valueItem=valueArr[i].split("=");
+			if(valueItem[1]!=''&&valueItem[1]!=null){
+				if(i!=0){
+					json+=',';	
+				}
+				json+='"'+valueItem[0]+'":"'+valueItem[1]+'"';
+			}
+		}
+		json+='}';
+		$(this).parents(".tab-pane").find("table.table-hover").DataTable().search(json).draw();
+	});
+	
+	//$('#table_report_recommend tr').removeClass("odd");
+	
+	$('.table').on( 'click', 'td', function () {
+        //$(this).find("input[flag=row]").click();
+        if($(this).find("input[flag=row]").length==0){
+        	$(this).parent("tr").find("input[flag=row]").click();
+        }
+    } );
+	
+	$(".tableCheckbox").click(function(){
+		var flag=this.checked;
+		$(this).parents(".tab-pane").find("input[flag=row]").each(function(){
+			this.checked=flag;
+		});
+	});
+});	
+
+
+function doExamine(id,type){
+	$("#type").val(type);
+	$("#examineTravelsId").val(id);
+	$("#examineModal").modal("show");
+}
+
+function submitExamine(status){
+	var id=$("#examineTravelsId").val();
+	var reason=$("#reason").val();
+	var type=$("#type").val();
+	$("#examineModal").modal("hide");
+	$.post("admin/fromuOperation/examine",{travelsId:id,status:status,reason:reason},function(data){
+		if(data.status == "success"){
+			bootbox.alert("审核结果提交成功！");
+		}else{
+			bootbox.alert("服务器忙，请稍后重试");
+		}
+		$("#"+typeStrArr[parseInt(type)-1]).DataTable().clear();
+		$("#"+typeStrArr[parseInt(type)-1]).DataTable().draw();
+	});
+}
+
+function doDelete(id,type){
+	var url="";
+	// if(type==1){
+		url="admin/fromuOperation/deletes";
+	// }else{
+	// 	url="";
+	// }
+	
+	bootbox.confirm("确定要删除该推荐么?", function(result) {
+		if(result){
+			$.ajax({
+				url : url,
+				post : "post",
+				data:{
+					"ids":id,
+					"type":type
+				},
+				success:function(data){
+					if(data.status == "success"){
+						bootbox.alert("删除成功！");
+						$("#"+typeStrArr[parseInt(type)-1]).DataTable().clear();
+						$("#"+typeStrArr[parseInt(type)-1]).DataTable().draw();
+					}else{
+						bootbox.alert("服务器忙，请稍后重试");
+					}
+				}
+				
+			});
+		}
+	});
+}
+
+function doDeletes(type){
+	var idStr="";
+	var url="";
+	url="admin/fromuOperation/deletes";
+	$("#"+typeStrArr[parseInt(type)-1]+" input[flag=row]").each(function(){
+		if(this.checked){
+			idStr+=this.value+",";
+		}
+	});
+	if(idStr==""){
+		bootbox.alert("请选择需要删除的内容");
+		return;
+	}
+	bootbox.confirm("确定要删除选中的内容么?", function(result) {
+		if(result){
+			$.ajax({
+				url : url,
+				post : "post",
+				data:{
+					"ids":idStr,
+					"type":type
+				},
+				success:function(data){
+					if(data.status == "success"){
+						bootbox.alert("删除成功！");
+						$("#"+typeStrArr[parseInt(type)-1]).DataTable().clear();
+						$("#"+typeStrArr[parseInt(type)-1]).DataTable().draw();
+					}else{
+						bootbox.alert("服务器忙，请稍后重试");
+					}
+				}
+				
+			});
+		}
+	});
+}
+
+function changeTop(id,type,top){
+	console.info("changeTop");
+	$.post("admin/fromuOperation/changeTop",{travelsId:id,top:top},function(data){
+		if(data.status == "success"){
+			bootbox.alert("修改置顶状态成功！");
+		}else{
+			bootbox.alert("服务器忙，请稍后重试");
+		}
+		$("#"+typeStrArr[parseInt(type)-1]).DataTable().clear();
+		$("#"+typeStrArr[parseInt(type)-1]).DataTable().draw();
+	});
+}
+
+function doAdd(type){
+	window.location.href="admin/fromu/add?type="+type;
+}
+
+function doCheck(id,type){
+	window.location.href="admin/fromuOperation/check_"+id+"_"+type;
+}
+
+
+
+
+function initMainList(id){
+	var url="";
+	var tableType=$("#"+id).attr("type");
+	$('#'+id).DataTable( {
+		"columns": [
+            { "data": null },//0
+            { "data": "id" },//1
+            { "data": "title" },//2
+            { "data": "create_time" },//3
+            { "data": "nickname" },//4
+            { "data": "level_desc" },//5
+            { "data": "is_master" },//6
+            { "data": "praise" },//7
+            { "data": "countReply" },//8
+            { "data": "collectionCount" },//9
+            { "data": "browse" },//10
+            { "data": "examine_state" },//11
+            { "data": null }//12
+            ],
+            "columnDefs": [{
+            	"targets":0,
+            	render:function(data,type,row){
+            		var str="<label><input type='checkbox'  flag='row' value='"+row.id+"' /><span class='lbl'></span></label>";
+            		return str;
+            	}
+            },{
+            	"targets":3,
+            	render:function(data,type,row){
+            		return getTimeTxt(data,19);
+            	}
+            },{
+            	"targets":6,
+            	render:function(data,type,row){
+            		var str="";
+            		if(data==0){
+            			str="达人";
+            		}else if(data==1){
+            			str="普通会员";
+            		}else{
+            			str=data;
+            		}
+            		return str;
+            	}
+            },{
+            	"targets":11,
+            	render:function(data,type,row){
+            		var str="";
+            		if(data==0){
+            			str="已通过";
+            		}else if(data==1){
+            			str="未通过";
+            		}else if(data==2){
+            			str='<a href="javascript:;" onclick="doExamine('+row.id+','+tableType+')">审核</a>';
+            		}else{
+            			str=data;
+            		}
+            		return str;
+            	}
+            },{
+            	"targets": 12,
+            	render: function (data, type, row, d) {
+            		var top={"name": "置顶", "fn": "changeTop(\'" + row.id + "\',"+tableType+",\'0\')", "type": "grey", "icon":"upload"};
+            		if(row.top==0){
+            			top.name="取消置顶";
+            			top.icon="download";
+            			top.fn="changeTop(\'" + row.id + "\',"+tableType+",\'1\')";
+            			top.type="light";
+            		}
+            		var context =
+            		{
+            			func: [
+            			top,
+            			{"name": "查看", "fn": "doCheck(\'" + row.id + "\',"+tableType+")", "type": "purple", "icon":"search"},
+            			{"name": "删除", "fn": "doDelete(\'" + row.id + "\',"+tableType+")", "type": "danger", "icon":"trash"}
+            			]
+            		};
+            		var html = template(context);
+            		return html;
+            	}
+            }
+            ],
+            fnInitComplete:function(){
+			$('#'+id).DataTable().column(1).visible(false);//隐藏ID行
+		},
+		"bDestroy": true,
+		"ajax": {
+			url:"admin/fromuOperation/list",
+			data:{type:tableType},
+			type: "POST"
+		}
+	} );
+}
+
+
+function initOtherMainList(id){
+	var url="";
+	var tableType=$("#"+id).attr("type");
+	$('#'+id).DataTable( {
+		"columns": [
+            { "data": null },//0
+            { "data": "id" },//1
+            { "data": "content" },//2
+            { "data": "create_time" },//3
+            { "data": "nickname" },//4
+            { "data": "level_desc" },//5
+            { "data": "is_master" },//6
+            { "data": "replyCount" },//7
+            { "data": "browse" },//8
+            { "data": null }//9
+            ],
+            "columnDefs": [{
+            	"targets":0,
+            	render:function(data,type,row){
+            		var str="<label><input type='checkbox'  flag='row' value='"+row.id+"' /><span class='lbl'></span></label>";
+            		return str;
+            	}
+            },{
+            	"targets":3,
+            	render:function(data,type,row){
+            		return getTimeTxt(data,19);
+            	}
+            },{
+            	"targets":6,
+            	render:function(data,type,row){
+            		var str="";
+            		if(data==0){
+            			str="达人";
+            		}else if(data==1){
+            			str="普通会员";
+            		}else{
+            			str=data;
+            		}
+            		return str;
+            	}
+            },{
+            	"targets": 9,
+            	render: function (data, type, row, d) {
+            		var context =
+            		{
+            			func: [
+            			{"name": "查看", "fn": "doCheck(\'" + row.id + "\',"+tableType+")", "type": "purple", "icon":"search"},
+            			{"name": "删除", "fn": "doDelete(\'" + row.id + "\',"+tableType+")", "type": "danger", "icon":"trash"}
+            			]
+            		};
+            		var html = template(context);
+            		return html;
+            	}
+            }
+            ],
+            fnInitComplete:function(){
+			$('#'+id).DataTable().column(1).visible(false);//隐藏ID行
+		},
+		"bDestroy": true,
+		"ajax": {
+			url:"admin/fromuOperation/list",
+			data:{type:tableType},
+			type: "POST"
+		}
+	} );
+}
+
+
+
+
+
+/**
+ * 将毫秒的时间转成时间字符串
+ * @param mmSecond
+ * @param length
+ * @returns {String}
+ */
+ var getTimeTxt=function(mmSecond,length){
+ 	var t = new Date(mmSecond);
+ 	var r=t.getFullYear()+"-";
+ 	r+=(t.getMonth()+1>=10?t.getMonth()+1:"0"+(t.getMonth()+1));
+ 	r+="-"+(t.getDate()>=10?t.getDate():"0"+t.getDate());
+ 	if(length==10){
+ 		return r;
+ 	}
+ 	r+=" "+(t.getHours()>=10?t.getHours():"0"+t.getHours());
+ 	r+=":"+(t.getMinutes()>=10?t.getMinutes():"0"+t.getMinutes());
+
+ 	if(length==16){
+ 		return r;
+ 	}
+
+ 	r+=":"+(t.getSeconds()>=10?t.getSeconds():"0"+t.getSeconds());
+ 	if(length==19){
+ 		return r;
+ 	}
+ }
+ </script>
+ </html>

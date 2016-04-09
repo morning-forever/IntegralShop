@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MerchEquipMapper">
+	
+	<select id="allList" resultType="PageData">
+		SELECT id, name FROM `merch_equip`
+	</select>
+	
+	<select id="getAdminEquipList" resultType="PageData">
+		SELECT id, name FROM `merch_equip` where 1=1
+		<if test="equipId != null and equipId != '' ">
+			and id = #{equipId}
+		</if>
+		<if test="equipName != null and equipName != '' ">
+			and name = #{equipName}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="getAdminResultNum" resultType="Integer">
+		SELECT COUNT(1) FROM `merch_equip` where 1=1
+		<if test="equipId != null and equipId != '' ">
+			and id = #{equipId}
+		</if>
+		<if test="equipName != null and equipName != '' ">
+			and name = #{equipName}
+		</if>
+	</select>
+	
+	<select id="getById" parameterType="Long" resultType="PageData">
+		select id, name from `merch_equip` where 1 = 1 
+		<if test="_parameter != null and _parameter > 0">
+			and id = #{_parameter}
+		</if>
+	</select>
+	
+	<!-- 更新 -->
+	<update id="update" >
+		update merch_equip set
+		<if test="equipId != null and equipId != ''">
+			id = #{equipId}
+		</if>
+		<if test="equipName != null and equipName != '' ">
+			,name = #{equipName}
+		</if>
+		where id = #{id}
+	</update>
+
+	<delete id="delete">
+		delete from merch_equip where id = #{id}
+	</delete>
+
+	<insert id="insert">
+		insert into merch_equip (name)
+		value(#{equipName});
+	</insert>
+	
+	
+</mapper>

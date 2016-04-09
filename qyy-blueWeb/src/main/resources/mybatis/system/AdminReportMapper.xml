@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AdminReportMapper">
+	
+	<sql id="findListSql">
+		SELECT ar.`create_date`,con.`content`,con.`id`,ar.`report_reason`
+		FROM `admin_report` AS ar
+		JOIN `${type}` AS con ON ar.`from_id`=con.`id` AND ar.`from_table`=#{type} AND con.state='ADD'
+	</sql>
+	
+	<select id="findList" resultType="map">
+		<include refid="findListSql"></include>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="findListCount" resultType="int">
+		SELECT count(*)
+		from (
+		<include refid="findListSql"></include>
+		) as countResult
+	</select>
+	
+	<insert id="insertReport">
+		INSERT INTO `admin_report`
+		SET create_date=NOW(),update_date=NOW(),from_id=#{fromId},from_table=#{fromTable},report_reason=#{reportReason}
+	</insert>
+	
+	<update id="deleteReply">
+		UPDATE `${type}`
+		SET state='DEL'
+		WHERE id in (${ids})
+	</update>
+	
+</mapper>

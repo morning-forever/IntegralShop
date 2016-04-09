@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebBusMapper">
+	
+	<select id="getList" resultType="PageData">
+		select cb.id,c.seating,cb.use_count,truncate(cb.use_count/c.seating * 100,2) as ple,
+		cu.pic_url,cr.price,cr.from_time,cr.to_time,br.brand
+		,wc.`name` as from_addr,wc2.`name` as to_addr
+		FROM web_car_route cr
+		LEFT JOIN web_car_bus cb ON cr.bus_id = cb.id
+		LEFT JOIN web_car c ON c.id = cb.car_id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id
+		LEFT JOIN common_upload cu ON cu.from_id = cb.car_id
+		LEFT JOIN web_car_addrs ca ON ca.id = cr.from_addr_id
+		LEFT JOIN web_car_addrs ca2 ON ca2.id = cr.to_addr_id
+		LEFT JOIN web_citys wc ON wc.id = ca.city_id
+		LEFT JOIN web_citys wc2 ON wc2.id = ca2.city_id
+		WHERE cu.pic_from = 'bus' AND cu.pic_type = 'cover'
+		AND cr.is_shelves = 0 AND cr.`state`='ADD' AND c.`state`='ADD'
+		
+		<if test="startTime != null and startTime != ''">
+			and cr.from_time LIKE '${startTime}%' 
+		</if>
+		<if test="fromAddrId != null and fromAddrId != ''">
+			and cr.from_addr_id = #{fromAddrId}
+		</if>
+		<if test="toAddrId != null and toAddrId != ''">
+			and cr.to_addr_id = #{toAddrId}
+		</if>
+		<if test="orderBy != null and orderBy != ''">
+			order by ${orderBy}
+		</if>
+		<if test="showLine != null and showLine != ''">
+			limit #{startLine} , #{showLine}
+		</if>
+	</select>
+	
+	<select id="getResultNum" resultType="Integer">
+		select count(*)
+		FROM web_car_route cr
+		LEFT JOIN web_car_bus cb ON cr.bus_id = cb.id
+		LEFT JOIN web_car c ON c.id = cb.car_id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id
+		LEFT JOIN common_upload cu ON cu.from_id = cb.car_id
+		LEFT JOIN web_car_addrs ca ON ca.id = cr.from_addr_id
+		LEFT JOIN web_car_addrs ca2 ON ca2.id = cr.to_addr_id
+		LEFT JOIN web_citys wc ON wc.id = ca.city_id
+		LEFT JOIN web_citys wc2 ON wc2.id = ca2.city_id
+		WHERE cu.pic_from = 'bus' AND cu.pic_type = 'cover'
+		AND cr.is_shelves = 0 AND cr.`state`='ADD' AND c.`state`='ADD'
+		<if test="startTime != null and startTime != ''">
+			and cr.from_time = #{startTime}
+		</if>
+		<if test="fromAddrId != null and fromAddrId != ''">
+			and cr.from_addr_id = #{fromAddrId}
+		</if>
+		<if test="toAddrId != null and toAddrId != ''">
+			and cr.to_addr_id = #{toAddrId}
+		</if>
+	</select>
+	
+	<select id="findById" resultType="PageData">
+		SELECT cb.id,c.seating,cb.use_count,TRUNCATE(cb.use_count/c.seating * 100,2) AS ple,
+		cu.pic_url,cr.price,cr.from_time,cr.to_time,br.brand,c.car_year
+		,wc.`name` AS from_addr,wc2.`name` AS to_addr,cb.car_id,
+		ca.store AS from_store,ca2.store AS to_store,
+		cs.price AS safe_price,cs.remark,ru.depict,ru.back_depict as backDepict,ru.reminder
+		FROM web_car_bus cb
+		LEFT JOIN web_car c ON c.id = cb.car_id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id
+		LEFT JOIN common_upload cu ON cu.from_id = cb.car_id
+		LEFT JOIN web_car_route cr ON cr.bus_id = cb.id
+		LEFT JOIN web_car_addrs ca ON ca.id = cr.from_addr_id
+		LEFT JOIN web_car_addrs ca2 ON ca2.id = cr.to_addr_id
+		LEFT JOIN web_citys wc ON wc.id = ca.city_id
+		LEFT JOIN web_citys wc2 ON wc2.id = ca2.city_id
+		LEFT JOIN web_car_safe cs ON safe_type = 'bus'
+		LEFT JOIN web_car_rule ru ON rule_type = 'bus'
+		WHERE cu.pic_from = 'bus' AND cu.pic_type = 'cover'
+		AND cr.is_shelves = 0
+		AND cr.state = 'ADD'
+		<if test="_parameter != null and _parameter != ''">
+			and cb.id = #{_parameter}
+		</if>
+		
+	</select>
+	
+	<select id="getBusImageById" parameterType="Long" resultType="PageData">
+		select pic_url,pic_type from common_upload where from_id = #{_parameter} and pic_from = 'bus' and (pic_type='cover' or pic_type='detail')
+	</select>
+	
+	<select id="getCarCardList" resultType="PageData">
+		select car_card from web_car_bus where 1 = 1 
+		<if test="carCard != null and carCard != ''">
+			and car_card = #{carCard}
+		</if>
+	</select>
+	
+	<select id="getFreeCardList" resultType="PageData">
+		SELECT cb.`id`,cb.`car_card`
+		FROM web_car_bus cb 
+		LEFT JOIN web_car c ON c.id = cb.`car_id`
+		WHERE cb.`id` NOT IN (SELECT wc.`bus_id` FROM web_car_route wc WHERE wc.`state`='ADD')
+		AND c.state='ADD'
+	</select>
+	
+	<select id="getBusSeatingList" resultType="PageData">
+		SELECT seating FROM web_car where car_type = 'bus'   GROUP BY seating
+	</select>
+	
+	<select id="getBusSeatingRemain" resultType="Integer">
+		SELECT (c.seating-cb.`use_count`) AS remain
+		FROM web_car c 
+		LEFT JOIN web_car_bus cb ON cb.`car_id` = c.id
+		WHERE cb.`id` = #{id}
+	</select>
+	
+	<select id="getAdminRouteList" resultType="PageData">
+		SELECT cr.id,c.seating,cb.car_card
+		,cu.pic_url,cr.price,cr.from_time,cr.to_time,br.brand,cr.is_shelves
+		,wc1_1.`name` AS from_addr,wc1_2.`name` AS from_area,ca.store AS from_store
+		,wc2_1.`name` AS to_addr,wc2_2.`name` AS to_area,ca2.store AS to_store
+		FROM web_car_route cr
+		LEFT JOIN web_car_bus cb ON cr.bus_id = cb.id
+		LEFT JOIN web_car c ON c.id = cb.car_id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id
+		LEFT JOIN common_upload cu ON cu.from_id = cb.car_id
+		LEFT JOIN web_car_addrs ca ON ca.id = cr.from_addr_id
+		LEFT JOIN web_car_addrs ca2 ON ca2.id = cr.to_addr_id
+		LEFT JOIN web_citys wc1_1 ON wc1_1.id = ca.city_id
+		LEFT JOIN web_citys wc1_2 ON wc1_2.id = ca.area
+		LEFT JOIN web_citys wc2_1 ON wc2_1.id = ca2.city_id
+		LEFT JOIN web_citys wc2_2 ON wc2_2.id = ca2.area
+		WHERE cu.pic_type = 'cover' AND cr.`state`='ADD' AND c.`state`='ADD'
+		<if test="brandId != null and brandId != ''">
+			and c.brand_id = #{brandId} 
+		</if>
+		<if test="carCard != null and carCard != ''">
+			and cb.car_card = #{carCard} 
+		</if>
+		<if test="seating != null and seating != ''">
+			and c.seating = #{seating} 
+		</if>
+		<if test="price != null and price != ''">
+			and cr.price = #{price} 
+		</if>
+		<if test="fromCityId != null and fromCityId != ''">
+			and wc1_1.id = #{fromCityId} 
+		</if>
+		<if test="toCityId != null and toCityId != ''">
+			and wc2_1.id = #{toCityId} 
+		</if>
+		<if test="fromCountyId != null and fromCountyId != ''">
+			and wc1_2.id = #{fromCountyId} 
+		</if>
+		<if test="toAddrId != null and toCountyId != ''">
+			and wc2_2.id = #{toCountyId} 
+		</if>
+		<if test="fromAddrId != null and fromAddrId != ''">
+			and cr.from_addr_id = #{fromAddrId} 
+		</if>
+		<if test="toAddrId != null and toAddrId != ''">
+			and cr.to_addr_id = #{toAddrId} 
+		</if>
+		<if test="showLine != null and showLine != ''">
+			limit #{startLine} , #{showLine}
+		</if>
+	</select>
+	
+	<select id="getAdminRouteResultNum" resultType="Integer">
+		SELECT count(cb.id)
+		FROM web_car_route cr
+		LEFT JOIN web_car_bus cb ON cr.bus_id = cb.id
+		LEFT JOIN web_car c ON c.id = cb.car_id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id
+		LEFT JOIN common_upload cu ON cu.from_id = cb.car_id
+		LEFT JOIN web_car_addrs ca ON ca.id = cr.from_addr_id
+		LEFT JOIN web_car_addrs ca2 ON ca2.id = cr.to_addr_id
+		LEFT JOIN web_citys wc1_1 ON wc1_1.id = ca.city_id
+		LEFT JOIN web_citys wc1_2 ON wc1_2.id = ca.area
+		LEFT JOIN web_citys wc2_1 ON wc2_1.id = ca2.city_id
+		LEFT JOIN web_citys wc2_2 ON wc2_2.id = ca2.area
+		WHERE cu.pic_type = 'cover' AND c.`state`='ADD' AND cr.`state`='ADD'
+		<if test="brandId != null and brandId != ''">
+			and c.brand_id = #{brandId} 
+		</if>
+		<if test="carCard != null and carCard != ''">
+			and cb.car_card = #{carCard} 
+		</if>
+		<if test="seating != null and seating != ''">
+			and c.seating = #{seating} 
+		</if>
+		<if test="price != null and price != ''">
+			and cr.price = #{price} 
+		</if>
+		<if test="fromCityId != null and fromCityId != ''">
+			and wc1_1.id = #{fromCityId} 
+		</if>
+		<if test="toCityId != null and toCityId != ''">
+			and wc2_1.id = #{toCityId} 
+		</if>
+		<if test="fromCountyId != null and fromCountyId != ''">
+			and wc1_2.id = #{fromCountyId} 
+		</if>
+		<if test="toAddrId != null and toCountyId != ''">
+			and wc2_2.id = #{toCountyId} 
+		</if>
+		<if test="fromAddrId != null and fromAddrId != ''">
+			and cr.from_addr_id = #{fromAddrId} 
+		</if>
+		<if test="toAddrId != null and toAddrId != ''">
+			and cr.to_addr_id = #{toAddrId} 
+		</if>
+	</select>
+	
+	<select id="getAdminBusList" resultType="PageData">
+		SELECT DISTINCT cb.car_id,cu.pic_url,br.brand,cs.sys,c.car_year,c.counts,c.seating
+		,(SELECT GROUP_CONCAT(cb.car_card) FROM web_car_bus cb WHERE cb.car_id = c.id) AS car_card
+		FROM web_car c
+		LEFT JOIN web_car_bus cb ON c.id = cb.car_id 
+		LEFT JOIN common_upload cu ON cu.from_id = c.id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id
+		LEFT JOIN web_car_sys cs ON cs.id = c.sys_id
+		WHERE cu.pic_type = 'cover' AND c.car_type = 'bus' AND c.`state`='ADD'
+		<if test="brandId != null and brandId != ''">
+			and c.brand_id = #{brandId} 
+		</if>
+		<if test="carCard != null and carCard != ''">
+			and cb.car_card = #{carCard} 
+		</if>
+		<if test="seating != null and seating != ''">
+			and c.seating = #{seating} 
+		</if>
+		<if test="sysId != null and sysId != ''">
+			and c.sys_id = #{sysId} 
+		</if>
+		<if test="showLine != null and showLine != ''">
+			limit #{startLine} , #{showLine}
+		</if>
+	</select>
+	
+	<select id="getAdminBusResultNum" resultType="Integer">
+		SELECT COUNT(DISTINCT cb.car_id) AS resultNum
+		FROM web_car c
+		LEFT JOIN web_car_bus cb ON c.id = cb.car_id 
+		LEFT JOIN common_upload cu ON cu.from_id = c.id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id
+		LEFT JOIN web_car_sys cs ON cs.id = c.sys_id
+		WHERE cu.pic_type = 'cover' AND c.car_type = 'bus' AND c.`state`='ADD'
+		<if test="brandId != null and brandId != ''">
+			and c.brand_id = #{brandId} 
+		</if>
+		<if test="carCard != null and carCard != ''">
+			and cb.car_card = #{carCard} 
+		</if>
+		<if test="seating != null and seating != ''">
+			and c.seating = #{seating} 
+		</if>
+		<if test="sysId != null and sysId != ''">
+			and c.sys_id = #{sysId} 
+		</if>
+	</select>
+	
+	<select id="findAdminById" parameterType="PageData" resultType="PageData">
+		SELECT DISTINCT c.id,br.brand,c.brand_id,cs.sys,c.sys_id,c.car_year,c.counts,c.seating,c.`car_configure`
+		,(SELECT GROUP_CONCAT(cb.car_card) FROM web_car_bus cb WHERE cb.car_id = c.id) AS car_card
+		,(SELECT GROUP_CONCAT(cu.pic_url) FROM common_upload cu WHERE cu.`from_id` = c.`id` ) AS imgs
+		FROM web_car c
+		LEFT JOIN web_car_bus cb ON c.id = cb.car_id 
+		LEFT JOIN common_upload cu ON cu.from_id = c.id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id	
+		LEFT JOIN web_car_sys cs ON cs.id = c.sys_id
+		WHERE c.car_type = 'bus'
+		<if test="id != null and id != ''">
+			and c.id = #{id} 
+		</if>
+	</select>
+	
+	<select id="findAdminRouteById" parameterType="PageData" resultType="PageData">
+		SELECT cr.id,c.seating,cb.car_card,cr.bus_id
+		,cr.price,cr.from_time,cr.to_time,br.brand,cr.is_shelves
+		,wc1_1.`id` AS fromCityId,wc1_2.`id` AS fromCountyId,ca.id AS fromStoreId
+		,wc2_1.`id` AS toCityId,wc2_2.`id` AS toCountyId,ca2.id AS toStoreId
+		FROM web_car_route cr
+		LEFT JOIN web_car_bus cb ON cr.bus_id = cb.id
+		LEFT JOIN web_car c ON c.id = cb.car_id
+		LEFT JOIN web_car_brand br ON br.id = c.brand_id
+		LEFT JOIN web_car_addrs ca ON ca.id = cr.from_addr_id
+		LEFT JOIN web_car_addrs ca2 ON ca2.id = cr.to_addr_id
+		LEFT JOIN web_citys wc1_1 ON wc1_1.id = ca.city_id
+		LEFT JOIN web_citys wc1_2 ON wc1_2.id = ca.area
+		LEFT JOIN web_citys wc2_1 ON wc2_1.id = ca2.city_id
+		LEFT JOIN web_citys wc2_2 ON wc2_2.id = ca2.area
+		where cr.id = #{id}
+	</select>
+
+	<insert id="insertBus">
+		insert into web_car_bus
+		(create_time,car_card,use_count,car_id)
+		values
+		(now(),#{carCard},0,#{carId})
+	</insert>
+	
+	<update id="deletesBus">
+		UPDATE `web_car` SET state='DELETE' WHERE id IN (${ids}) AND car_type=#{type}
+	</update>
+	
+	<update id="updateBus">
+		update web_car_bus set id=#{id} 
+		<if test="carCard != null and carCard !=''">
+			,car_card = #{carCard}
+		</if>
+		<if test="useCount != null and useCount !=''">
+			,use_count = #{useCount}
+		</if>
+		where id = #{id} 
+	</update>
+	
+	<select id="findStartTime" resultType="PageData">
+		SELECT bus_start_time
+		FROM `web_order_item`
+		WHERE form_id=#{id}
+	</select>
+	
+</mapper>

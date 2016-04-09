@@ -1,0 +1,109 @@
+@charset "utf-8";
+/* 订单管理 */
+
+/* 旅游-待支付 */
+.borderbs1{  border-bottom: 1px solid #cfcfcf;}
+.order-manage .whitebg{  box-shadow: 0 1px 2px #ddd;padding: 20px;}
+.order-manage .order-info .arrow{  background-position: -42px -571px;width: 10px;height: 19px;right: 15px;top: 47px;}
+.order-manage .order-info .info-right{width: 268px;line-height: 113px;}
+.stroke{padding:20px 10px;}
+.spanstyle .item{color: #666;padding-right:55px;}
+.spanstyle span span{color: #999;}
+.personal-info li{  border-bottom: 1px solid #cfcfcf;height: 50px;line-height: 50px;padding-left: 10px;}
+.personal-info li:last-child{border-bottom: none;}
+.personal-info .item{padding-right: 65px;}
+.topnav{height: 80px;border: 1px solid #ffb126;padding:10px 20px;}
+.topnav span{padding-right: 40px;}
+.topnav a{font-size: 16px;color: #666;font-weight: bold;padding: 0 50px;}
+
+
+
+/* 旅游-交易成功-申请退款（使适用快旅出行和景区）*/
+.refund-cont{padding: 10px 20px;}
+.refund-cont .info{padding: 20px 20px 0 20px;}
+.refund-cont .info label{font-size: 16px;color: #666;width: 120px;display: inline-block;}
+.refund-cont .info input{width: 340px;height: 30px;line-height: 30px;border: 1px solid #cccccc;padding: 5px;}
+.checkbox{  width: 16px;  height: 16px;  border: 1px solid #cfcfcf;background: #fff;}
+.checkbox.checked{width: 18px;height: 18px;  border: 0;  background: url('../images/sprites.png') -527px -535px no-repeat;}
+.refund-cont .other textarea{width: 677px;height: 71px;border: 1px solid #ccc;}
+.refund-cont .other .limit{  right: 194px;  bottom: 8px;color: #ccc;}
+.coupon{width: 356px;height: 101px;background: url(../images/coupon.png) 0 0 no-repeat;}
+.coupon p:first-child{height: 101px;width:105px;line-height:101px;}
+.coupon1{background: url(../images/coupon1.png) 0 0 no-repeat;}
+
+
+
+/* P4-10-2-2订单管理-旅游-智易行详情-行程方案-行程计划 */
+.sub-cont{background: #fff;  border-top: 2px solid #ffb126;min-height: 77px;box-shadow: 0 1px 2px #ddd;padding: 40px 20px 0;}
+.sub-cont .tips{display: block;  background: url(../images/titlebg.png) 0 0 no-repeat;  width: 108px;  height: 37px;  top: 0;  left: 20px;  line-height: 37px;  text-align: center;  color: #fff;}
+.sub-cont .stroke-items{padding-top: 10px;font-size: 12px;}
+.stroke-items .items{display: inline-block;min-width: 220px; margin-right: 16px;color: #999;}
+.stroke-items .items span{padding-left: 10px;color: #666666;}
+.tabs{padding: 20px 0 0 10px;}
+.tabs li{background: url(../images/tabbg.png) 0 0 no-repeat;float: left;margin-left: 10px;  width: 108px;  height: 37px;  text-align: center;  line-height: 37px;  color: #9eabbb;  cursor: pointer;}
+.tabs li.current{  background-position: 0 -37px;  color: #fff;}
+.tabs_cont{background: #fff;padding: 30px 20px;box-shadow: 0 1px 2px #ddd;}
+.tabs_cont .cont .title{padding:10px 0 0 20px;}
+.tabs_cont .cont .dot{display: inline-block;width: 7px;height: 7px;background-position: -480px -577px; left: -2.5px;top: 12px;}
+.timeline{border-left: 1px solid #d9d9d9;padding-left: 20px;}
+.timeline li{padding: 8px 0;color: #666666;font-size: 12px;}
+.timeline li:first-child{padding-top: 20px;}
+.timeline li span{padding-right: 10px;}
+.date{background: #ffb126;padding:2px 10px;color: #fff;}
+.ml-10{margin-left: -10px;}
+.pb30{padding-bottom: 30px;}
+.mt-10{margin-top: -10px;}
+.ordertable th{background: #e9ecf3;color: #9eabbb;font-weight: normal;font-size: 12px;border: 1px solid #cccccc;border-right: none;border-left: 0;}
+.ordertable th:first-child{border-left: 1px solid #ccc;}
+.ordertable th.last-child{border-right: 1px solid #ccc;}
+.ordertable tr{text-align: center;height: 50px;font-size: 12px;}
+.ordertable tr td{border-bottom: 1px solid #ccc;color: #666666;}
+.ordertable tr td.last-child{border-right: 1px solid #ccc;}
+.ordertable .rowspan{border-left: 1px solid #ccc;border-right: 1px solid #ccc;}
+.equip-details td:first-child{border-left: 1px solid #ccc;border-right: 1px solid #ccc;}
+.equip-details td .item{  min-width: 180px;  display: inline-block;  margin-bottom: 18px;  margin-left: 70px;}
+.equip-details td .item .i-check {margin-right: 10px;}
+.i-check.checked {background-position: -352px -14px;}
+.i-check {width: 18px;height: 18px;background-position: -378px -14px;}
+.i-print-w{  width: 26px;  height: 25px;  background-position: -497px -566px;}
+
+
+/* 漫游商城 */
+.submenu{background: #fff;}
+.submenu li{font-size: 12px;margin-bottom: 1px;height: 40px;line-height: 40px;}
+.submenu li p{width: 60px;text-align: left;margin: 0 auto;color: #999999;}
+.submenu li.current p{color: #ffb126;}
+.submenu li .dot{width: 5px;height: 5px;background-position: -592px -581px;display: inline-block;margin-right: 5px;vertical-align: middle;}
+.submenu li.current .dot{background-position:-592px -572px;}
+.subtabs li{display: inline-block;height:40px; text-align: center;width: 33.3%;border-bottom: 2px solid #ccc;}
+.subtabs li.current{border-bottom: 2px solid #ffb126;}
+.subtabs li.current a{color:#ffb126; }
+.subtabs li a{border-left: 1px solid #ccc;display: inline-block;width: 100%;color: #333333;}
+.subtabs li:first-child a{border-left: none;}
+.noorder{width: 80px;margin: 100px auto;}
+.ordertab2{border-collapse:collapse;}
+.ordertab2 th{font-weight: normal;color: #666;background: #e9ecf3;padding: 5px 0;}
+.ordertab2 .borderline{border: 1px solid #ccc;}
+.ordertab2 .borderline td{padding: 10px;}
+.omission{width: 165px;display: inline-block;overflow: hidden;white-space: nowrap;text-overflow:ellipsis;}
+.operate{display: inline-block; width: 64px;height: 23px;text-align: center;line-height: 23px; color: #fff;}
+.optorange{background: #ffb126;}
+.optcancel{background: #9eabbb;}
+.cgreen{color: #16cc6c;}
+.cred{color: #e42000;}
+.four li{width: 25%;}
+.right-warp p a{text-decoration: none;}
+.remark{width: 700px;margin: 0 auto;}
+.i-score{display: inline-block; width: 22px;height: 19px;padding: 0 5px;}
+.hasscore{background-position: -132px -425px;}
+.noscore{background-position: -132px -448px;}
+.txarea{width: 629px;height: 182px;padding: 10px;border: 1px solid #ccc;}
+.addimgs .img{width: 109px;height: 109px;float: left;margin-right: 25px;}
+.addimgs .add{background: url(../images/addimg.png) 0 0 no-repeat;cursor: pointer;}
+.i-reason{display: inline-block;width: 18px;height: 18px;background-position:  -569px -571px;padding-right: 5px;}
+.reason{width: 160px;border-right: 1px solid #ccc;padding:0 20px 50px 0;}
+.choose{margin-left: 30px;}
+.choose p{padding-bottom: 10px;}
+.choose p .iicon{padding-right: 7px;}
+.choose p textarea{width: 647px;height: 71px;border: 1px solid #ccc;padding: 10px;}
+.choose .tips{right: 21px;bottom: 17px;font-size: 12px;color: #ccc;}

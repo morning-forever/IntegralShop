@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebUserMasterMapper">
+	<insert id="applyMaster" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO `web_user_master`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		user_id=#{userId},
+		real_name=#{realName},
+		nowlive=#{nowlive},
+		occupation=#{occupation},
+		qq_num=#{qq},
+		phone=#{phone},
+		email=#{email},
+		real_head_img=#{realHeadImg},
+		summary=#{summary},
+		<if test=" isAudit !=null and isAudit !='' ">
+			is_audit=#{isAudit},
+		</if>
+		wechat=#{weChat}
+		
+	</insert>
+	
+	<update id="updateMaster">
+		UPDATE `web_user_master`
+		SET update_time=NOW(),
+		real_name=#{realName},
+		nowlive=#{nowlive},
+		occupation=#{occupation},
+		qq_num=#{qq},
+		phone=#{phone},
+		email=#{email},
+		real_head_img=#{realHeadImg},
+		summary=#{summary},
+		is_audit='TO',
+		state='ADD',
+		wechat=#{weChat}
+		WHERE user_id=#{userId}
+	</update>
+	
+	
+	<insert id="addMasterArea">
+		INSERT INTO `web_user_master_area`
+		SET create_time=NOW(),
+		master_id=#{masterId},
+		area_id=#{areaId}
+	</insert>
+	
+	<delete id="deleteMasterArea">
+		DELETE 
+		FROM `web_user_master_area`
+		WHERE master_id IN (SELECT id FROM `web_user_master` WHERE user_id=#{userId})
+	</delete>
+	
+	<select id="finaAreaIdByName" parameterType="PageData" resultType="Long">
+		SELECT id FROM area_all WHERE full_name = #{nowAddr};
+	</select>
+	
+	
+	<select id="checkIsMaster" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_user WHERE is_master =0 AND id = #{userId};
+	</select>
+	
+	<update id="updateMasterNowAddr" parameterType="PageData">
+		UPDATE web_user_master SET nowlive = #{nowAddr} WHERE user_id = #{userId}
+	</update>
+	
+	<update id="updateUserNowAddr" parameterType="PageData">
+		UPDATE web_user SET at_area_id = #{nowAddr} WHERE id = #{userId}
+	</update>
+	
+	<sql id="findMasterSql">
+		SELECT wum.`id`,wum.`real_name`,wum.`nowlive`,wum.`occupation`,wum.`qq_num`,wum.`wechat`,wu.`phone`,wu.`nickname`,wu.`email`,
+		GROUP_CONCAT(wc.`name`) AS `area`,pwul.`level_desc` AS level,wum.`is_audit`
+		FROM `web_user_master` AS wum
+		JOIN `web_user` AS wu ON wu.`id`=wum.`user_id`
+		LEFT JOIN `web_user_master_area` AS wuma ON wuma.`master_id`=wum.`id`
+		LEFT JOIN `web_citys` AS wc ON wc.`id`=wuma.`area_id`
+		LEFT JOIN `web_user_level` AS wul ON wul.`id`=wu.`user_level_id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		WHERE wum.`state`='ADD'
+		<if test=" realName !=null and realName !='' ">
+			AND wum.`real_name` LIKE '%${realName}%'
+		</if>
+		<if test=" phone !=null and phone !='' ">
+			AND wu.`phone` LIKE '%${phone}%'
+		</if>
+		<if test=" email !=null and email !='' ">
+			AND wu.`email` LIKE '%${email}%'
+		</if>
+		<if test=" areaId !=null and areaId !='' ">
+			AND wuma.`area_id`=#{areaId}
+		</if>
+		<if test=" isAudit !=null and isAudit !='' ">
+			AND wum.`is_audit`=#{isAudit}
+		</if>
+		GROUP BY wum.`id`
+	</sql>
+	
+	<select id="findMasterList" resultType="map">
+		<include refid="findMasterSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	
+	<select id="findMasterCount" resultType="long">
+		SELECT COUNT(*) 
+		FROM (
+		<include refid="findMasterSql"></include>
+		) as `result`
+	</select>
+	
+	<insert id="insertExamine">
+		INSERT INTO `web_user_master_examine`
+		SET create_time=NOW(),from_id=#{id},reason=#{reamrk},result=#{state}
+	</insert>
+	
+	<update id="updateMasterState">
+		UPDATE `web_user_master`
+		SET is_audit=#{state}
+		WHERE id=#{id}
+	</update>
+	
+	<update id="deleteMaster">
+		UPDATE `web_user_master`
+		SET state='DEL'
+		WHERE id IN (${ids})
+	</update>
+	
+	<select id="findMasterDetial" resultType="map">
+		SELECT wum.`id`,wum.`real_name`,wum.`nowlive`,wum.`occupation`,wum.`qq_num`,wum.`wechat`,wu.`phone`,wu.`nickname`,wu.`email`,
+		GROUP_CONCAT(wc.`name`) AS `area`,pwul.`level_desc` AS `level`,wum.`is_audit`,wu.`head_img`,wu.`sex`
+		,wum.`summary`,wum.`real_head_img`
+		FROM `web_user_master` AS wum
+		JOIN `web_user` AS wu ON wu.`id`=wum.`user_id`
+		LEFT JOIN `web_user_master_area` AS wuma ON wuma.`master_id`=wum.`id`
+		LEFT JOIN `web_citys` AS wc ON wc.`id`=wuma.`area_id`
+		LEFT JOIN `web_user_level` AS wul ON wul.`id`=wu.`user_level_id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		WHERE wum.`id`=#{id}
+	</select>
+	
+	<select id="findExamineList" resultType="map">
+		SELECT create_time,reason,result
+		FROM `web_user_master_examine` 
+		WHERE from_id=#{id}
+	</select>
+	
+	<sql id="findUserSql">
+		SELECT id,nickname,phone,email
+		FROM `web_user`
+		WHERE nickname LIKE '%${name}%' AND is_master=1
+	</sql>
+	
+	<select id="findUserList" resultType="map">
+		<include refid="findUserSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	
+	<select id="findUserCount" resultType="long">
+		SELECT COUNT(*) 
+		FROM (
+		<include refid="findUserSql"></include>
+		) as `result`
+	</select>
+	
+	<select id="findMasterDetialByUserId" resultType="map">
+		SELECT create_time,real_name,nowlive,occupation,qq_num,wechat,is_audit,phone,email,real_head_img,summary
+		FROM `web_user_master` 
+		WHERE user_id=#{userId}
+		<if test=" state !=null and state !='' ">
+			AND state=#{state}
+		</if>
+		ORDER BY create_time DESC
+		LIMIT 0,1
+	</select>
+	
+	<select id="findMasterArea" resultType="map">
+		SELECT wc.`id`,wc.`name`
+		FROM `web_user_master` AS wum
+		JOIN `web_user_master_area` AS wuma ON wum.`id`=wuma.`master_id`
+		JOIN `web_citys` AS wc ON wc.`id`=wuma.`area_id`
+		WHERE wum.`user_id`=#{userId}
+	</select>
+	
+	<select id="findMasterIdByUserId" resultType="long">
+		SELECT id
+		FROM `web_user_master`
+		WHERE user_id=#{userId}
+		ORDER BY create_time DESC
+		LIMIT 0,1
+	</select>
+	
+	<select id="findUserIdByMasterId" resultType="long">
+		SELECT user_id
+		FROM `web_user_master`
+		WHERE id=#{id}
+	</select>
+	
+	<update id="updateUserMaster">
+		UPDATE `web_user`
+		SET is_master=0
+		WHERE id=(
+		SELECT user_id
+		FROM `web_user_master`
+		WHERE id=#{id}
+		) 
+	</update>
+	
+	<update id="updateDeleteMaster">
+		UPDATE `web_user`
+		SET is_master=1
+		WHERE id IN (
+		SELECT user_id
+		FROM `web_user_master`
+		WHERE id IN (#{ids})
+		)
+	</update>
+	
+	<select id="findUserMaster" resultType="PageData">
+		SELECT is_master
+		FROM `web_user`
+		WHERE id=#{userId}
+	</select>
+	
+</mapper>

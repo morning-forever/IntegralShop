@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebRecommendMapper">
+	
+	<sql id="findWebSql">
+		SELECT wr.`id`,wr.`img_url`,wr.`from_type`,wr.`start_time`,wr.`end_time`,wr.`order_number`,wr.`is_enable`
+		FROM `web_recommend` AS wr
+		<if test=" fromTable !=null and fromTable !='' and fromTable == 'web_depth'">
+			INNER JOIN web_depth wd 
+		    ON wd.`id` = wr.`from_id` 
+		    AND wd.`state` = 'ADD'
+		</if>
+		WHERE wr.`from_table`=#{fromTable}
+		AND wr.state='ADD'
+		<if test=" startDate !=null and startDate !=''">
+			AND wr.`start_time` &gt;= '${startDate} 00:00:00'
+		</if>
+		<if test=" endDate !=null and endDate !=''">
+			AND wr.`end_time` &lt;= '${endDate} 23:59:59'
+		</if>
+		<if test=" fromType !=null and fromType !=''">
+			AND wr.`from_type` = #{fromType}
+		</if>
+		ORDER BY wr.`from_type`,wr.`order_number`
+	</sql>
+	
+	<select id="findWebCount" resultType="float">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findWebSql"></include>
+		) AS countResult
+	</select>
+	
+	<select id="findWebList" resultType="map">
+		<include refid="findWebSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<update id="updateEnable">
+		UPDATE `web_recommend` SET is_enable=#{state} WHERE id IN (${ids})
+	</update>
+	
+	<update id="deleteRecommend">
+		UPDATE `web_recommend` SET state='DEL' WHERE id IN (${ids})
+	</update>
+	
+	<select id="checkRecommend" resultType="integer">
+		SELECT id
+		FROM `web_recommend`
+		WHERE from_type=#{from_type} 
+		AND from_table=#{from_table}
+		AND recommend_where=1 
+		AND order_number=#{order_number}
+		AND state='ADD'
+		<if test=" id !='' and id !=null ">
+			AND id!=#{id}
+		</if>		
+	</select>
+	
+	<insert id="insertRecommend">
+		INSERT INTO `web_recommend`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		recommend_where=1,
+		from_table=#{from_table},
+		from_id=#{from_id},
+		order_number=#{order_number},
+		start_time=#{startDate},
+		end_time=#{endDate},
+		from_type=#{from_type},
+		img_url=#{url},
+		is_enable=#{isShelves}
+	</insert>
+	
+	<select id="findRecommendDetial" resultType="map">
+		SELECT wr.`id`,wr.`recommend_where`,wr.`from_id`,wr.`order_number`,
+		wr.`start_time`,wr.`end_time`,wr.`from_type`,wr.`img_url`,wr.`is_enable`,
+		wt.`title`
+		FROM `web_recommend` AS wr
+		LEFT JOIN `web_travels` AS wt ON wr.`from_id`=wt.`id`
+		WHERE wr.`id`=#{id}
+	</select>
+	
+	<select id="findDepthRecommendDetial" resultType="map">
+		SELECT 
+		  wr.`id`,
+		  wr.`recommend_where`,
+		  wr.`from_id`,
+		  wr.`order_number`,
+		  wr.`start_time`,
+		  wr.`end_time`,
+		  wr.`from_type`,
+		  wr.`img_url`,
+		  wr.`is_enable`,
+		  wd.`name` as title
+		FROM
+		  `web_recommend` AS wr 
+		  LEFT JOIN `web_depth` AS wd 
+		    ON wr.`from_id` = wd.`id` 
+		WHERE wr.`id` = #{id} 
+	</select>
+	
+	<update id="updateRecommend">
+		UPDATE `web_recommend`
+		SET update_time=NOW(),
+		from_id=#{from_id},
+		order_number=#{order_number},
+		start_time=#{startDate},
+		end_time=#{endDate},
+		from_type=#{from_type},
+		img_url=#{url},
+		is_enable=#{isShelves}
+		WHERE id=#{id}
+	</update>
+	
+	<select id="findTravelsRecommendList" resultType="map">
+		SELECT wt.`id`,wt.`id` as travelsId,wc.`name` AS addrName,wt.`title`,wu.`id` AS userId,
+		wu.`head_img`,wt.`price`,wr.`img_url`,wti.`context`,countReply.`count`,wu.`nickname`
+		FROM `web_recommend` AS wr
+		JOIN `web_travels` AS  wt ON wr.`from_id`=wt.`id` AND wr.`from_table`='web_travels' 
+		AND wr.`is_enable`=0 AND wr.`start_time` &lt; NOW() AND wr.`end_time` &gt; NOW()
+		AND wr.`from_type`=#{fromType}
+		LEFT JOIN `web_citys` AS wc ON wc.`id`=wt.`at_addr`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wt.`user_id`
+		LEFT JOIN `web_travels_item` AS wti ON wti.`travel_id`=wt.`id` AND wti.`item_type`='word'
+		LEFT JOIN (
+		SELECT COUNT(*) AS `count`,cwt.`user_id`
+		FROM `web_travels` AS cwt
+		WHERE cwt.`state`='ADD'
+		GROUP BY cwt.`user_id`
+		) AS countReply ON countReply.`user_id`=wt.`user_id`
+		WHERE wr.`order_number` &lt; #{orderNumber}
+		AND wr.`state`='ADD'
+		AND wt.`state`='ADD'
+		GROUP BY wt.`id`
+		ORDER BY wr.`order_number`
+	</select>
+	
+</mapper>

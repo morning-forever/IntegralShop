@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ProductMapper">
+	
+	<select id="getAdminScenicList" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  au.`username`,
+		  -- 商户名称
+		  mg.`number`,
+		  -- 商品ID
+		  mg.`title`,
+		  -- 商品标题
+		  mgs.`original_price`,
+		  -- 商品原价
+		  mgs.`current_price`,
+		  -- 商品现价
+		  mg.`sales_volume`,
+		  -- 销量
+		  mg.`used_volume`,
+		  -- 消费数量
+		  mg.`is_shelves` -- 上架状态
+		FROM
+		  merch_goods_scenic mgs -- 景点商品详情表
+		  INNER JOIN merch_goods mg -- 商户下商品主表
+		    ON mg.`id` = mgs.`goods_id` 
+		    AND mg.`goods_type` = 'scenic' 
+		    AND mg.`is_delete` = 0 
+		  LEFT JOIN merch_user mu -- 商户用户表
+		    ON mu.`id` = mg.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		WHERE 1 = 1 
+		<if test="username != null and username != '' ">
+			and au.`username` like  CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="productNo != null and productNo != '' ">
+			and mg.`number` = #{productNo}
+		</if>
+		<if test="title != null and title != '' ">
+			and mg.`title` like  CONCAT(CONCAT('%', #{title}),'%')
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			and mg.`is_shelves` = #{isShelves}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="getAdminScenicNum" resultType="Integer">
+		SELECT 
+		  COUNT(1)
+		FROM
+		  merch_goods_scenic mgs -- 景点商品详情表
+		  INNER JOIN merch_goods mg -- 商户下商品主表
+		    ON mg.`id` = mgs.`goods_id`
+		    AND mg.`goods_type` = 'scenic' 
+  		  	AND mg.`is_delete` = 0 
+		  LEFT JOIN merch_user mu -- 商户用户表
+		    ON mu.`id` = mg.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id`   
+		WHERE 1=1
+		<if test="username != null and username != '' ">
+			and au.`username` like  CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="productNo != null and productNo != '' ">
+			and mg.`number` = #{productNo}
+		</if>
+		<if test="title != null and title != '' ">
+			and mg.`title` like  CONCAT(CONCAT('%', #{title}),'%')
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			and mg.`is_shelves` = #{isShelves}
+		</if>
+	</select>
+	
+	<select id="getAdminHotelList" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  au.`username`,
+		  -- 商户名称
+		  mg.`number`,
+		  -- 商品ID
+		  mg.`title`,
+		  -- 商品标题
+		  mgh.`room_name`,
+		  -- 房型名(套餐名)
+		  mgh.`room_number`,
+		  -- 房间数
+		  mgh.`original_price`,
+		  -- 商品原价
+		  mgh.`current_price`,
+		  -- 商品现价
+		  mg.`sales_volume`,
+		  -- 销量
+		  mg.`is_shelves` -- 上架状态
+		FROM
+		  merch_goods_hotel mgh -- 酒店商品详情
+		  INNER JOIN merch_goods mg -- 商户下商品主表
+		    ON mg.`id` = mgh.`goods_id`
+		    AND mg.`goods_type` = 'hotel' 
+  		  	AND mg.`is_delete` = 0 
+		  LEFT JOIN merch_user mu -- 商户用户表
+		    ON mu.`id` = mg.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		  LEFT JOIN web_citys wc -- 城市表
+		    ON wc.`id` = mu.`at_addr` 
+		WHERE 1=1
+		<if test="createTime != null and createTime != '' ">
+			and DATE_FORMAT(mgh.`create_time`, '%Y-%m-%d') = str_to_date(#{createTime}, '%Y-%m-%d')
+		</if>
+		<if test="username != null and username != '' ">
+			and au.`username` like  CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="productNo != null and productNo != '' ">
+			and mg.`number` = #{productNo}
+		</if>
+		<if test="title != null and title != '' ">
+			and mg.`title` like  CONCAT(CONCAT('%', #{title}),'%')
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			and mg.`is_shelves` = #{isShelves}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="getAdminHotelNum" resultType="Integer">
+		SELECT 
+		  COUNT(1)
+		FROM
+		  merch_goods_hotel mgh -- 酒店商品详情
+		  INNER JOIN merch_goods mg -- 商户下商品主表
+		    ON mg.`id` = mgh.`goods_id`
+		    AND mg.`goods_type` = 'hotel' 
+  		  	AND mg.`is_delete` = 0 
+		  LEFT JOIN merch_user mu -- 商户用户表
+		    ON mu.`id` = mg.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		  LEFT JOIN web_citys wc -- 城市表
+		    ON wc.`id` = mu.`at_addr` 
+		WHERE 1=1
+		<if test="createTime != null and createTime != '' ">
+			and DATE_FORMAT(mgh.`create_time`, '%Y-%m-%d') = str_to_date(#{createTime}, '%Y-%m-%d')
+		</if>
+		<if test="username != null and username != '' ">
+			and au.`username` like  CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="productNo != null and productNo != '' ">
+			and mg.`number` = #{productNo}
+		</if>
+		<if test="title != null and title != '' ">
+			and mg.`title` like  CONCAT(CONCAT('%', #{title}),'%')
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			and mg.`is_shelves` = #{isShelves}
+		</if>
+	</select>
+	
+	<select id="getAdminCaterList" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  au.`username`,
+		  -- 商户名称
+		  mg.`number`,
+		  -- 商品ID
+		  mg.`title`,
+		  -- 商品标题
+		  mgc.`meal`,
+		  -- 套餐
+		  mgc.`original_price`,
+		  -- 商品原价
+		  mgc.`current_price`,
+		  -- 商品现价
+		  mg.`sales_volume`,
+		  -- 销量
+		  mg.`is_shelves` -- 上架状态
+		FROM
+		  merch_goods_cater mgc -- 餐饮商品详情
+		  INNER JOIN merch_goods mg -- 商户下商品主表
+		    ON mg.`id` = mgc.`goods_id`
+		    AND mg.`goods_type` = 'cater' 
+  		  	AND mg.`is_delete` = 0 
+		  LEFT JOIN merch_user mu -- 商户用户表
+		    ON mu.`id` = mg.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		  LEFT JOIN web_citys wc -- 城市表
+		    ON wc.`id` = mu.`at_addr` 
+		WHERE 1=1
+		<if test="createTime != null and createTime != '' ">
+			and DATE_FORMAT(mgc.`create_time`, '%Y-%m-%d') = str_to_date(#{createTime}, '%Y-%m-%d')
+		</if>
+		<if test="username != null and username != '' ">
+			and au.`username` like  CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="productNo != null and productNo != '' ">
+			and mg.`number` = #{productNo}
+		</if>
+		<if test="title != null and title != '' ">
+			and mg.`title` like  CONCAT(CONCAT('%', #{title}),'%')
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			and mg.`is_shelves` = #{isShelves}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="getAdminCaterNum" resultType="Integer">
+		SELECT 
+		  COUNT(1)
+		FROM
+		  merch_goods_cater mgc -- 餐饮商品详情
+		  INNER JOIN merch_goods mg -- 商户下商品主表
+		    ON mg.`id` = mgc.`goods_id`
+		    AND mg.`goods_type` = 'cater' 
+  		  	AND mg.`is_delete` = 0 
+		  LEFT JOIN merch_user mu -- 商户用户表
+		    ON mu.`id` = mg.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		  LEFT JOIN web_citys wc -- 城市表
+		    ON wc.`id` = mu.`at_addr` 
+		WHERE 1=1
+		<if test="createTime != null and createTime != '' ">
+			and DATE_FORMAT(mgc.`create_time`, '%Y-%m-%d') = str_to_date(#{createTime}, '%Y-%m-%d')
+		</if>
+		<if test="username != null and username != '' ">
+			and au.`username` like  CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="productNo != null and productNo != '' ">
+			and mg.`number` = #{productNo}
+		</if>
+		<if test="title != null and title != '' ">
+			and mg.`title` like  CONCAT(CONCAT('%', #{title}),'%')
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			and mg.`is_shelves` = #{isShelves}
+		</if>
+	</select>
+	
+	<select id="getAdminEquipList" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  au.`username`,
+		  -- 商户名称
+		  mg.`number`,
+		  -- 商品ID
+		  mg.`title`,
+		  -- 商品标题
+		  mge.`spec`,
+		  -- 规格
+		  mge.`original_price`,
+		  -- 商品原价
+		  mge.`current_price`,
+		  -- 商品现价
+		  mge.`volume`,
+		  -- 数量
+		  mg.`sales_volume`,
+		  -- 销量
+		  mg.`is_shelves` -- 上架状态
+		FROM
+		  merch_goods_equip mge -- 装备商品详情
+		  INNER JOIN merch_goods mg -- 商户下商品主表
+		    ON mg.`id` = mge.`goods_id`
+		    AND mg.`goods_type` = 'equip' 
+  		  	AND mg.`is_delete` = 0 
+		  LEFT JOIN merch_user mu -- 商户用户表
+		    ON mu.`id` = mg.`merch_user_id`
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id`  
+		  LEFT JOIN web_citys wc -- 城市表
+		    ON wc.`id` = mu.`at_addr` 
+		WHERE 1=1
+		<if test="createTime != null and createTime != '' ">
+			and DATE_FORMAT(mge.`create_time`, '%Y-%m-%d') = str_to_date(#{createTime}, '%Y-%m-%d')
+		</if>
+		<if test="username != null and username != '' ">
+			and au.`username` like  CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="productNo != null and productNo != '' ">
+			and mg.`number` = #{productNo}
+		</if>
+		<if test="title != null and title != '' ">
+			and mg.`title` like  CONCAT(CONCAT('%', #{title}),'%')
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			and mg.`is_shelves` = #{isShelves}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="getAdminEquipNum" resultType="Integer">
+		SELECT 
+		  COUNT(1)
+		FROM
+		  merch_goods_equip mge -- 装备商品详情
+		  INNER JOIN merch_goods mg -- 商户下商品主表
+		    ON mg.`id` = mge.`goods_id`
+		    AND mg.`goods_type` = 'equip' 
+  		  	AND mg.`is_delete` = 0 
+		  LEFT JOIN merch_user mu -- 商户用户表
+		    ON mu.`id` = mg.`merch_user_id` 
+		  LEFT JOIN admin_user au 
+		    ON au.`id` = mu.`admin_id` 
+		  LEFT JOIN web_citys wc -- 城市表
+		    ON wc.`id` = mu.`at_addr` 
+		WHERE 1=1
+		<if test="createTime != null and createTime != '' ">
+			and DATE_FORMAT(mge.`create_time`, '%Y-%m-%d') = str_to_date(#{createTime}, '%Y-%m-%d')
+		</if>
+		<if test="username != null and username != '' ">
+			and au.`username` like  CONCAT(CONCAT('%', #{username}),'%')
+		</if>
+		<if test="productNo != null and productNo != '' ">
+			and mg.`number` = #{productNo}
+		</if>
+		<if test="title != null and title != '' ">
+			and mg.`title` like  CONCAT(CONCAT('%', #{title}),'%')
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			and mg.`is_shelves` = #{isShelves}
+		</if>
+	</select>
+	
+	<select id="getEquipById" resultType="PageData">
+		SELECT id, spec, original_price, current_price, volume from merch_goods_equip mge where mge.`goods_id` = #{goodsId}
+	</select>
+	
+</mapper>

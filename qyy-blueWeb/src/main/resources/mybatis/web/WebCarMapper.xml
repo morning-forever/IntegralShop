@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarMapper">
+
+	<!-- 新增车辆信息 -->
+	<insert id="insertCar" useGeneratedKeys="true" keyProperty="carId">
+		insert into web_car
+		(create_time, car_card, brand_id, sys_id, car_year, car_configure, counts, is_shelves, car_type, seating)
+		values
+		(NOW(), #{carCard}, #{brandId}, #{sysId}, #{carYear}, #{carConfigure}, #{counts}, #{isShelves}, #{carType}, #{seating})
+	</insert>
+	
+	<!-- 更新车辆信息 -->
+	<update id="updateCar">
+		update `web_car` set update_time = NOW()
+		<if test="carCard != null and carCard != '' ">
+			, car_card = #{carCard}
+		</if>
+		<if test="brandId != null and brandId != '' ">
+			, brand_id = #{brandId}
+		</if>
+		<if test="sysId != null and sysId != '' ">
+			, sys_id = #{sysId}
+		</if>
+		<if test="carYear != null and carYear != '' ">
+			, car_year = #{carYear}
+		</if>
+		<if test="carConfigure != null and carConfigure != '' ">
+			, car_configure = #{carConfigure}
+		</if>
+		<if test="counts != null and counts != '' ">
+			, counts = #{counts}
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			, is_shelves = #{isShelves}
+		</if>
+		<if test="carType != null and carType != '' ">
+			, car_type = #{carType}
+		</if>
+		<if test="seating != null and seating != '' ">
+			, seating = #{seating}
+		</if>
+		where id = #{carId}
+	</update>
+	
+	<select id="queryById" resultType="PageData">
+		select id, create_time, car_card, brand_id, sys_id, car_year, car_configure, counts, is_shelves, car_type, seating 
+		from `web_car` where id = #{carId}
+	</select>
+	
+	<select id="findCarBus" resultType="map">
+		SELECT wcb.`id`,swca.`store` AS startStore,ewca.`store` AS endStore,wcr.`from_time`,wcr.`to_time`
+		FROM `web_car_bus` AS  wcb
+		JOIN `web_car_route` AS wcr ON wcr.`bus_id`=wcb.`id`
+		JOIN `web_car_addrs` AS swca ON wcr.`from_addr_id`=swca.`id`
+		JOIN `web_car_addrs` AS ewca ON wcr.`to_addr_id`=ewca.`id`
+		WHERE wcb.`id`=#{id}
+	</select>
+	
+	<select id="findCarPool" resultType="map">
+		SELECT wcc.`id`,wcc.`create_time`,wcc.`start_time`,swc.`name` AS startCity,ewc.`name` AS endCity
+		FROM `web_car_carpool` AS wcc
+		JOIN `web_citys` AS swc ON wcc.`start_city_id`=swc.`id`
+		JOIN `web_citys` AS ewc ON wcc.`end_city_id`=ewc.`id`
+		WHERE wcc.`id`=#{id}
+	</select>
+
+
+</mapper>

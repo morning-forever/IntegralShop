@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="MerchRestaurantMapper">
+	
+	<resultMap type="MerchRestaurant" id="MerchRestaurantMap">
+		<id column="id" property="id" />
+		<result column="name" property="name" />
+	</resultMap>
+	
+	<select id="allList" resultMap="MerchRestaurantMap">
+		SELECT * FROM `merch_restaurant`
+	</select>
+	
+	<select id="getAdminList" resultType="PageData">
+		SELECT id, name FROM `merch_restaurant` where 1=1
+		<if test="caterId != null and caterId != '' ">
+			and id = #{caterId}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="getAdminResultNum" resultType="Integer">
+		SELECT COUNT(1) FROM `merch_restaurant` where 1=1
+		<if test="caterId != null and caterId != '' ">
+			and id = #{caterId}
+		</if>
+		<if test="caterName != null and caterName != '' ">
+			and name = #{caterName}
+		</if>
+	</select>
+	
+	<select id="getById" parameterType="Long" resultType="PageData">
+		select id, name from `merch_restaurant` where 1 = 1 
+		<if test="_parameter != null and _parameter > 0">
+			and id = #{_parameter}
+		</if>
+	</select>
+	
+	<!-- 更新 -->
+	<update id="update" >
+		update merch_restaurant set
+		<if test="caterId != null and caterId != ''">
+			id = #{caterId}
+		</if>
+		<if test="caterName != null and caterName != '' ">
+			,name = #{caterName}
+		</if>
+		where id = #{id}
+	</update>
+
+	<delete id="delete">
+		delete from merch_restaurant where id = #{id}
+	</delete>
+
+	<insert id="insert">
+		insert into merch_restaurant (name)
+		value(#{caterName});
+	</insert>
+	
+	
+</mapper>

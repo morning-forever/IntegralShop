@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebDepthSubjectMapper">
+	
+	<!-- 获取所有列表 -->
+	<select id="allList" resultType="PageData">
+		SELECT id, subject FROM `web_depth_subject`
+	</select>
+	
+	<!-- 后台查询列表 分页 -->
+	<select id="getAdminList" resultType="PageData">
+		SELECT id, subject FROM `web_depth_subject` where 1=1
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<!-- 后台查询总数 -->
+	<select id="getAdminResultNum" resultType="Integer">
+		SELECT COUNT(1) FROM `web_depth_subject` where 1=1
+		<if test="subjectId != null and subjectId != ''">
+			and id != #{subjectId}
+		</if>
+		<if test="subjectName != null and subjectName != '' ">
+			and subject = #{subjectName}
+		</if>
+	</select>
+	
+	<!-- 查询明细 -->
+	<select id="getById" resultType="PageData">
+		select id, subject from `web_depth_subject` where id = #{id}
+	</select>
+	
+	<!-- 更新 -->
+	<update id="update" >
+		update web_depth_subject set subject = #{subjectName}
+		where id = #{id}
+	</update>
+
+	<!-- 删除 -->
+	<delete id="delete">
+		delete from web_depth_subject where id = #{id}
+	</delete>
+
+	<!-- 新增 -->
+	<insert id="insert">
+		insert into web_depth_subject (create_time, subject)
+		value(NOW(), #{subjectName});
+	</insert>
+	
+	<!-- 新增深度游主题 -->
+	<insert id="insertDepthSubject">
+		insert into web_depth_subject_ct 
+		(create_time, subject_id, depth_id)
+		values
+		(NOW(), #{subjectId}, #{depthId})
+	</insert>
+	
+	<!-- 删除深度游对应主题 -->
+	<delete id="deleteDepthSubject">
+		delete from web_depth_subject_ct where depth_id = #{depthId}
+	</delete>
+	
+</mapper>

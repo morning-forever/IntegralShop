@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebDepthMapper">
+   
+   <resultMap type="WebDepth" id="WebDepthResultMap">
+		<id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="update_time" property="updateTime" />
+		<result column="subject_id" property="subjectId" />
+		<result column="at_addr" property="atAddr" />
+		<result column="days" property="days" />
+		<result column="adult_price" property="adultPrice" />
+		<result column="child_price" property="childPrice" />
+		<result column="expon" property="expon" />
+		<result column="azimuth_id" property="azimuthId" />
+		<result column="admin_user_id" property="adminUserId" />
+		<result column="subject" property="subject" />
+	</resultMap>
+   
+   <select id="getResultNum" resultType="Integer">
+		select count(a.id)
+		from web_depth_subject as a
+		where 1 = 1
+		<if test="name != null and name != ''">
+			and a.subject like  CONCAT(CONCAT('%', #{name}),'%')
+		</if>
+	</select>
+	
+	<select id="findWebDepthListPage" resultMap="WebDepthResultMap">
+		select
+
+        a.id,a.state,a.create_time,a.update_time,a.subject
+        
+		from web_depth_subject as a 
+		
+		where 1 = 1
+		<if test="name != null and name != ''">
+			and a.subject like  CONCAT(CONCAT('%', #{name}),'%')
+		</if>
+		order by a.id asc
+		<if test="showLine != null and showLine != ''">
+			limit #{startLine} , #{showLine}
+		</if>
+	</select>
+	
+	<!-- 获取天数列表 -->
+	<select id="dayList" resultType="PageData">
+		SELECT days from web_depth wd WHERE wd.`state` = 'ADD' AND wd.`is_shelves` = 0 group by days
+	</select>
+	
+	<!-- 获取深度游列表 分页 -->
+	<select id="getDepthList" resultType="PageData">
+		SELECT 
+		  wd.`id`,
+		  wd.`name`,
+		  wd.`expon`,
+		  wd.`sale_num`,
+		  wd.`adult_price`,
+		  wd.`child_price`,
+		  IFNULL(
+		    cu.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS picUrl,
+		  FORMAT( rateTab.goodNum / scoreTab.evaluateNum * 100 , 2 ) AS goodsRate,
+		  IFNULL(collectTab.collectNum, 0) AS collectNum
+		FROM
+		  web_depth wd 
+		  LEFT JOIN web_depth_azimuth wda 
+		    ON wda.id = wd.azimuth_id 
+		  LEFT JOIN web_depth_subject_ct wdsc 
+		    ON wdsc.depth_id = wd.id 
+		  LEFT JOIN web_depth_subject wds 
+		    ON wdsc.subject_id = wds.id 
+		  LEFT JOIN web_depth_addr_ct wdac 
+		    ON wdac.depth_id = wd.id 
+		  LEFT JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  LEFT JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wdac.addr_id 
+		  LEFT JOIN common_upload cu 
+		    ON cu.pic_from = 'depth' 
+		    AND cu.pic_type = #{picType} 
+		    AND cu.from_id = wd.id
+		  LEFT JOIN 
+		    (SELECT 
+		      we.`form_id`,
+		      COUNT(we.id) AS evaluateNum
+		    FROM
+		      web_evaluate we 
+		    WHERE we.`forms` = 'depth' 
+		      AND we.state = 'ADD' 
+		    GROUP BY we.`form_id`) scoreTab 
+		    ON scoreTab.form_id = wd.`id` 
+		  LEFT JOIN 
+		    (SELECT 
+		      we.`form_id`,
+		      COUNT(we.id) AS goodNum 
+		    FROM
+		      web_evaluate we 
+		    WHERE we.`forms` = 'depth' 
+		      AND we.state = 'ADD' 
+		      AND we.score >= 3 
+		    GROUP BY we.`form_id`) rateTab 
+		    ON rateTab.form_id = wd.`id` 
+		  LEFT JOIN 
+		    (SELECT 
+		      wuc.`from_id`,
+		      COUNT(wuc.`id`) AS collectNum 
+		    FROM
+		      web_user_collection wuc 
+		    WHERE wuc.from_table = 'web_depth' 
+		    GROUP BY wuc.`from_id`) collectTab 
+		    ON collectTab.from_id = wd.`id` 
+		WHERE wd.state = 'ADD' 
+		  AND wd.is_shelves = 0
+		<if test="cityIds != null and cityIds != '' "> 
+			and wdac.addr_id in (${cityIds})
+		</if>
+		<if test="azimuthIds != null and azimuthIds != '' "> 
+			and wda.id in (${azimuthIds})
+		</if>
+		<if test="subjectIds != null and subjectIds != '' "> 
+			and wds.id in (${subjectIds})
+		</if>
+		<if test="days != null and days != '' ">
+			and wd.`days` = #{days}
+		</if>
+		<if test="priceStart != null and priceStart != '' ">
+			and wd.`adult_price` &gt;= #{priceStart}
+		</if>
+		<if test="priceEnd != null and priceEnd != '' ">
+			and wd.`adult_price` &lt;= #{priceEnd}
+		</if>
+		GROUP BY wd.id 
+		<if test="orderBy != null and orderBy=='hot' ">
+			order by wd.click_num desc
+		</if>
+		<if test="orderBy != null and orderBy=='evaluate' ">
+			order by goodsRate desc
+		</if>
+		<if test="orderBy != null and orderBy=='time' ">
+			order by wd.create_time desc
+		</if>
+		<if test="orderBy != null and orderBy=='sale' ">
+			order by wd.`sale_num` desc
+		</if>
+		<if test="orderBy != null and orderBy=='priceUp' ">
+			order by wd.`adult_price` asc
+		</if>
+		<if test="orderBy != null and orderBy=='priceDown' ">
+			order by wd.`adult_price` desc
+		</if>
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 获取列表总数 -->
+	<select id="getDepthListTotal" resultType="Long">
+		select count(1) from	
+		(SELECT 
+			wd.`id`,
+		    wd.`name`,
+		    wd.`expon`,
+		    wd.`sale_num`,
+		    wd.`adult_price`,
+		    wd.`child_price` 
+		FROM
+		  web_depth wd 
+		  LEFT JOIN web_depth_azimuth wda 
+		    ON wda.id = wd.azimuth_id 
+		  LEFT JOIN web_depth_subject_ct wdsc 
+		    ON wdsc.depth_id = wd.id 
+		  LEFT JOIN web_depth_subject wds 
+		    ON wdsc.subject_id = wds.id 
+		  LEFT JOIN web_depth_addr_ct wdac 
+		    ON wdac.depth_id = wd.id 
+		  LEFT JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  LEFT JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wdac.addr_id 
+		WHERE wd.state = 'ADD' 
+		  AND wd.is_shelves = 0 
+		<if test="cityIds != null and cityIds != '' "> 
+			and wdac.addr_id in (${cityIds})
+		</if>
+		<if test="azimuthIds != null and azimuthIds != '' "> 
+			and wda.id in (${azimuthIds})
+		</if>
+		<if test="subjectIds != null and subjectIds != '' "> 
+			and wds.id in (${subjectIds})
+		</if>
+		<if test="days != null and days != '' ">
+			and wd.`days` = #{days}
+		</if>
+		<if test="priceStart != null and priceStart != '' ">
+			and wd.`adult_price` &gt;= #{priceStart}
+		</if>
+		<if test="priceEnd != null and priceEnd != '' ">
+			and wd.`adult_price` &lt;= #{priceEnd}
+		</if>
+		GROUP BY wd.id) tb 
+	</select>
+	
+	<!-- 根据id获取深度游详情 -->
+	<select id="getDepthById" resultType="PageData">
+		SELECT 
+		  wd.`id`,
+		  wd.`name`,
+		  wd.`expon`,
+		  CAST( IFNULL( wdp.`adult_price`, '暂无' ) AS CHAR) AS adult_price,  
+		  CAST( IFNULL( wdp.`child_price`, '暂无' ) AS CHAR) AS child_price,
+		  wd.`sale_num`,
+		  wd.`label`,
+		  GROUP_CONCAT(wc2.`name` SEPARATOR '/') AS addrNames,
+		  IFNULL(
+		    cu1.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS coverUrl,
+		  IFNULL(
+		    cu2.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS tripUrl,
+		  IFNULL(collectTab.collectNum, 0) AS collectNum,
+		  IFNULL(scoreTab.evaluateNum, 0) AS evaluateNum,
+		  FORMAT( IFNULL(scoreTab.avgScore, 0), 1) AS avgScore,
+		  FORMAT( IFNULL(rateTab.goodNum,0 ) / IFNULL(scoreTab.evaluateNum,0 ) * 100, 2)  AS goodsRate,
+		  IFNULL(wuc.`id`, 0) AS isCollected  
+		FROM
+		  web_depth wd 
+		  LEFT JOIN common_upload cu1 
+		    ON cu1.pic_from = 'depth' 
+		    AND cu1.pic_type = #{picType1}
+		    AND cu1.from_id = wd.id 
+		  LEFT JOIN common_upload cu2 
+		    ON cu2.pic_from = 'depth' 
+		    AND cu2.pic_type = #{picType2}
+		    AND cu2.from_id = wd.id 
+		  LEFT JOIN web_depth_addr_ct wdac 
+		    ON wdac.depth_id = wd.id 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wdac.addr_id 
+		  LEFT JOIN web_user_collection wuc 
+		    ON wuc.`from_table` = 'web_depth' 
+		    AND wuc.`from_id` = wd.`id` 
+		    AND wuc.`user_id` = #{userId} 
+		  LEFT JOIN web_depth_prices wdp 
+		    ON wdp.`depth_id` = wd.`id` 
+		    AND wdp.`price_time` = DATE_FORMAT(DATE_ADD(NOW(),INTERVAL 1 DAY), '%y-%m-%d') 
+		  LEFT JOIN 
+		    (SELECT 
+		      we.`form_id`,
+		      COUNT(we.id) AS evaluateNum,
+		      SUM(we.score) / COUNT(we.id) AS avgScore 
+		    FROM
+		      web_evaluate we 
+		    WHERE we.`forms` = 'depth' 
+		      AND we.state = 'ADD' 
+		    GROUP BY we.`form_id`) scoreTab 
+		    ON scoreTab.form_id = wd.`id` 
+		  LEFT JOIN 
+		    (SELECT 
+		      we.`form_id`,
+		      COUNT(we.id) AS goodNum 
+		    FROM
+		      web_evaluate we 
+		    WHERE we.`forms` = 'depth' 
+		      AND we.state = 'ADD' 
+		      AND we.score >= 3 
+		    GROUP BY we.`form_id`) rateTab 
+		    ON rateTab.form_id = wd.`id` 
+		  LEFT JOIN 
+		    (SELECT 
+		      wuc.`from_id`,
+		      COUNT(wuc.`id`) AS collectNum 
+		    FROM
+		      web_user_collection wuc 
+		    WHERE wuc.from_table = 'web_depth' 
+		    GROUP BY wuc.`from_id`) collectTab 
+		    ON collectTab.from_id = wd.`id` 
+		WHERE wd.`id` = #{depthId} 
+	</select>
+	
+	<!-- 获取6个推荐列表 -->
+	<select id="getRecommendList" resultType="PageData">
+		SELECT 
+		  wd.`id`,
+		  wd.`name`,
+		  wd.adult_price,
+		  wd.child_price,
+		  wd.expon,
+		  wd.sale_num,
+		  (SELECT 
+		    COUNT(1) 
+		  FROM
+		    web_user_collection wuc 
+		  WHERE wuc.from_table = 'web_depth' 
+		    AND wuc.from_id = wd.id) AS collectNum,
+		  IFNULL(
+		    wr.`img_url`,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS picUrl,
+		  (SELECT 
+		    COUNT(1) 
+		  FROM
+		    web_praise wp 
+		  WHERE wp.`form_table` = 'web_depth' 
+		    AND wp.`form_id` = wd.`id` 
+		    AND wp.`web_user_id` = #{userId}) AS isPraise  
+		FROM
+		  web_depth wd 
+		  INNER JOIN web_recommend wr 
+		    ON wr.`from_id` = wd.`id` 
+		    AND wr.`from_table` = 'web_depth' 
+		    AND wr.`is_enable` = 0 
+    		AND wr.`start_time` &lt;= NOW() 
+    		AND wr.`end_time` &gt;= NOW()
+    		AND wr.`state` = 'ADD'
+		  WHERE wd.state = 'ADD' 
+		  AND wd.is_shelves = 0
+		  ORDER BY wr.order_number 
+	</select>
+	
+	<insert id="insertDepthOrder">
+		insert into web_order_depth 
+		(create_time, start_time, adult_price, child_price, start_addr_id, person_name, person_phone, order_from_id)
+		values
+		(NOW(), #{startTime}, #{adultPrice}, #{childPrice}, #{startAddrId}, #{personName}, #{personPhone}, #{orderFormId})
+	</insert>
+	
+	<!-- 修改点击量+1 -->
+	<update id="updateClickNum">
+		UPDATE web_depth wd SET wd.`click_num`  = wd.`click_num` + 1 where id = #{depthId};
+	</update>
+	
+	<!-- 获取收藏的主题深度游列表 -->
+	<select id="findDepthCollection" resultType="PageData">
+		SELECT 
+		  wd.`id`,
+		  wd.`name`,
+		  wd.`adult_price`,
+		  wuc.`create_time`,
+		  IFNULL(
+		    cu.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS picUrl 
+		FROM
+		  web_depth wd 
+		  JOIN web_user_collection wuc 
+		    ON wuc.`user_id` = #{userId} 
+		    AND wuc.`from_table` = 'web_depth' 
+		    AND wuc.`from_id`=wd.`id`
+		  LEFT JOIN common_upload cu 
+		    ON cu.pic_from = 'depth' 
+		    AND cu.pic_type = #{picType} 
+		    AND cu.from_id = wd.id 
+		WHERE wd.state = 'ADD' 
+		  AND wd.is_shelves = 0
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 后台获取深度游列表 -->
+	<select id="getAdminDepthList" resultType="PageData">
+		SELECT 
+		  wd.`id`,
+		  wd.`name`,
+		  wd.`expon`,
+		  wd.`sale_num`,
+		  wd.`adult_price`,
+		  wd.`child_price`,
+		  wd.days,
+		  wd.label,
+		  wda.azimuth,
+		  wd.is_shelves
+		FROM
+		  web_depth wd 
+		  LEFT JOIN web_depth_azimuth wda 
+		    ON wda.id = wd.azimuth_id 
+		  LEFT JOIN web_depth_subject_ct wdsc 
+		    ON wdsc.depth_id = wd.id 
+		  LEFT JOIN web_depth_subject wds 
+		    ON wdsc.subject_id = wds.id 
+		  LEFT JOIN web_depth_addr_ct wdac 
+		    ON wdac.depth_id = wd.id 
+		  LEFT JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  LEFT JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wdac.addr_id 
+		WHERE wd.state = 'ADD'
+		<if test="depthName != null and depthName != '' ">
+			and wd.`name` like  CONCAT(CONCAT('%', #{depthName}),'%')
+		</if>
+		<if test="cityId != null and cityId != '' ">
+			and wc2.id = #{cityId}
+		</if>
+		<if test="subjectId != null and subjectId != '' ">
+			and wds.id  = #{subjectId}
+		</if>
+		<if test="azimuthId != null and azimuthId != '' ">
+			and wda.id  = #{azimuthId}
+		</if>
+		<if test="expon != null and expon != '' ">
+			and wd.expon  = #{expon}
+		</if>
+		<if test="days != null and days != '' ">
+			and wd.`days` = #{days}
+		</if>
+		<if test="adultPrice != null and adultPrice != '' ">
+			and wd.`adult_price` = #{adultPrice}
+		</if>
+		<if test="childPrice != null and childPrice != '' ">
+			and wd.`child_price` = #{childPrice}
+		</if>
+		<if test=" isShelves != null and isShelves != '' ">
+			and wd.`is_shelves` = #{isShelves}
+		</if>
+		GROUP BY wd.id 
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 后台获取深度游 总数 -->
+	<select id="getAdminDepthListCount" resultType="Integer">
+		select count(1) from 
+		(SELECT 
+			wd.id 
+		FROM
+		  web_depth wd 
+		  LEFT JOIN web_depth_azimuth wda 
+		    ON wda.id = wd.azimuth_id 
+		  LEFT JOIN web_depth_subject_ct wdsc 
+		    ON wdsc.depth_id = wd.id 
+		  LEFT JOIN web_depth_subject wds 
+		    ON wdsc.subject_id = wds.id 
+		  LEFT JOIN web_depth_addr_ct wdac 
+		    ON wdac.depth_id = wd.id 
+		  LEFT JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  LEFT JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wdac.addr_id 
+		WHERE wd.state = 'ADD'
+		<if test="depthName != null and depthName != '' ">
+			and wd.`name` like  CONCAT(CONCAT('%', #{depthName}),'%')
+		</if>
+		<if test="cityId != null and cityId != '' ">
+			and wc2.id = #{cityId}
+		</if>
+		<if test="subjectId != null and subjectId != '' ">
+			and wds.id  = #{subjectId}
+		</if>
+		<if test="azimuthId != null and azimuthId != '' ">
+			and wda.id  = #{azimuthId}
+		</if>
+		<if test="expon != null and expon != '' ">
+			and wd.expon  = #{expon}
+		</if>
+		<if test="days != null and days != '' ">
+			and wd.`days` = #{days}
+		</if>
+		<if test="adultPrice != null and adultPrice != '' ">
+			and wd.`adult_price` = #{adultPrice}
+		</if>
+		<if test="childPrice != null and childPrice != '' ">
+			and wd.`child_price` = #{childPrice}
+		</if>
+		<if test=" isShelves != null and isShelves != '' ">
+			and wd.`is_shelves` = #{isShelves}
+		</if>
+		group by id ) tb 
+	</select>
+
+	<!-- 根据深度游id获取所在地名称 拼接 -->
+	<select id="findAddrNamesByDepthId" resultType="String">
+		SELECT 
+		  GROUP_CONCAT(wc2.`name` SEPARATOR ';') as addrNames
+		FROM
+		  web_depth_addr_ct wdac 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wdac.addr_id 
+		WHERE wdac.`depth_id` = #{depthId}
+	</select>
+	
+	<!-- 根据深度游id获取所在地名称 拼接 -->
+	<select id="findSubjectNamesByDepthId" resultType="String">
+		SELECT 
+		  GROUP_CONCAT(wds.`subject` SEPARATOR ';') as subjectNames
+		FROM
+		  web_depth_subject_ct wdsc 
+		  LEFT JOIN web_depth_subject wds 
+		    ON wdsc.subject_id = wds.id 
+		WHERE wdsc.depth_id = #{depthId}
+	</select>
+	
+	<!-- 新增深度游 -->
+	<insert id="insert" useGeneratedKeys="true" keyProperty="depthId">
+		insert into web_depth
+		(create_time, name, days, adult_price, child_price, expon, azimuth_id, admin_user_id, label)
+		values
+		(NOW(), #{depthName}, #{days}, #{adultPrice}, #{childPrice}, #{expon}, #{azimuthId}, #{adminId}, #{label})
+	</insert>
+	
+	<!-- 更新深度游 -->
+	<update id="update">
+		update web_depth wd set update_time = NOW()
+		<if test="depthName != null and depthName != '' ">
+			, wd.`name` = #{depthName}
+		</if>
+		<if test="days != null and days != '' ">
+			, wd.`days` = #{days}
+		</if>
+		<if test="adultPrice != null and adultPrice != '' ">
+			, wd.`adult_price` = #{adultPrice}
+		</if>
+		<if test="childPrice != null and childPrice != '' ">
+			, wd.`child_price` = #{childPrice}
+		</if>
+		<if test="expon != null and expon != '' ">
+			, wd.`expon` = #{expon}
+		</if>
+		<if test="azimuthId != null and azimuthId != '' ">
+			, wd.`azimuth_id` = #{azimuthId}
+		</if>
+		<if test="label != null and label != '' ">
+			, wd.`label` = #{label}
+		</if>
+		<if test="adminId != null and adminId != '' ">
+			, wd.`admin_user_id` = #{adminId}
+		</if>
+		<if test="isShelves != null and isShelves != '' ">
+			, wd.`is_shelves` = #{isShelves}
+		</if>
+		where wd.id = #{depthId}
+	</update>
+	
+	<!-- 后台查询深度游明细 -->
+	<select id="findAdminDepthById" resultType="PageData">
+		SELECT 
+		  wd.`id`,
+		  wd.`name`,
+		  wd.`expon`,
+		  wd.`adult_price`,
+		  wd.`child_price`,
+		  wd.`sale_num`,
+		  wd.`label`,
+		  wd.days,
+		  wd.azimuth_id,
+		  wd.label,
+		  CONCAT(',', wdac.addrIds, ',') AS addrIds,
+  		  CONCAT(',', wdsc.subjectIds, ',') AS subjectIds,
+		  IFNULL(
+		    cu1.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS webCoverUrl,
+		  IFNULL(
+		    cu2.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS appCoverUrl 
+		FROM
+		  web_depth wd 
+		  LEFT JOIN common_upload cu1 
+		    ON cu1.pic_from = 'depth' 
+		    AND cu1.pic_type = 'webCover' 
+		    AND cu1.from_id = wd.id 
+		  LEFT JOIN common_upload cu2 
+		    ON cu2.pic_from = 'depth' 
+		    AND cu2.pic_type = 'appCover' 
+		    AND cu2.from_id = wd.id 
+		  LEFT JOIN 
+		    (SELECT 
+		      depth_id,
+		      GROUP_CONCAT(
+		        CAST(`addr_id` AS CHAR) SEPARATOR ','
+		      ) AS addrIds 
+		    FROM
+		      web_depth_addr_ct 
+		    GROUP BY depth_id) AS wdac 
+		    ON depth_id = wd.id 
+		  LEFT JOIN 
+		    (SELECT 
+		      depth_id,
+		      GROUP_CONCAT(
+		        CAST(`subject_id` AS CHAR) SEPARATOR ','
+		      ) AS subjectIds 
+		    FROM
+		      web_depth_subject_ct 
+		    GROUP BY depth_id) AS wdsc 
+		    ON wdsc.`depth_id` = wd.`id` 
+		WHERE wd.`id` = #{depthId}  
+	</select>
+	
+	<!-- 短信接口 -->
+	<select id="findOrderMes" resultType="PageData">
+		SELECT 
+		  wof.`create_time`,
+		  wof.`order_code`,
+		  wod.`start_time`,
+		  ADDDATE(
+		    wod.`start_time`,
+		    INTERVAL (wd.`days` - 1) DAY
+		  ) AS end_time,
+		  woi.`real_price`,
+		  wd.`name`,
+		  wod.`person_name`,
+  		  wod.`person_phone`,
+  		  woi.`goods_id` AS goodsId
+		FROM
+		  web_order_form wof 
+		  JOIN web_order_item woi 
+		    ON woi.`form_id` = wof.`id` 
+		  JOIN web_order_depth wod 
+		    ON wod.`order_from_id` = wof.`id` 
+		  JOIN web_depth wd 
+		    ON wd.`id` = woi.`goods_id` 
+		WHERE wof.`id` = #{orderId}
+	</select>
+	
+	<!-- 深度游销量+1 -->
+	<update id="updateDepthSaleNum">
+		UPDATE web_depth wd SET wd.`sale_num` = wd.`sale_num` + 1 WHERE wd.`id` = #{depthId}
+	</update>
+	
+	<!-- 获取所有的交通工具方式列表 -->
+	<select id="findToolList" resultType="PageData">
+		select id, name from web_depth_tool
+	</select>
+	
+	<!-- 删除深度游 -->
+	<update id="deleteDepth">
+		update web_depth set state = 'DELETE' where id = #{depthId}
+	</update>
+	
+	<!-- 上架和下架 -->
+	<update id="onOffLine">
+		update web_depth set is_shelves = #{isShelves} where id = #{depthId}
+	</update>
+	
+	<!-- 获取所有未评价过的，且当前时间大于出发时间，即可以评价的订单列表 -->
+	<select id="findCommentOrderList" resultType="PageData">
+		SELECT 
+		  wof.`id`,
+		  wof.`order_code`,
+		  wof.`user_id`,
+		  wod.`start_time` 
+		FROM
+		  web_order_form wof 
+		  INNER JOIN web_order_depth wod 
+		    ON wod.`order_from_id` = wof.`id` 
+		WHERE wof.`is_delete` = 0 
+		  AND wof.`order_type` = 'depth' 
+		  AND wof.`is_evaluate`  = 1
+		  AND wof.`order_state` = 'PAY_OK'
+		  AND wod.`is_notice` = 1 
+		  AND wod.`start_time` &lt;= NOW()
+	</select>
+	
+	<!-- 修改订单状态为已通知 -->
+	<update id="updateOrderNotice">
+		UPDATE web_order_depth wod SET wod.`is_notice` = 0 WHERE wod.`order_from_id` = #{id}
+	</update>
+	
+</mapper>

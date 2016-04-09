@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebFeedbackMapper">
+	
+	<!-- 添加反馈信息 -->
+	<insert id="addFeedback" parameterType="PageData">
+		INSERT web_feedback (create_time,email,phone,username,message
+		<if test="userId != null and userId != ''">
+			,user_id		
+		</if>
+		)
+		VALUES (NOW(),#{email},#{phone},#{username},#{message}
+		<if test="userId != null and userId != ''">
+			,#{userId}
+		</if>
+		);
+	</insert>
+	
+	<select id="findFeedbackList" resultType="PageData" parameterType="PageData">
+		SELECT  wf.id, DATE_FORMAT(wf.create_time,'%Y-%m-%d %H:%i:%s') createTime, wf.email, wf.phone, wf.username, wf.message 
+		,IFNULL(wu.email,wu.phone) account
+		FROM web_feedback wf
+		LEFT JOIN web_user wu ON wu.id = wf.user_id
+		WHERE 1=1 
+		
+		<if test=" startTime != null and startTime != '' ">
+			AND wf.create_time &gt; DATE('${startTime}')
+		</if>
+		<if test=" endTime != null and endTime != '' ">
+			AND wf.create_time &lt; DATE('${endTime}')
+		</if>
+		 
+		LIMIT ${startLine} , ${showLine}
+		;	
+	</select>
+	
+	
+	<select id="findFeedbackListCount" resultType="Integer" parameterType="PageData">
+		SELECT COUNT(*)
+		FROM web_feedback wf
+		LEFT JOIN web_user wu ON wu.id = wf.user_id
+		WHERE 
+		1=1
+		<if test=" startTime != null and startTime != '' ">
+			AND wf.create_time &gt; DATE('${startTime}')
+		</if>
+		<if test=" endTime != null and endTime != '' ">
+			AND wf.create_time &lt; DATE('${endTime}')
+		</if>
+	</select>
+	
+	<select id="feedbackDetail" resultType="PageData" parameterType="PageData">
+		SELECT  wf.id, DATE_FORMAT(wf.create_time,'%Y-%m-%d %H:%i:%s') createTime, wf.email, wf.phone, wf.username, wf.message 
+		,IFNULL(wu.email,wu.phone) account
+		FROM web_feedback wf
+		LEFT JOIN web_user wu ON wu.id = wf.user_id
+		WHERE 1=1 AND wf.id = #{backId}
+	</select>
+	
+	<delete id="dels" parameterType="PageData">
+		DELETE FROM web_feedback where id = #{backId};
+	</delete>
+	
+	
+	
+</mapper>

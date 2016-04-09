@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="LinkmanMapper">
+
+	<resultMap type="MerchLinkman" id="merchlinkmanResultMap">
+		<id column="id" property="id" />
+		<result column="state" property="state" />
+		<result column="create_time" property="createTime" />
+		<result column="udpate_time" property="udpateTime" />
+		<result column="link_name" property="linkName" />
+		<result column="link_phone" property="linkPhone" />
+		<result column="link_email" property="linkEmail" />
+		<result column="link_merch_tel" property="linkMerchTel" />
+		<result column="merch_user_id" property="merchUserId" />
+	</resultMap>
+	
+	<update id="updateLinkman" parameterType="pageData">
+		UPDATE `merch_linkman` SET 
+		update_time=NOW()
+		<if test="linkName !=null and linkName != ''">
+			,link_name=#{linkName}
+		</if>
+		<if test="linkPhone !=null and linkPhone != ''">
+			,link_phone=#{linkPhone}
+		</if>
+		<if test="linkEmail !=null and linkEmail != ''">
+			,link_email=#{linkEmail}
+		</if>
+		<if test="linkMerchTel !=null and linkMerchTel != ''">
+			,link_merch_tel=#{linkMerchTel}
+		</if>
+		WHERE merch_user_id=#{merchId}
+	</update>
+	
+	<select id="findLinkMan" parameterType="pageData" resultMap="merchlinkmanResultMap">
+		SELECT * FROM `merch_linkman` WHERE merch_user_id=#{merchId}
+	</select>
+	
+</mapper>

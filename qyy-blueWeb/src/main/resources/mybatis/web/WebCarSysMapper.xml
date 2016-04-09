@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarSysMapper">
+
+	<resultMap type="webCarSys" id="webCarSysMap">
+		<id column="id" property="id"/>
+		<result column="state" property="state"/>
+		<result column="create_time" property="createTime"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="sys" property="sys"/>
+		<result column="brand_id" property="brandId"/>
+	</resultMap>
+
+	<select id="findCarSysByBrandId" resultMap="webCarSysMap">
+		SELECT * FROM `web_car_sys` WHERE brand_id in (${id})
+	</select>
+	
+	<sql id="select">
+	SELECT wcs.`id`,wcb.`id` AS brandId,wcb.`brand`,wcs.`sys`
+	FROM `web_car_brand` AS wcb
+	JOIN `web_car_sys` AS wcs ON wcb.`id`=wcs.`brand_id`
+	WHERE wcb.`brand_type`=#{brandType} AND wcs.`state`='ADD'
+	<if test=" brandName !=null and brandName !='' ">
+		AND wcb.`brand` LIKE '%${brandName}%'
+	</if>
+	</sql>
+	
+	<select id="findCarSysByBrandType" resultType="pageData">
+	<include refid="select"></include>
+	LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findCarSysBrandTypeCount" resultType="long">
+	select count(*)
+	from(
+	<include refid="select"></include>
+	) as `result`
+	</select>
+	
+	<insert id="insertSys">
+		INSERT INTO `web_car_sys`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		sys=#{addSysName},
+		brand_id=#{addBrandId}
+	</insert>
+	
+	<update id="deletesCarSys">
+		UPDATE `web_car_sys`
+		SET state='DELETE'
+		WHERE id IN (${ids})
+	</update>
+	
+	<update id="updateSys">
+		UPDATE `web_car_sys` SET
+		update_time=NOW(),
+		sys=#{addSysName},
+		brand_id=#{addBrandId}
+		WHERE id=#{id}
+	</update>
+	
+	
+	<select id="findBrandOfCarpool" parameterType="PageData" resultType="PageData">
+		SELECT id,brand FROM web_car_brand WHERE brand_type = 'wrap';
+	</select>
+	
+	<select id="findSysOfCarpoolByBrandId" parameterType="PageData" resultType="PageData">
+		SELECT id,sys FROM web_car_sys WHERE brand_id = #{brandId};
+	</select>
+	
+	<select id="getSysList" resultType="PageData">
+		SELECT cs.id,cs.sys FROM web_car_sys cs
+		LEFT JOIN web_car_brand cb ON cs.brand_id = cb.id
+		WHERE cb.brand_type = #{type}
+	</select>
+	
+</mapper>

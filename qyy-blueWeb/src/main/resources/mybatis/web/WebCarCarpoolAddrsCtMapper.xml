@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarCarpoolAddrsCtMapper">
+
+	<!-- 返回所有出发的城市列表 -->
+	<select id="findAllFromCitys" resultType="PageData">
+		SELECT wc.id,wc.`name` FROM web_car_carpool_addr_ct wccac
+		LEFT JOIN web_car_addrs wca ON wca.id = wccac.from_addr_id
+		LEFT JOIN web_citys wc ON wc.id = wca.city_id GROUP BY wc.id
+		;
+	</select>
+	
+	<!-- 根据出发城市的id返回区县 -->
+	<select id="findFromCountyByCityId" resultType="PageData" parameterType="PageData">
+		SELECT wc.id,wc.`name` FROM web_car_carpool_addr_ct wccac
+		LEFT JOIN web_car_addrs wca ON wca.id = wccac.from_addr_id
+		LEFT JOIN web_citys wc ON wc.id = wca.area 
+		WHERE wca.city_id = #{fromCityId}
+		GROUP BY wc.id;
+	</select>
+	
+	<!-- 根据出发的区县id返回相应的门店或者具体地址  -->
+	<select id="findFromAddrByCountyId" resultType="PageData" parameterType="PageData">
+		SELECT wca.id,wca.store,IFNULL(wca.addr_detail,'暂无') addrDetail,IFNULL(wca.link_tel,'暂无') linkTel
+		,IFNULL( CONCAT(wca.open_start,'-',wca.open_end) ,'暂无') AS openTime  
+		FROM web_car_carpool_addr_ct wccac
+		LEFT JOIN web_car_addrs wca ON wca.id = wccac.from_addr_id
+		LEFT JOIN web_citys wc ON wc.id = wca.area 
+		WHERE wc.id = #{fromCountyId} 
+		<if test="cityId != null and cityId !='' ">
+			AND wca.city_id = #{fromCityId} 
+		</if>
+		GROUP BY wc.id;
+	</select>
+	
+	
+	<!-- 返回所有目的地城市列表 -->
+	<select id="findAllToCitysByFromId" parameterType="PageData" resultType="PageData">
+		SELECT wc.id,wc.`name` FROM web_car_carpool_addr_ct wccac
+		LEFT JOIN web_car_addrs wca ON wca.id = wccac.to_addr_id
+		LEFT JOIN web_citys wc ON wc.id = wca.city_id 
+		WHERE wccac.from_addr_id = #{fromId}
+		GROUP BY wc.id
+		;
+	</select>
+	
+	<!-- 根据城市返回目的地区域列表 -->
+	<select id="findToCountyByCityId" resultType="PageData" parameterType="PageData">
+		SELECT wc.id,wc.`name`
+		FROM web_car_carpool_addr_ct wccac
+		INNER JOIN web_car_addrs wca ON wca.id = wccac.to_addr_id AND wccac.from_addr_id = #{fromId}
+		INNER JOIN web_citys wc ON wc.id = wca.area AND wca.city_id = #{toCityId}
+	</select>
+	
+	<!-- 根据区域id返回门店或者具体地址 -->
+	<select id="findToAddrByCountyId" resultType="PageData" parameterType="PageData">
+		SELECT DISTINCT wca.id,wca.store,IFNULL(wca.addr_detail,'暂无') addrDetail,IFNULL(wca.link_tel,'暂无') linkTel
+		,IFNULL( CONCAT(wca.open_start,'-',wca.open_end) ,'暂无') AS openTime  
+		FROM web_car_carpool_addr_ct wccac
+		INNER JOIN web_car_addrs wca ON wca.id = wccac.to_addr_id 
+		WHERE wccac.from_addr_id = #{fromId} AND wca.area = #{toCountyId} ;
+	</select>
+	
+	<select id="findPoolStartDetail" parameterType="PageData" resultType="PageData">
+		SELECT sta.id startAddrId,sta.store startStore 
+		,eta.id endAddrId ,eta.store endStore
+		,swc.`name` startCityName ,ewc.`name` endCityName
+		,swc.id startCityId ,ewc.id endCityId
+		FROM web_car_carpool_addr_ct wccac 
+		INNER JOIN web_car_addrs sta ON sta.id = wccac.from_addr_id
+		INNER JOIN web_car_addrs eta ON eta.id = wccac.to_addr_id
+		INNER JOIN web_citys swc ON swc.id = sta.city_id
+		INNER JOIN web_citys ewc ON ewc.id = eta.city_id
+		WHERE wccac.from_addr_id = #{fromAddrId} AND wccac.to_addr_id = #{toAddrId};
+	</select>
+	
+	
+</mapper>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarRouteMapper">	
+	<insert id="insertRoute">
+		insert into web_car_route
+		(create_time,update_time,car_id,from_addr_id,to_addr_id,price,from_time,to_time,is_shelves,kilometrers,bus_id)
+		values(now(),now(),#{carId},#{fromAddrId},#{toAddrId},#{price},#{fromTime},#{toTime},#{isShelves},#{kilometrers},#{busId})
+	</insert>
+	<update id="updateRoute">
+		update web_car_route set update_time = now()
+		<if test="carId != null and carId != ''">
+			,car_id = #{carId}
+		</if>
+		<if test="fromAddrId != null and fromAddrId != ''">
+			,from_addr_id = #{fromAddrId}
+		</if>
+		<if test="toAddrId != null and toAddrId != ''">
+			,to_addr_id = #{toAddrId}
+		</if>
+		<if test="price != null and price != ''">
+			,price = #{price}
+		</if>
+		<if test="fromTime != null and fromTime != ''">
+			,from_time = #{fromTime}
+		</if>
+		<if test="toTime != null and toTime != ''">
+			,to_time = #{toTime}
+		</if>
+		<if test="isShelves != null and isShelves != ''">
+			,is_shelves = #{isShelves}
+		</if>
+		<if test="kilometrers != null and kilometrers != ''">
+			,kilometrers = #{kilometrers}
+		</if>
+		<if test="busId != null and busId != ''">
+			,bus_id = #{busId}
+		</if>
+		where id = #{routeId}
+	</update>
+	
+	<update id="deletesRoute">
+		UPDATE `web_car_route` SET state='DELETE' WHERE id IN (${ids})
+	</update>
+	
+	<update id="updateRouteShelves">
+		update `web_car_route` set is_shelves = #{is_shelves} where INSTR(#{ids},id) > 0
+	</update>
+</mapper>

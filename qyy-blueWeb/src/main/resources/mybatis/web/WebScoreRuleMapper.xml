@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebScoreRuleMapper">
+	
+	
+	<!-- 获取兑换规则 -->
+	<select id="findExList" resultType="PageData">
+		SELECT id,state,DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime ,DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s') updateTime
+		,rule_key ruleKey,rule_score ruleScore,ex_rmb exRmb,rule_desc ruleDesc
+		,rule_type ruleType,ex_trem exTrem
+		FROM web_score_rule 
+		WHERE rule_type = 2;
+	</select>
+	
+	<!-- 获取过期时间 -->
+	<select id="findTremList" resultType="PageData">
+		SELECT id,state,DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime ,DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s') updateTime
+		,rule_key ruleKey,rule_score ruleScore,ex_rmb exRmb,rule_desc ruleDesc
+		,rule_type ruleType,ex_trem exTrem
+		FROM web_score_rule 
+		WHERE rule_type = 3;
+	</select>
+	<!-- 获取获取规则 -->
+	<select id="findObtainList" resultType="PageData" >
+		SELECT id,state,DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime ,DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s') updateTime
+		,rule_key ruleKey,rule_score ruleScore,ex_rmb exRmb,rule_desc ruleDesc
+		,rule_type ruleType,ex_trem exTrem
+		FROM web_score_rule 
+		WHERE rule_type = 1;
+	</select>
+	
+	<!-- 根据id或者key来获取规则 -->
+	<select id="findRule" parameterType="PageData" resultType="PageData" >
+		SELECT id,state,DATE_FORMAT(create_time,'%Y-%m-%d %H:%i:%s') createTime ,DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s') updateTime
+		,rule_key ruleKey,rule_score ruleScore,ex_rmb exRmb,rule_desc ruleDesc
+		,rule_type ruleType,ex_trem exTrem
+		FROM web_score_rule 
+		WHERE 
+		<if test="id!=null and id!=''">
+			id = #{id}
+		</if>
+		<if test="ruleKey != null and ruleKey != ''">
+			rule_key = #{ruleKey}
+		</if>
+	</select>
+	
+	<!-- 更新兑换规则信息 -->
+	<update id="updateRuleEx" parameterType="PageData" >
+		UPDATE web_score_rule SET rule_score = #{ruleScore},ex_rmb = #{exRmb}  WHERE id= #{id};
+	</update>
+	
+	<!-- 更新有效期规则信息 -->
+	<update id="updateRuleTrem" parameterType="PageData" >
+		UPDATE web_score_rule SET ex_trem =#{exTrem} WHERE id= #{id};
+	</update>
+	
+	<!-- 更新获取规则信息 -->
+	<update id="updateRuleObtain" parameterType="PageData" >
+		UPDATE web_score_rule SET rule_score = #{ruleScore} WHERE id= #{id};
+	</update>
+	
+	<select id="findDetail" resultType="PageData" >
+		SELECT id,state,details FROM web_score_detail;
+	</select>
+	
+	<update id="updateDetail" parameterType="PageData">
+		UPDATE web_score_detail SET details = #{detail} WHERE id = #{id}
+	</update>
+	
+	<select id="findScoreList" parameterType="PageData" resultType="PageData">
+		SELECT wso.id,DATE_FORMAT(wso.create_time,'%Y-%m-%d %H:%i:%s') operDate,wso.opers ,wso.totals
+		,wsr.rule_desc ruleDesc,wsr.rule_score ruleScore
+		FROM web_score_obtain wso
+		LEFT JOIN web_score_rule wsr ON wsr.id = wso.rule_id
+		WHERE wso.user_id = #{userId} 
+		ORDER BY wso.create_time DESC
+		<if test="limistStart !=null and limistStart != '' ">
+			LIMIT ${startLine},${showLine}
+		</if>
+		;
+	</select>
+	
+	<select id="findScoreRuleByKey" parameterType="PageData" resultType="PageData">
+		SELECT id,rule_key ruleKey,rule_score ruleScore 
+		FROM web_score_rule 
+		WHERE 1=1
+		<if test="ruleKey != null and ruleKey != '' ">
+			AND rule_key = #{ruleKey};
+		</if>
+		<if test="opers != null and opers != '' ">
+			AND rule_key = #{opers};
+		</if>
+	</select>
+	
+	<select id="findScoreListCount" parameterType="PageData" resultType="Long">
+		SELECT COUNT(*)
+		FROM web_score_obtain wso
+		LEFT JOIN web_score_rule wsr ON wsr.id = wso.rule_id
+		WHERE wso.user_id = #{userId} 
+	</select>
+	
+	<insert id="addScoreObtain" parameterType="PageData">
+		INSERT web_score_obtain 
+		(create_time,rule_id,opers,totals,user_id) 
+		VALUES 
+		(NOW(),#{ruleId},#{opers},#{totals},#{userId});
+	</insert>
+	
+	<select id="findLastScoreObtain" parameterType="PageData" resultType="PageData">
+		SELECT id,rule_id ruleId,opers,totals,user_id userId 
+		FROM web_score_obtain 
+		WHERE user_id = #{userId} 
+		ORDER BY create_time DESC 
+		LIMIT 0,1;
+	</select>
+	
+	<select id="checkIsLoginScore" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_score_obtain  wco
+		WHERE 
+		date_format( wco.create_time,'%Y-%m-%d') = date_format(now(),'%Y-%m-%d')
+		AND user_id = #{userId} AND wco.opers = #{opers};
+	</select>
+	
+	
+</mapper>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebPraiseMapper">
+	
+	<insert id="insertPraise">
+		INSERT INTO `web_praise`
+		SET create_time=NOW(),
+		form_table=#{form_table},
+		form_id=#{replyId},
+		web_user_id=#{userId}
+	</insert>
+	
+	<select id="findPraise" resultType="int">
+		SELECT id
+		FROM `web_praise`
+		WHERE form_table=#{form_table} AND form_id=#{replyId} AND web_user_id=#{userId}
+	</select>
+	
+	<select id="checkPraise" resultType="int">
+		SELECT wp.`id`
+		FROM `web_praise` AS wp
+		WHERE wp.`form_id`=#{replyId} AND wp.`form_table`=#{form_table} AND wp.`web_user_id`=#{userId}
+	</select>
+	
+</mapper>

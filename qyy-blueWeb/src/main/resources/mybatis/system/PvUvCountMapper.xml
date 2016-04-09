@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PvUvCountMapper">
+	
+	<insert id="addPvUvCount" parameterType="PageData">
+		INSERT admin_pv_uv_count(access_ip,access_url) VALUES (#{accessIp},#{accessUrl});
+	</insert>
+	
+	<select id="getPVCount" parameterType="PageData" resultType="PVUV">
+		SELECT accessTime ,COUNT(accessIp) pvTotalCount
+		FROM 
+		(SELECT DISTINCT access_url accessUrl,access_ip accessIp,DATE_FORMAT(access_time,'%Y-%m-%d') accessTime 
+			FROM admin_pv_uv_count 
+			WHERE 1 = 1 
+			<if test="startTime != null and startTime != '' ">
+				AND UNIX_TIMESTAMP(access_time) &gt;= UNIX_TIMESTAMP(#{startTime}) 
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				AND UNIX_TIMESTAMP(access_time) &lt;= UNIX_TIMESTAMP(#{endTime}) 
+			</if>
+		) t
+		GROUP BY t.accessTime
+		ORDER BY t.accessTime DESC
+	</select>
+	
+	<select id="getPVCountCount" parameterType="PageData" resultType="Long">
+		SELECT COUNT(*) FROM (
+			SELECT accessTime ,COUNT(accessIp) pvTotalCount
+			FROM 
+			(SELECT DISTINCT access_url accessUrl,access_ip accessIp,DATE_FORMAT(access_time,'%Y-%m-%d') accessTime 
+				FROM admin_pv_uv_count 
+				WHERE 1 = 1 
+				<if test="startTime != null and startTime != '' ">
+					AND UNIX_TIMESTAMP(access_time) &gt;= UNIX_TIMESTAMP(#{startTime}) 
+				</if>
+				<if test="endTime != null and endTime != '' ">
+					AND UNIX_TIMESTAMP(access_time) &lt;= UNIX_TIMESTAMP(#{endTime}) 
+				</if>
+			) t
+			GROUP BY t.accessTime
+		) t1
+	</select>
+	
+	
+	<select id="getUVCount" parameterType="PageData" resultType="PVUV">
+		SELECT accessTime,COUNT(*) uvTotalCount
+		FROM 
+		(SELECT DISTINCT access_url accessUrl, access_ip accessIp, DATE_FORMAT(access_time,'%Y-%m-%d') accessTime
+			FROM admin_pv_uv_count 
+			WHERE  1 = 1 
+			<if test="startTime != null and startTime != '' ">
+				AND UNIX_TIMESTAMP(access_time) &gt;= UNIX_TIMESTAMP(#{startTime}) 
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				AND UNIX_TIMESTAMP(access_time) &lt;= UNIX_TIMESTAMP(#{endTime}) 
+			</if>
+			GROUP BY access_ip,accessTime
+		) t
+		GROUP BY t.accessTime
+		ORDER BY t.accessTime DESC
+	</select>
+	
+	
+	<select id="getPVDetailByUrl" parameterType="PageData" resultType="PageData">
+		SELECT accessTime,accessUrl,COUNT(*) pvTotalCount FROM (
+			SELECT DISTINCT DATE_FORMAT(access_time,'%Y-%m-%d') accessTime,access_url accessUrl,access_ip
+			FROM admin_pv_uv_count 
+			WHERE 
+			<if test="startTime != null and startTime != '' ">
+				UNIX_TIMESTAMP(access_time) &gt;= UNIX_TIMESTAMP(#{startTime}) 
+			</if>
+			<if test="endTime != null and endTime != '' ">
+				AND UNIX_TIMESTAMP(access_time) &lt;= UNIX_TIMESTAMP(#{endTime}) 
+			</if>
+			AND access_url LIKE ${accessUrl}
+			GROUP BY access_ip
+		)t
+	</select>
+	
+	
+	
+</mapper>

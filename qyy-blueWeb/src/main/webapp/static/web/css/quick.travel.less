@@ -1,0 +1,451 @@
+﻿@charset "utf-8";
+
+@import (reference) "common";
+@import (reference) "inner.style.less";
+
+.orange2 {
+	color: #e48b00;
+}
+.red {
+	color: red;
+}
+.f30 {
+	font-size: 30px;
+}
+.pd20 {
+	.pd(20px);
+}
+.hidden {
+	visibility: hidden !important;
+	display: block !important;
+}
+.borderto1 {
+	.bordert1(#ffeed1);
+}
+.borderbo1 {
+	.borderb1(#ffeed1);
+}
+.borderbs1 {
+	.borderb1(#cfcfcf);
+}
+
+.w320 {
+	width: 320px;
+}
+.lh2 {
+	.lh(2.0em);
+}
+
+.orangeh4 {
+	.pl(20px);
+	.iicon {
+		.vt;
+		.mr;
+	}
+}
+.box-section {
+	.pd(20px);
+	.f12;
+	.l-part {
+		width: 485px;
+		.fl;
+		.lh(1.2em);
+		h5 {
+			.f14;
+			.mb();
+		}
+	}
+	.r-part {
+		width: 455px;
+		.fr;
+	}
+}
+
+
+.shadow {
+	shadow: 0 1px 2px #ddd;
+}
+.content {
+	.rpart {
+		width: 752px;
+		.fr;
+		box-shadow: none;
+	}
+}
+.category {
+
+	.i-quicktype1 {
+		background-position: -169px -150px;
+	}
+	.i-quicktype2 {
+		background-position: -220px -150px;
+	}
+	.i-quicktype3 {
+		background-position: -273px -150px;
+	}
+	.i-quicktype4 {
+		background-position: -329px -149px;
+	}
+	li {
+		.iicon {
+			.rel;
+			top:-5px;
+		}
+		a {
+			color: #999;
+		}
+		&.active {
+			.i-quicktype1 {
+				background-position: -3px -100px;
+			}
+			.i-quicktype2 {
+				background-position: -54px -100px;
+			}
+			.i-quicktype3 {
+				background-position: -107px -100px;
+			}
+			.i-quicktype4 {
+				background-position: -163px -100px;
+			}
+		}
+	}
+}
+
+/* 租车 */
+.ctgtype2 {
+	.pd(15px 0 0);
+	.ctgselect_wrap {
+		.pd(5px 15px);
+		.lh(1.8em);
+		.mb(0);
+		.value_wrap {
+			.inline;
+			.pd(0 70px 0 80px);
+			.rel;
+			width:500px;
+			.vt;
+			overflow: hidden;
+			.labs {
+				.abs;
+				left:0;
+				top:0;
+				width: 50px;
+				.tc;
+			}
+		}
+		.ctgvalue {
+			color: @grey9;
+			.pd(0);
+			.mg(0 10px 10px);
+			&.active {
+				color: @lorange;
+				.border(@orange);
+			}
+		}
+		.showmore {
+			.abs;
+			.f12;
+			color: @lorange;
+			right:0;
+			top:0;
+			.pointer;
+		}
+		.showless {
+			color: @lorange;
+			.pointer;
+		}
+	}
+}
+.i-type {
+	background-position: -299px -531px;
+}
+.i-pnum {
+	background-position: -333px -531px;
+}
+.i-aim {
+	background-position: -370px -531px;
+}
+.i-pos {
+	background-position: -404px -531px;
+}
+.i-rate {
+	background-position: -436px -531px;
+}
+.i-dtime {
+	background-position: -467px -531px;
+}
+.carprolist_wrap {
+	.pd(0 20px 20px);
+	.carlist {
+		li {
+			.border(#f4f4f4);
+			border-top: 0;
+			.pd(10px 5px);
+			.info {
+				.inline;
+				.vm;
+				.pd(10px 0 0 30px);
+				width: 260px;
+				.mr(20px);
+				p {
+					color: @dark;
+					.lh(2.8em);
+				}
+				.iicon {
+					width: 27px;
+					height: 27px;
+					.mr();
+				}
+				img {
+					.mr();
+					.vm;
+				}
+			}
+			.cprice {
+				.inline;
+				.vm;
+				width: 150px;
+				.f14;
+			}
+		}
+		&.type2 {			
+			li {				
+				.info {					
+					width: 175px;
+					.mr(0);
+					.pd(10px 0 0 0);
+				}
+				.cprice {
+					width: 160px;
+					height: 80px;
+					.tr;
+					.formbtn {
+						.mt(36px);
+					}
+				}				
+			}			
+		}
+		&.type3 {
+			li {
+				.pd(0 5px);
+				.info {					
+					width: 260px;
+					.mr(10px);
+					.pd(10px 0 0 0);
+				}
+				.info2 {
+					width: 235px;
+				}
+				.otime {
+					.f18;
+					.bold;
+					.lorange;
+				}
+				.r-part {
+					.inline;
+					width: 160px;
+					height: 80px;
+					.tr;
+				}
+			}
+		}
+	}
+	
+}
+
+/* 租车详情 */
+.paramitem {
+	.pd(15px 0);
+	.carparam {
+		.inline;
+		min-width: 185px;
+		.mr(7px);
+		color: @grey;
+		span {
+			color: @grey9;
+		}
+		i {
+			.inline;
+			.vm;
+			width: 23px;
+			height: 22px;
+			background-image: url('../images/caricon.png');
+			background-repeat: no-repeat;
+			.mr();
+		}
+	}
+	&.lesspace {
+		.pd(5px 0);
+	}
+}
+.i-icon1 {
+	background-position: -17px -13px;
+}
+.i-icon2 {
+	background-position: -50px -13px;
+}
+.i-icon3 {
+	background-position: -84px -13px;
+}
+.i-icon4 {
+	background-position: -114px -13px;
+}
+.i-icon5 {
+	background-position: -140px -13px;
+}
+.i-icon6 {
+	background-position: -169px -13px;
+}
+.i-icon7 {
+	background-position: -194px -13px;
+}
+.i-icon8 {
+	background-position: -221px -13px;
+}
+.i-icon9 {
+	background-position: -244px -13px;
+}
+.i-icon10 {
+	background-position: -269px -13px;
+}
+.i-icon11 {
+	background-position: -296px -13px;
+}
+.i-icon12 {
+	background-position: -324px -13px;
+}
+.i-icon13 {
+	background-position: -354px -13px;
+}
+.i-icon14 {
+	background-position: -17px -43px;
+}
+.i-icon15 {
+	background-position: -50px -43px;
+}
+.i-icon16 {
+	background-position: -84px -43px;
+}
+.i-icon17 {
+	background-position: -114px -43px;
+}
+.i-icon18 {
+	background-position: -142px -43px;
+}
+.i-icon19 {
+	background-position: -170px -43px;
+}
+.i-icon20 {
+	background-position: -197px -43px;
+}
+.i-icon21 {
+	background-position: -221px -43px;
+}
+.i-icon22 {
+	background-position: -246px -43px;
+}
+.i-icon23 {
+	background-position: -270px -43px;
+}
+.i-icon24 {
+	background-position: -296px -43px;
+}
+.i-icon25 {
+	background-position: -323px -43px;
+}
+.i-icon26 {
+	background-position: -354px -42px;
+}
+
+/* 提交订单 */
+.checkbox {
+	width: 16px;
+	height: 16px;
+	.border(#cfcfcf);
+	background: #fff;
+	&.checked {
+		width: 18px;
+		height: 18px;
+		border: 0;
+		background: url('../images/sprites.png') -527px -535px no-repeat;
+	}
+}
+.i-i {
+	width: 15px;
+	height: 14px;
+	background-position: -362px -68px;
+}
+.i-edit {
+	width: 13px;
+	height: 14px;
+	background-position: -583px -537px;
+}
+
+.remarkbox {
+	.mg(0 36px);
+	.border(#cfcfcf);
+	.pd(15px 20px);
+	.mb();
+	h5 {
+		.f16;
+		.mb();
+	}
+	p {
+		color: @grey;
+	}
+}
+
+.tipinfowrap {
+	.inline;
+	width: 15px;
+	height: 14px;
+	.rel;
+	.tipbox {
+		.abs;
+		z-index: 99;
+		left:35px;
+		top:-5px;
+		.pd(20px);
+		color: @grey;
+		.lh(2.0em);
+		width: 150px;
+		.border(#ccc);
+		.none;
+		word-break:break-all;
+		background: #fff;
+		.i-arrow {
+			.abs;
+			left:-9px;
+			top:10px;
+			width: 9px;
+			height: 16px;
+			background-position: -3px -573px;
+		}
+	}
+	&:hover {
+		.tipbox {
+			.block;
+		}
+	}
+}
+
+
+/* 可翻动的列表 */
+.scroll_wrap {.inline; .vm; width: 445px; padding:0 35px; overflow:hidden;}
+.inner_wrap { width:445px; height:60px; padding:0; overflow:hidden;}
+.scroll_wrap span.scroll_left,.scroll_wrap span.scroll_right {.abs; display:block; top:50%; margin-top:-10px; width:10px; height:19px; z-index:99; cursor:pointer;}
+.scroll_wrap span.scroll_left { left:15px; background-position: -21px -571px;}
+.scroll_wrap span.scroll_left:hover {}
+.scroll_wrap span.scroll_right { right:15px; background-position:-42px -571px;}
+.scroll_wrap span.scroll_right:hover { }
+.inner_list { width:99999px;}
+.inner_list li { width:135px; height: 38px; .tc; .border(#cfcfcf); float:left; padding:10px 0; .mg(0 5px); overflow:hidden;}
+
+
+
+
+
+
+
+
+

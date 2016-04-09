@@ -1,0 +1,382 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebUserMapper">
+
+	<!-- 添加用户 -->
+	<insert id="insertWebUser" parameterType="PageData">
+		INSERT web_user
+		(create_time,nickname,sex,birthday,at_area_id,phone,email,summary,head_img,user_level_id,is_master,is_ban)
+		VALUES
+		(NOW(),#{nickname},#{sex},#{birthday},#{atAreaId},#{phone},#{email},#{summary},#{headImg},#{userLevelId,isMaster,isBan);
+	</insert>
+
+	<!-- 手机端添加用户 -->
+	<insert id="insertWebUserByApp" parameterType="PageData" useGeneratedKeys="true" keyProperty="userId">
+		INSERT
+		INTO `web_user`
+		SET create_time=NOW(),
+		nickname=#{nickName},
+		phone=#{phone},
+		user_level_id = 2
+	</insert>
+
+	<!-- 更新用户 -->
+	<update id="updateWebUser" parameterType="PageData">
+		UPDATE web_user
+		SET 
+		update_time = NOW(),
+		nickname = #{nickname},
+		sex = #{sex},
+		at_area_id = #{atAreaId},
+		summary = #{summary},
+		head_img = #{headImg}
+		<if test=" birthday != null and birthday != ''">
+			, birthday = #{birthday}
+		</if>
+		<if test=" phone != null and phone != ''">
+			, phone = #{phone}
+		</if>
+		<if test=" email != null and email != ''">
+			, email = #{email}
+		</if>
+		<if test=" userLevelId != null and userLevelId != ''">
+			, user_level_id = #{userLevelId}
+		</if>
+		WHERE id = #{id};
+	</update>
+
+	<!-- 返回用户的所有数据 -->
+	<select id="getAllDetail" parameterType="PageData" resultType="PageData">
+		SELECT
+		wu.id,wu.state
+		,DATE_FORMAT(wu.create_time,'%Y-%m-%d %H:%i:%s') createTime
+		,DATE_FORMAT(wu.update_time,'%Y-%m-%d %H:%i:%s') updateTime
+		,wu.nickname ,IF(wu.sex=1,'男','女') sex
+		,DATE_FORMAT(wu.birthday,'%Y-%m-%d') birthday
+		,wu.at_area_id atAreaId ,aa.name areaName ,aa.parent areaParent ,paa.`name` areaParentName
+		,wu.phone,wu.email,wu.summary,wu.head_img headImg
+		,wu.user_level_id userLevelId ,wul.level_name levelName
+		,wul1.level_name parentLevelName
+		,wul.level_desc
+		levelDesc ,wul1.level_desc parentLevelDesc
+		,IF(wu.is_master=0,'达人','会员') isMaster ,wu.score,wu.third_login thirdLogin
+		,wu.is_ban isBan
+		FROM web_user wu
+		LEFT JOIN area_all aa ON aa.id = wu.at_area_id
+		LEFT JOIN area_all paa ON paa.id = aa.parent
+		LEFT JOIN web_user_level wul ON wul.id = wu.user_level_id
+		LEFT JOIN web_user_level wul1 ON wul1.id = wul.parent_id
+		WHERE wu.id = #{id} AND wu.state = 'ADD'
+	</select>
+
+	<!-- 返回用户的所有数据 -->
+	<select id="getByPhoneOrEmail" parameterType="PageData" resultType="PageData">
+		SELECT
+		wu.id,wu.state
+		,DATE_FORMAT(wu.create_time,'%Y-%m-%d %H:%i:%s') createTime
+		,DATE_FORMAT(wu.update_time,'%Y-%m-%d %H:%i:%s') updateTime
+		,wu.nickname ,IF(wu.sex=1,'男','女') sex
+		,DATE_FORMAT(wu.birthday,'%Y-%m-%d') birthday
+		,wu.at_area_id atAreaId ,aa.name areaName
+		,wu.phone,wu.email,wu.summary,wu.head_img headImg
+		,wu.user_level_id userLevelId ,wul.level_name levelName
+		,wul1.level_name parentLevelName
+		,wul.level_desc
+		levelDesc ,wul1.level_desc parentLevelDesc
+		,IF(wu.is_master=0,'达人','会员') isMaster ,wu.score,wu.is_master AS isMasterFlag
+		,third_login thirdLogin
+		,wu.is_ban isBan
+		FROM web_user wu
+		LEFT JOIN area_all aa ON aa.id = wu.at_area_id
+		LEFT JOIN
+		web_user_level wul ON wul.id
+		= wu.user_level_id
+		LEFT JOIN web_user_level wul1 ON wul1.id = wul.parent_id
+		WHERE (wu.phone = #{loginname} or wu.email = #{email}) AND wu.state = 'ADD'
+	</select>
+
+	<!-- 列表页 -->
+	<select id="pageList" parameterType="PageData" resultType="PageData">
+		SELECT
+		wu.id,wu.state
+		,DATE_FORMAT(wu.create_time,'%Y-%m-%d %H:%i:%s') createTime
+		,DATE_FORMAT(wu.update_time,'%Y-%m-%d %H:%i:%s') updateTime
+		,wu.nickname ,IF(wu.sex=1,'男','女') sex
+		,DATE_FORMAT(wu.birthday,'%Y-%m-%d') birthday
+		,wu.at_area_id atAreaId ,aa.name areaName
+		,wu.phone,wu.email,wu.summary,wu.head_img headImg
+		,wu.user_level_id userLevelId ,wul.level_name levelName
+		,wul1.level_name parentLevelName
+		,wul.level_desc levelDesc ,wul1.level_desc parentLevelDesc
+		,IF(wu.is_master=0,'达人','会员') isMaster ,wu.score,wu.third_login thirdLogin
+		,wu.is_ban isBan
+		FROM web_user wu
+		LEFT JOIN area_all aa ON aa.id = wu.at_area_id
+		LEFT JOIN web_user_level wul ON wul.id
+		= wu.user_level_id
+		LEFT JOIN web_user_level wul1 ON wul1.id = wul.parent_id
+		WHERE 1 = 1 AND wu.state = 'ADD'
+		<if test="phone!=null and phone !=''">
+			AND wu.phone LIKE '%${phone}%'
+		</if>
+		<if test="email!=null and email!=''">
+			AND wu.email LIKE CONCAT(CONCAT('%',#{email}),'%')
+		</if>
+		<if test="nickname!=null and nickname!=''">
+			AND wu.nickname LIKE CONCAT(CONCAT('%',#{nickname}),'%')
+		</if>
+		<if test="isBan==0">
+			AND wu.is_ban = 0
+		</if>
+		<if test="isBan==1">
+			AND wu.is_ban = 1
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+
+	<!-- 查询条数 -->
+	<select id="pageListTotalCount" parameterType="PageData" resultType="Integer">
+		SELECT
+		COUNT(*)
+		FROM web_user wu
+		LEFT JOIN area_all aa ON aa.id = wu.at_area_id
+		LEFT JOIN web_user_level wul
+		ON wul.id = wu.user_level_id
+		LEFT JOIN web_user_level wul1 ON wul1.id = wul.parent_id
+		WHERE 1 = 1 AND
+		wu.state = 'ADD'
+		<if test="phone!=null and phone !=''">
+			AND phone LIKE '%${phone}%'
+		</if>
+		<if test="email!=null and email!=''">
+			AND email LIKE CONCAT(CONCAT('%',#{email}),'%')
+		</if>
+		<if test="nickname!=null and nickname!=''">
+			AND nickname LIKE CONCAT(CONCAT('%',#{nickname}),'%')
+		</if>
+		<if test="isBan==0">
+			AND is_ban = 0
+		</if>
+		<if test="isBan==1">
+			AND is_ban = 1
+		</if>
+	</select>
+
+	<!-- 重置密码 -->
+	<update id="resetPwd" parameterType="PageData">
+		UPDATE web_user_login SET login_pwd = #{loginPwd} WHERE user_id
+		= #{userId} ;
+	</update>
+
+	<!-- 启用禁用用户 -->
+	<update id="updateBanUser" parameterType="PageData">
+		<if test="isBan == 0 ">
+			UPDATE web_user SET is_ban = 0 WHERE id = #{id};
+		</if>
+		<if test="isBan == 1 ">
+			UPDATE web_user SET is_ban = 1 WHERE id = #{id};
+		</if>
+	</update>
+	
+	<update id="updateUserOfPhoneOrEmail" parameterType="PageData">
+		UPDATE web_user SET update_time = NOW()
+		<if test=" phone != null and phone != '' ">
+			, phone =#{phone} 
+		</if>
+		<if test=" email != null and email != '' ">
+			,email = #{email} 
+		</if>
+		WHERE id = #{userId} ;
+	</update>
+	
+	
+	
+	<!-- 查找积分 -->
+	<select id="findScore" parameterType="PageData" resultType="Integer">
+		SELECT score FROM web_user
+		WHERE id =
+		#{id};
+	</select>
+
+	<!-- 更新积分 -->
+	<update id="updateScore" parameterType="PageData">
+		UPDATE web_user SET score = score + #{updateScore}
+		WHERE id =
+		#{id};
+	</update>
+	
+	<!-- 查找积分 -->
+	<select id="findScoreNew" parameterType="PageData" resultType="Integer">
+		SELECT score FROM web_user
+		WHERE id = #{userId};
+	</select>
+
+	<!-- 更新积分 -->
+	<update id="updateScoreNew" parameterType="PageData">
+		UPDATE web_user SET score = score + #{updateScore}
+		WHERE id = #{userId};
+	</update>
+	
+	
+	
+	<!-- 申请达人成功,更新用户数据 -->
+	<update id="updateIsMaster" parameterType="PageData">
+		<if test="isMaster == 1">
+			UPDATE web_user SET is_master = 1 WHERE id = #{id};
+		</if>
+		<if test="isMaster == 0">
+			UPDATE web_user SET is_master = 0 WHERE id = #{id};
+		</if>
+	</update>
+
+	<!-- 不物理删除用户 -->
+	<update id="delUser" parameterType="PageData">
+		UPDATE web_user SET state = #{state} WHERE id = #{id};
+	</update>
+
+	<select id="findById" resultType="PageData">
+		<!-- 更新 -->
+		<!-- 不修改原字段的情况下，增加一个联表查询到web_user_level表的字段会员等级名 -->
+		SELECT wu.*,wul.`level_name`,pwul.`level_name` AS p_level_name
+		FROM web_user AS wu
+		LEFT JOIN `web_user_level` AS wul ON
+		wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON
+		wul.`parent_id`=pwul.`id`
+		WHERE wu.`id`= #{id}
+	</select>
+
+	<select id="findUserListByUserNickName" resultType="map">
+		SELECT id,nickname
+		FROM `web_user`
+		WHERE nickname
+		LIKE '${nickName}%'
+	</select>
+
+	<!-- 查找用户的级别 -->
+	<select id="findUserLevelById" resultType="PageData">
+		SELECT
+		wu.`id`,
+		wu.`nickname`,
+		wu.`phone`,
+		wul.`id` AS levelId,
+		wul.`level_name`,
+		wul.`level_desc`
+		FROM
+		web_user wu
+		LEFT JOIN web_user_level wul
+		ON wul.`id` = wu.`user_level_id`
+		WHERE wu.`id` = #{id}
+	</select>
+
+	<select id="findMasterUserDynamic" resultType="map">
+		SELECT wt.`id`,wu.`id` AS
+		userId,wu.`nickname`,wu.`head_img`,wt.`title`,wt.`create_time`
+		FROM `web_user` AS wu
+		JOIN `web_travels` AS
+		wt ON wu.`id`=wt.`user_id`
+		WHERE wu.`is_master`=0
+		ORDER BY wt.`create_time` DESC
+		LIMIT 0,10
+	</select>
+
+	<select id="checkPhone" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_user WHERE 
+		state = 'ADD' AND phone = #{phone} AND id != #{userId} ;
+	</select>
+
+	<update id="updateUserPhone" parameterType="PageData">
+		UPDATE web_user SET phone =#{phone} WHERE id = #{userId};
+	</update>
+	
+	<update id="updateAppUser" parameterType="PageData">
+		UPDATE web_user
+		SET
+		update_time = NOW(),
+		<if test=" nickname != null and nickname != '' ">
+			nickname = #{nickname}
+		</if>
+		<if test=" sex != null and sex != '' ">
+			sex = #{sex}
+		</if>
+		<if test=" birthday != null and birthday != '' ">
+			birthday = #{birthday}
+		</if>
+		<if test=" headImg != null and headImg != '' ">
+			head_img = #{headImg}
+		</if>
+		<if test=" summary != null and summary != '' ">
+			summary = #{summary}
+		</if>
+		
+		WHERE id = #{userId};
+	</update>	
+	
+	<insert id="registe" parameterType="PageData" useGeneratedKeys="true" keyProperty="userId">
+		INSERT
+		INTO `web_user`
+		SET 
+		create_time=NOW(),
+		nickname=#{nickName},
+		<if test=" email !=null and email !='' ">
+			email=#{email},
+		</if>
+		<if test=" phone !=null and phone !='' ">
+			phone=#{phone},
+		</if>
+		<if test=" headImg !=null and headImg !='' ">
+			head_img=#{headImg},
+		</if>
+		<if test=" thridFrom !=null and thridFrom !='' ">
+			third_login=#{thridFrom},
+		</if>
+		user_level_id = 2
+	</insert>
+	
+	<update id="buildUser" parameterType="PageData">
+		UPDATE web_three_build SET user_id = #{userId} WHERE build_from = #{thridFrom} AND thrid_uid = #{thridUid};
+	</update>
+	
+	<update id="unbuildUser" parameterType="PageData">
+		UPDATE web_three_build SET user_id = 0 WHERE build_from = #{thridFrom} AND thrid_uid = #{thridUid} AND user_id = #{userId};
+	</update>
+	
+	<select id="findActiveList" resultType="map">
+		SELECT wu.`id`,wu.`nickname`,wu.`head_img`,COUNT(wt.`id`) AS `count`
+		FROM `web_user` AS wu
+		LEFT JOIN `web_travels` AS wt ON wt.`user_id`=wu.`id` AND wt.`travel_type`=1 AND wt.`state`='ADD'
+		WHERE wu.`state`='ADD'
+		GROUP BY wu.`id`
+		ORDER BY `count` DESC
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="checkPhoneOrEmail" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_user WHERE id != #{userId} AND state = 'ADD'
+		<if test=" phone != null and phone != '' ">
+			AND phone = #{phone}
+		</if>
+		<if test=" email != null and email != '' ">
+			AND email = #{email}
+		</if>
+	</select>
+	
+	<select id="findUserLevelOfScore" parameterType="PageData" resultType="Long">
+		SELECT id FROM web_user_level
+		WHERE parent_id != 0 AND  require_start &lt;= #{userScore} AND  #{userScore} &lt;= require_end 
+	</select>
+	
+	<update id="updateUserLevel" parameterType="PageData">
+		UPDATE web_user SET user_level_id = #{levelId} WHERE id = #{userId};
+	</update>
+	
+	
+	<select id="updateCheckPhone" resultType="Integer">
+		SELECT COUNT(*) FROM `web_user` WHERE phone=#{phone}
+	</select>
+	
+	<select id="findUserPhone" resultType="map">
+		SELECT phone FROM `web_user` WHERE id=#{userId}
+	</select>
+	
+</mapper>

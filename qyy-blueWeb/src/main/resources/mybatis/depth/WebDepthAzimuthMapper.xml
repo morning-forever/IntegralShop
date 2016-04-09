@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebDepthAzimuthMapper">
+	
+	<!-- 获取所有列表 -->
+	<select id="allList" resultType="PageData">
+		SELECT id, azimuth FROM `web_depth_azimuth`
+	</select>
+	
+	<!-- 后台查询列表 分页 -->
+	<select id="getAdminList" resultType="PageData">
+		SELECT id, azimuth FROM `web_depth_azimuth` where 1=1
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<!-- 后台查询总数 -->
+	<select id="getAdminResultNum" resultType="Integer">
+		SELECT COUNT(1) FROM `web_depth_azimuth` where 1=1
+		<if test="azimuthId != null and azimuthId != ''">
+			and id != #{azimuthId}
+		</if>
+		<if test="azimuthName != null and azimuthName != '' ">
+			and azimuth = #{azimuthName}
+		</if>
+	</select>
+	
+	<!-- 查询明细 -->
+	<select id="getById" resultType="PageData">
+		select id, azimuth from `web_depth_azimuth` where id = #{id}
+	</select>
+	
+	<!-- 更新 -->
+	<update id="update" >
+		update web_depth_azimuth set azimuth = #{azimuthName}
+		where id = #{id}
+	</update>
+
+	<!-- 删除 -->
+	<delete id="delete">
+		delete from web_depth_azimuth where id = #{id}
+	</delete>
+
+	<!-- 新增 -->
+	<insert id="insert">
+		insert into web_depth_azimuth (create_time, azimuth)
+		value(NOW(), #{azimuthName});
+	</insert>
+	
+</mapper>

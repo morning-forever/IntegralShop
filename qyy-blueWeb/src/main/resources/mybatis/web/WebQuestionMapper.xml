@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebQuestionMapper">
+	
+	<sql id="findSql">
+		SELECT wq.`id`,wq.`content`,wq.`create_time`,wu.`id` AS userId,wu.`nickname`,wu.`head_img`,
+		COUNT(wqa.`id`) AS replyCount,wq.`browse`,pwul.`level_desc`,wu.`is_master`,IFNULL(MIN(wqa.`is_adopt`),1) AS adopt,
+		IF(wq.`user_id`=#{userId},0,1) AS isDelete
+		FROM `web_question` AS wq
+		LEFT JOIN `web_question_answer` AS wqa ON wqa.`reply_id`=wq.`id` AND wqa.`root_id`=0 AND wqa.`state`='ADD'
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wq.`user_id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		WHERE wq.`state`='ADD'
+		<if test=" title !='' and title !=null">
+			AND wq.`content` LIKE '%${title}%'
+		</if>
+		<if test=" nickName !='' and nickName !=null">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		<if test=" personal ==0 ">
+			AND wq.`user_id`=#{userId}
+		</if>
+		GROUP BY wq.`id`
+		HAVING 1=1
+		<if test=" solve ==0">
+			AND replyCount>0
+		</if>
+		<if test=" solve ==1">
+			AND replyCount=0
+		</if>
+		<if test=" adopt !=null ">
+			AND adopt=#{adopt}
+		</if>
+		<if test=" orderType ==0 ">
+			ORDER BY create_time DESC
+		</if>
+		<if test=" orderType ==1 ">
+			ORDER BY replyCount DESC
+		</if>
+	</sql>
+	
+	<select id="findList" resultType="map">
+		<include refid="findSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findCount" resultType="double">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findSql"></include>
+		) AS countResult
+	</select>
+	
+	<select id="findQuestionDetial" resultType="map">
+		SELECT wq.`id`,wq.`state`,wu.`id` AS userId,wu.`nickname`,wu.`head_img`,wu.`is_master`,
+		wul.`level_name` AS badgeNumber,pwul.`level_desc` AS `level`,pwul.`level_name` AS p_level_name,
+		wq.`content`,IF(wq.`user_id`=#{userId},0,1) AS isDelete,COUNT(wqa.`id`) AS replyCount,
+		wq.`create_time`,wq.`browse`,
+		MIN(wqa.`is_adopt`) AS adopt
+		FROM `web_question` AS wq 
+		LEFT JOIN `web_user` AS wu ON wq.`user_id`=wu.`id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		LEFT JOIN `web_question_answer` AS wqa ON wq.`id`=wqa.`reply_id` AND wqa.`root_id`=0
+		WHERE wq.`id`=#{questionId}
+		HAVING `state`='ADD'
+	</select>
+	
+	<update id="updateBrowse">
+		UPDATE `web_question` SET browse=browse+1 WHERE id=#{questionId}
+	</update>
+	
+	<sql id="findReplySql">
+		SELECT wqa.`id`,wu.`id` AS userId,wu.`nickname`,wu.`head_img`,wul.`level_name` AS badgeNumber,
+		pwul.`level_desc` AS `level`,pwul.`level_name` AS p_level_name,wqa.`create_time`,wqa.`content`,wqa.`praise`,IFNULL(wp.`id` ,0)AS isPraise,
+		COUNT(cwqa.`id`) AS replyCount,wqa.`is_adopt` AS isAdopt,wu.`is_master`
+		FROM `web_question_answer` AS wqa
+		LEFT JOIN `web_question_answer` AS cwqa ON wqa.`id`=cwqa.`root_id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wqa.`reply_user_id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		LEFT JOIN `web_praise` AS wp ON wp.`form_table`='web_question_answer' AND wp.`web_user_id`=#{userId} AND wp.`form_id`=wqa.`id`
+		WHERE wqa.`root_id`=0 AND wqa.`reply_id`=#{questionId}
+		AND wqa.`state`='ADD'
+		<if test=" title !=null and title !='' ">
+			AND wqa.`content` LIKE '%${title}%'
+		</if>
+		<if test=" nickName !=null and nickName !='' ">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		GROUP BY wqa.`id`
+	</sql>
+	
+	<select id="findReplyList" resultType="map">
+		<include refid="findReplySql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findReplyCount" resultType="double">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findReplySql"></include>
+		) AS countResult
+	</select>
+	
+	<select id="findSecondaryList"  statementType="CALLABLE" resultType="map">
+		CALL groupByQeustionTop(${groupTop},#{ids});
+	</select>
+	
+	<insert id="insertQuestion" useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO `web_question`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		user_id=#{userId},
+		at_user_ids=#{atUserIds},
+		content=#{content}
+	</insert>
+	
+	<insert id="insertQuestionReply">
+		INSERT INTO `web_question_answer`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		content=#{content},
+		user_id=#{toUserId},
+		reply_id=#{replyId},
+		reply_user_id=#{replyUserId},
+		root_id=#{rootId}
+	</insert>
+	
+	<update id="deleteQuestion">
+		UPDATE `web_question` SET state='DEL' WHERE id IN (${questionId})
+	</update>
+	
+	<select id="checkDeleteQuestion" resultType="int">
+		SELECT id FROM `web_question` WHERE id=#{questionId} AND user_Id=#{userId}
+	</select>
+	
+	<update id="praiseAdd">
+		UPDATE `web_question_answer` SET praise=praise+1 WHERE id=#{replyId}
+	</update>
+	
+	<select id="findAllSecondaryList" resultType="map">
+		SELECT wqa.`id`,wu.`id` AS userId,wu.`nickname` AS userNickName,wu.`head_img` AS userHeadImg,wqa.`create_time`,
+		wqa.`content`,towu.`id` AS toUserId,towu.`nickname` AS toUserNickName,
+		wqa.`root_id` AS rootId,wqa.`reply_id` AS replyId,
+		pwul.`level_desc`,pwul.`level_name` AS p_level_name,wul.`level_name`
+		FROM `web_question_answer` AS wqa
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wqa.`reply_user_id`
+		LEFT JOIN `web_user` AS towu ON towu.`id`=wqa.`user_id`
+		LEFT JOIN `web_user_level` AS wul ON wu.`user_level_id`=wul.`id`
+		LEFT JOIN `web_user_level` AS pwul ON pwul.`id`=wul.`parent_id`
+		WHERE wqa.`root_id`=#{replyId}
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="checkAdopt" resultType="int">
+		SELECT MIN(bwqa.`is_adopt`) AS idAdopt
+		FROM `web_question_answer` AS wqa
+		LEFT JOIN `web_question_answer` AS bwqa ON bwqa.`root_id`=0 AND bwqa.`reply_id`=wqa.`reply_id`
+		AND wqa.`reply_id`=bwqa.`reply_id`
+		WHERE wqa.`root_id`=0
+		AND  wqa.`id`=#{replyId}
+	</select>
+	
+	<update id="adoptReply" >
+		UPDATE `web_question_answer` SET is_adopt=0 WHERE id=#{replyId}
+	</update>
+	
+	<select id="findRootReplyCount" resultType="Long">
+		SELECT IFNULL(COUNT(wqa.`id`),0) AS `count`
+		FROM `web_question_answer` AS wqa
+		WHERE wqa.`reply_user_id`=#{userId} AND wqa.`root_id`=0
+		<if test=" adopt != null ">
+			AND wqa.`is_adopt`=#{adopt}
+		</if>
+	</select>
+	
+	<sql id="findReplySqlByUserId">
+		SELECT wq.`id`,wu.`head_img`,wu.`nickname`,wq.`content`,COUNT(*) AS replyCount,wqa.`create_time`
+		FROM `web_question_answer` AS wqa
+		JOIN `web_question` AS wq ON wq.`id`=wqa.`reply_id` AND wqa.`root_id`=0
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wq.`user_id`
+		LEFT JOIN `web_question_answer` AS cwqa ON cwqa.`reply_id`=wq.`id` AND cwqa.`root_id`=0
+		WHERE wqa.`reply_user_id`=#{userId}
+		GROUP BY wqa.`id`
+		ORDER BY wqa.`create_time` DESC
+	</sql>
+	
+	<select id="findReplyListByUserId" resultType="map">
+		<include refid="findReplySqlByUserId"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findReplyCountByUserId" resultType="double">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findReplySqlByUserId"></include>
+		) AS countResult
+	</select>
+	
+</mapper>

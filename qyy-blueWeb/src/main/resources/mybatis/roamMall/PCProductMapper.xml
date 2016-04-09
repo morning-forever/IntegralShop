@@ -1,0 +1,387 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="PCProductMapper">
+	
+	<!-- 得到景区列表 -->
+	<select id="getScenicList" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  mg.`title`,
+		  mg.`subtitle`,
+		  mgs.`original_price`,
+		  mgs.`current_price`,
+		  mg.`sales_volume`,
+		  msd.destination,
+		  mu.id as merchUserId,
+		  (SELECT 
+		    COUNT(1) 
+		  FROM
+		    web_evaluate we 
+		  WHERE we.`form_id` = mg.`id` 
+		    AND we.`forms` = 'scenic') AS evalCount,
+		  (SELECT 
+		    COUNT(1) 
+		  FROM
+		    web_evaluate we 
+		  WHERE we.`form_id` = mg.`id` 
+		    AND we.`forms` = 'scenic' 
+		    AND we.score > 3) / 
+		  (SELECT 
+		    COUNT(1) 
+		  FROM
+		    web_evaluate we 
+		  WHERE we.`form_id` = mg.`id` 
+		    AND we.`forms` = 'scenic') * 100 AS goodsRate
+		FROM
+		  merch_goods_scenic mgs 
+		  INNER JOIN merch_goods mg 
+		    ON mg.`id` = mgs.`goods_id` 
+		    AND mg.`goods_type` = 'scenic' 
+		    AND mg.`is_delete` = 0
+		  LEFT JOIN merch_scenic_dest msd 
+    		ON msd.id = mgs.at_area_id  
+    	  INNER JOIN merch_user mu 
+    		ON mu.id = mg.merch_user_id 
+		WHERE 1 = 1 
+		<if test="destIds != null and destIds != '' "> 
+			and INSTR(#{destIds}, msd.id) > 0
+		</if>
+		<if test="priceStart != null and priceStart != '' ">
+			and mgs.`current_price` &gt;= #{priceStart}
+		</if>
+		<if test="priceEnd != null and priceEnd != '' ">
+			and mgs.`current_price` &lt;= #{priceEnd}
+		</if>
+		<if test="orderBy != null and orderBy=='hot' ">
+			order by mg.click_num desc
+		</if>
+		<if test="orderBy != null and orderBy=='evaluate' ">
+			order by goodsRate desc
+		</if>
+		<if test="orderBy != null and orderBy=='time' ">
+			order by mg.create_time desc
+		</if>
+		<if test="orderBy != null and orderBy=='sale' ">
+			order by mg.`sales_volume` desc
+		</if>
+		<if test="orderBy != null and orderBy=='priceUp' ">
+			order by mgs.`current_price` asc
+		</if>
+		<if test="orderBy != null and orderBy=='priceDown' ">
+			order by mgs.`current_price` desc
+		</if>
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 得到酒店列表 -->
+	<select id="getHotelList" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  mg.`title`,
+		  mg.`subtitle`,
+		  mgh.`original_price`,
+		  mgh.`current_price`,
+		  mg.`sales_volume`,
+		  mu.facilities,
+		  mu.id as merchUserId,
+		  (SELECT 
+		    COUNT(1) 
+		  FROM
+		    web_evaluate we 
+		  WHERE we.`form_id` = mg.`id` 
+		    AND we.`forms` = 'hotel') AS evalCount,
+		  (SELECT 
+		    COUNT(1) 
+		  FROM
+		    web_evaluate we 
+		  WHERE we.`form_id` = mg.`id` 
+		    AND we.`forms` = 'hotel' 
+		    AND we.score > 3) / 
+		  (SELECT 
+		    COUNT(1) 
+		  FROM
+		    web_evaluate we 
+		  WHERE we.`form_id` = mg.`id` 
+		    AND we.`forms` = 'hotel') * 100 AS goodsRate 
+		FROM
+		  merch_goods_hotel mgh 
+		  INNER JOIN merch_goods mg 
+		    ON mg.`id` = mgh.`goods_id` 
+		    AND mg.`goods_type` = 'hotel' 
+		    AND mg.`is_delete` = 0 
+		  INNER JOIN merch_user mu 
+    		ON mu.id = mg.merch_user_id 
+    	  LEFT JOIN merch_brand mb 
+		    ON mb.`id` = mu.`brand` 
+		  LEFT JOIN merch_theme mt 
+		    ON mt.`id` = mu.`theme` 
+		  LEFT JOIN web_simple_hotel_star hs 
+		    ON hs.`id` = mu.`star_level` 
+		  LEFT JOIN merch_hotel_loc_ct mhlc 
+    		ON mhlc.merch_user_id = mg.merch_user_id 
+		WHERE 1 = 1
+		<if test="merchUserId != null and merchUserId != '' ">
+			and mu.id = #{merchUserId}
+		</if>
+		<if test="priceStart != null and priceStart != '' ">
+			and mgh.`current_price` &gt;= #{priceStart}
+		</if>
+		<if test="priceEnd != null and priceEnd != '' ">
+			and mgh.`current_price` &lt;= #{priceEnd}
+		</if>
+		<if test="starIds != null and starIds != '' ">
+			and INSTR(#{starIds}, hs.`id`) > 0
+		</if>
+		<if test="brandIds != null and brandIds != '' ">
+			and INSTR(#{brandIds}, mb.`id`) > 0
+		</if>
+		<if test="themeIds != null and themeIds != '' ">
+			and INSTR(#{themeIds}, mt.`id`) > 0
+		</if>
+		<if test="locId != null and locId != '' ">
+			and mhlc.merch_hotel_loc_id = #{locId}
+		</if>
+		group by mg.id
+		<if test="orderBy != null and orderBy=='hot' ">
+			order by mg.click_num desc
+		</if>
+		<if test="orderBy != null and orderBy=='evaluate' ">
+			order by goodsRate desc
+		</if>
+		<if test="orderBy != null and orderBy=='time' ">
+			order by mg.create_time desc
+		</if>
+		<if test="orderBy != null and orderBy=='sale' ">
+			order by mg.`sales_volume` desc
+		</if>
+		<if test="orderBy != null and orderBy=='priceUp' ">
+			order by mgh.`current_price` asc
+		</if>
+		<if test="orderBy != null and orderBy=='priceDown' ">
+			order by mgh.`current_price` desc
+		</if>
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 得到餐饮列表 -->
+	<select id="getCaterList" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  mg.`title`,
+		  mg.`subtitle`,
+		  mgc.`original_price`,
+		  mgc.`current_price`,
+		  mg.`sales_volume`,
+		  mu.facilities,
+		  mu.id as merchUserId, 
+		FROM
+		  merch_goods_cater mgc 
+		  INNER JOIN merch_goods mg 
+		    ON mg.`id` = mgc.`goods_id` 
+		    AND mg.`goods_type` = 'cater' 
+		    AND mg.`is_delete` = 0 
+		  INNER JOIN merch_user mu 
+		    ON mu.id = mg.merch_user_id 
+		  LEFT JOIN merch_restaurant mr 
+		    ON mr.`id` = mu.`service_type` 
+		  LEFT JOIN merch_goods_cater_meal mgcm 
+		    ON mgcm.id = mgc.`meal` 
+		WHERE 1 = 1
+		<if test="merchUserId != null and merchUserId != '' ">
+			and mu.id = #{merchUserId}
+		</if>
+		<if test="priceStart != null and priceStart != '' ">
+			and mgc.`current_price` &gt;= #{priceStart}
+		</if>
+		<if test="priceEnd != null and priceEnd != '' ">
+			and mgc.`current_price` &lt;= #{priceEnd}
+		</if>
+		<if test="countyIds != null and countyIds != '' ">
+			and INSTR(#{countyIds}, mu.`at_addr`) > 0
+		</if>
+		<if test="restIds != null and restIds != '' ">
+			and INSTR(#{restIds}, mu.`service_type`) > 0
+		</if>
+		<if test="mealIds != null and mealIds != '' ">
+			and INSTR(#{mealIds}, mgc.`meal`) > 0
+		</if>
+		<if test="orderBy != null and orderBy=='hot' ">
+			order by mg.click_num desc
+		</if>
+		<if test="orderBy != null and orderBy=='time' ">
+			order by mg.create_time desc
+		</if>
+		<if test="orderBy != null and orderBy=='priceUp' ">
+			order by mgh.`current_price` asc
+		</if>
+		<if test="orderBy != null and orderBy=='priceDown' ">
+			order by mgh.`current_price` desc
+		</if>
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 得到装备列表 -->
+	<select id="getEquipList" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  mg.`title`,
+		  mg.`subtitle`,
+		  mge.`original_price`,
+		  mge.`current_price`,
+		  mg.`sales_volume`,
+		  mu.id as merchUserId
+		FROM
+		  merch_goods_equip mge 
+		  INNER JOIN merch_goods mg 
+		    ON mg.`id` = mge.`goods_id` 
+		    AND mg.`goods_type` = 'equip' 
+		    AND mg.`is_delete` = 0 
+		  INNER JOIN merch_user mu 
+		    ON mu.id = mg.merch_user_id 
+		  LEFT JOIN merch_equip me
+		    ON me.`id` = mu.`service_type` 
+		WHERE 1 = 1 
+		<if test="merchUserId != null and merchUserId != '' ">
+			and mu.id = #{merchUserId}
+		</if>
+		<if test="priceStart != null and priceStart != '' ">
+			and mge.`current_price` &gt;= #{priceStart}
+		</if>
+		<if test="priceEnd != null and priceEnd != '' ">
+			and mge.`current_price` &lt;= #{priceEnd}
+		</if>
+		<if test="countyIds != null and countyIds != '' ">
+			and INSTR(#{countyIds}, mu.`at_addr`) > 0
+		</if>
+		<if test="equipIds != null and equipIds != '' ">
+			and INSTR(#{equipIds}, mu.`service_type`) > 0
+		</if>
+		GROUP BY mg.`id`
+		<if test="orderBy != null and orderBy=='hot' ">
+			order by mg.click_num desc
+		</if>
+		<if test="orderBy != null and orderBy=='time' ">
+			order by mg.create_time desc
+		</if>
+		<if test="orderBy != null and orderBy=='priceUp' ">
+			order by mgh.`current_price` asc
+		</if>
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 得到餐饮人数 -->
+	<select id="getCaterMealList" resultType="PageData">
+		select id, meal from merch_goods_cater_meal
+	</select>
+	
+	<select id="getScenicByMerch" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  mg.`title`,
+		  mg.`subtitle`,
+		  mgs.`original_price`,
+		  mgs.`current_price`,
+		  mu.id AS merchUserId 
+		FROM
+		  merch_goods_scenic mgs 
+		  INNER JOIN merch_goods mg 
+		    ON mg.`id` = mgs.`goods_id` 
+		    AND mg.`goods_type` = 'scenic' 
+		    AND mg.`is_delete` = 0 
+		  INNER JOIN merch_user mu 
+		    ON mu.id = mg.merch_user_id 
+		WHERE 1 = 1
+		<if test="merchUserId != null and merchUserId != '' ">
+			and mu.id = #{merchUserId}
+		</if>
+		<if test="goodsId != null and goodsId != '' ">
+			and mg.`id` != #{goodsId}
+		</if>
+	</select>
+	
+	<select id="getHotelByMerch" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  mg.`title`,
+		  mg.`subtitle`,
+		  mgh.`original_price`,
+		  mgh.`current_price`,
+		  mu.id AS merchUserId 
+		FROM
+		  merch_goods_hotel mgh 
+		  INNER JOIN merch_goods mg 
+		    ON mg.`id` = mgh.`goods_id` 
+		    AND mg.`goods_type` = 'hotel' 
+		    AND mg.`is_delete` = 0 
+		  INNER JOIN merch_user mu 
+		    ON mu.id = mg.merch_user_id 
+		WHERE 1 = 1
+		<if test="merchUserId != null and merchUserId != '' ">
+			and mu.id = #{merchUserId}
+		</if>
+		<if test="goodsId != null and goodsId != '' ">
+			and mg.`id` != #{goodsId}
+		</if>
+	</select>
+	
+	<select id="getCaterByMerch" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  mg.`title`,
+		  mg.`subtitle`,
+		  mgc.`original_price`,
+		  mgc.`current_price`,
+		  mu.id AS merchUserId 
+		FROM
+		  merch_goods_cater mgc 
+		  INNER JOIN merch_goods mg 
+		    ON mg.`id` = mgc.`goods_id` 
+		    AND mg.`goods_type` = 'cater' 
+		    AND mg.`is_delete` = 0 
+		  INNER JOIN merch_user mu 
+		    ON mu.id = mg.merch_user_id 
+		WHERE 1 = 1
+		<if test="merchUserId != null and merchUserId != '' ">
+			and mu.id = #{merchUserId}
+		</if>
+		<if test="goodsId != null and goodsId != '' ">
+			and mg.`id` != #{goodsId}
+		</if>
+	</select>
+	
+	<select id="getEquipByMerch" resultType="PageData">
+		SELECT 
+		  mg.`id`,
+		  mg.`title`,
+		  mg.`subtitle`,
+		  mge.`original_price`,
+		  mge.`current_price`,
+		  mu.id AS merchUserId 
+		FROM
+		  merch_goods_equip mge
+		  INNER JOIN merch_goods mg 
+		    ON mg.`id` = mge.`goods_id` 
+		    AND mg.`goods_type` = 'equip' 
+		    AND mg.`is_delete` = 0 
+		  INNER JOIN merch_user mu 
+		    ON mu.id = mg.merch_user_id 
+		WHERE 1 = 1
+		<if test="merchUserId != null and merchUserId != '' ">
+			and mu.id = #{merchUserId}
+		</if>
+		<if test="goodsId != null and goodsId != '' ">
+			and mg.`id` != #{goodsId}
+		</if>
+		group by mg.`id`
+	</select>
+	
+</mapper>

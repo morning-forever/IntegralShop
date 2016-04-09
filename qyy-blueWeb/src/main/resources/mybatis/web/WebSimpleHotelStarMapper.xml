@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebSimpleHotelStarMapper">
+
+	<resultMap type="WebSimpleHotelStar" id="WebSimpleHotelStarMap">
+		<id column="id" property="id"/>
+		<result column="state" property="state"/>
+		<result column="create_time" property="createTime"/>
+		<result column="update_time" property="updateTime"/>
+		<result column="star_key" property="starKey"/>
+		<result column="star_detail" property="starDetail"/>
+	</resultMap>
+	
+	<select id="allList" resultMap="WebSimpleHotelStarMap">
+		SELECT * FROM `web_simple_hotel_star`
+	</select>
+	
+	<select id="findStarList" resultType="PageData" parameterType="PageData">
+		SELECT id,star_detail starDetail FROM web_simple_hotel_star
+		<if test=" starId != null and starId != 0 and starId != '' ">
+			WHERE id = #{starId}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+		;
+	</select>
+	
+	<select id="findStarListCount" resultType="Integer" parameterType="PageData">
+		SELECT COUNT(*) FROM web_simple_hotel_star
+		<if test=" starId != null and starId != 0 and starId != '' ">
+			WHERE id = #{starId}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+		;
+	</select>
+	
+	<select id="getAdminStarList" resultMap="WebSimpleHotelStarMap">
+		SELECT * FROM `web_simple_hotel_star` where 1=1
+		<if test="starId != null and starId != '' ">
+			and id = #{starId}
+		</if>
+		<if test="starName != null and starName != '' ">
+			and star_detail = #{starName}
+		</if>
+		LIMIT ${startLine} , ${showLine}
+	</select>
+	
+	<select id="getAdminResultNum" resultType="Integer">
+		SELECT COUNT(1) FROM `web_simple_hotel_star` where 1=1
+		<if test="starId != null and starId != '' ">
+			and id = #{starId}
+		</if>
+		<if test="starName != null and starName != '' ">
+			and star_detail = #{starName}
+		</if>
+	</select>
+	
+	<select id="getById" parameterType="Long" resultMap="WebSimpleHotelStarMap">
+		select * from `web_simple_hotel_star` where 1 = 1 
+		<if test="_parameter != null and _parameter > 0">
+			and id = #{_parameter}
+		</if>
+	</select>
+	
+	<!-- 更新 -->
+	<update id="update" >
+		update web_simple_hotel_star set update_time = NOW()
+		<if test="starName != null and starName != '' ">
+			,star_detail = #{starName}
+		</if>
+		where id = #{id}
+	</update>
+	
+	<!-- 删除 -->
+	<delete id="delete">
+		delete from web_simple_hotel_star where id = #{id}
+	</delete>
+	
+	<!-- 添加 -->
+	<insert id="insert">
+		insert into web_simple_hotel_star (create_time, star_detail)
+		value(NOW(), #{starName});
+	</insert>
+	
+	<!-- 检查是否已经存在 -->
+	<select id="checkIsHave" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_simple_hotel_star 
+		WHERE star_detail LIKE CONCAT('',#{starName},'%') 
+		<if test="id != null and id != 0 ">
+			AND id != #{id}
+		</if>
+		;
+	</select>
+	
+	<select id="checkIsUsed" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(wsh.star_id) FROM web_simple_hotel wsh WHERE wsh.star_id = #{starId} 
+		UNION ALL
+		SELECT COUNT(star_level) FROM merch_user WHERE star_level = #{starId} ;
+	</select>
+	
+	
+	
+	
+	
+	
+	
+</mapper>

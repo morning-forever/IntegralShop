@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarTypeMapper">
+
+	<select id="findCarTypeList" resultType="pageData">
+		SELECT id,car_type FROM `web_car_type` WHERE type_type=#{typeType}
+	</select>
+
+	<insert id="insertTypeCt">
+		INSERT INTO `web_car_type_ct`
+		SET create_time=NOW(),
+		car_id=#{carId},
+		car_type_id=#{carTypeId}
+	</insert>
+	
+	<select id="findCarTypeIdsById" resultType="String">
+		SELECT GROUP_CONCAT(car_type_id) AS carIds
+		FROM `web_car_type_ct`
+		WHERE car_id=#{id}
+	</select>
+	
+	<delete id="deleteTypeCt">
+		DELETE FROM `web_car_type_ct` WHERE car_id=#{carId}
+	</delete>
+	
+	
+	<sql id="adminList">
+		SELECT * 
+		FROM `web_car_type`
+		WHERE `type_type`=#{type} 
+		AND state='ADD'
+		<if test=" typeName !=null and typeName !='' ">
+			AND car_type LIKE '%${typeName}%'
+		</if>
+	</sql>
+	
+	<select id="findAdminTypeListCount" resultType="long">
+		select count(*)
+		from (
+		<include refid="adminList"></include>
+		) as `result`
+	</select>
+	
+	<select id="findAdminTypeList" resultType="pageData">
+		<include refid="adminList"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<insert id="insertType">
+		INSERT INTO `web_car_type` 
+		SET create_time=NOW(),
+		update_time=NOW(),
+		car_type=#{addTypeName},
+		type_type=#{typeType}
+	</insert>
+	
+	<update id="updateType">
+		UPDATE `web_car_type` 
+		SET update_time=NOW(),
+		car_type=#{addTypeName},
+		type_type=#{typeType}
+		WHERE id=#{id}
+	</update>
+	
+	<update id="deleteType">
+		UPDATE `web_car_type`
+		SET state='DELETE'
+		WHERE id IN (${ids})
+	</update>
+
+</mapper>

@@ -1,0 +1,299 @@
+@charset "utf-8";
+
+@import (reference) "app-common";
+
+
+.search-wrapper {
+	.mg(0 30px);
+	.border;
+	.bradius;
+	.pd(5px 5px 5px 30px);
+	height: 20px;
+	.i-search {
+		left:6px;
+		top:6px;
+		.abs;
+	}
+	input {
+		width: 100%;
+	}
+}
+
+.content-ul {
+	.ml;
+	.mr;
+	.mb(5px);
+	li {
+		.ellipsis;
+		.lh(2.6em);
+		.iicon {
+			.mr();
+		}
+		border-bottom: 1px dashed #e1e1e1;
+		.f(1.4rem);
+		&.selected {
+			.i-ok {
+				background-position: -33px -6px;
+			}
+		}
+	}
+}
+
+/* 商品详情 */
+.h3-include-r {
+	.rel;
+	.pr(80px);
+	.r-show {
+		width: 80px;
+		.tc;
+		.abs;
+		top:0; 
+		right:0;
+		border-left: 1px solid #e1e1e1;
+		color:@pink;
+		.f(1.4rem);
+		.i-heart {
+			.mr(5px);
+		}
+	}
+}
+
+.attr_list {
+	span {
+		.inline;
+		.border(#ccc);
+		min-width: 56px;
+		height: 26px;
+		.lh(26px);
+		.tc;
+		.mr();
+		&.active {
+			.border(@orange);
+			color: @orange;
+		}
+	}
+}
+
+.pronum-wrapper {
+	.lh(26px);
+}
+
+/* 管理收货地址 */
+.addr-ul {
+	li {
+		.rel;
+		.pd(5px 10px);
+		.mb();
+		background: #fff;
+		.border(#ccc);
+		.bradius;
+		a {
+			.block;
+		}
+		p {
+			.mb(3px);
+			color: #666;
+		}
+		.i-arrow {
+			.abs;
+			right:10px;
+			top:50%;
+			margin-top: -8px;
+		}
+		
+	}
+	&.select-addr-ul {
+		li {
+			.pl(40px);
+			.i-ok {
+				.abs;
+				left:10px;
+				top:50%;
+				margin-top: -8px;
+			}
+			&.active {
+				.i-ok {
+					background-position: -33px -6px;
+				}
+			}
+		}
+	}
+}
+
+/* 编辑订单 */
+.order-ul {
+	.pd(0 10px);
+	li {
+		.rel;
+		.bordert1;		
+		overflow: hidden;
+		h3 {
+			.mb(0);
+		}
+		p {
+			.mb(5px);
+			.f(1.2rem);
+		}
+		a {
+			.pd(10px 0 10px 0);
+			.block;
+			.r-content {
+				width: 65%;
+			}
+		}
+		.order-num {
+			.abs;
+			.block;
+			right:15px;
+			top:50%;
+			margin-top: -10px;
+			color: #333;
+		}
+		&:first-child {
+			border-top: 0;
+		}
+	}
+}
+
+/* 千米特价 */
+.bargain_ul {
+	.pd();
+	li {
+		a {
+			.block;
+		}
+		.mb();
+		.bradius;
+		.box-shadow;
+		img {
+			border-radius: 5px 5px 0 0;
+		}
+		h3 {
+			.pd(7px 0 7px 10px);
+			.mb(0);
+		}
+		div.rel {
+			.pd(7px 10px);
+			.r-content {
+				top:5px;
+				right:20px;
+			}
+		}
+	}
+}
+
+/* 千米商圈 */
+.rela-shops-ul {
+	li {
+		.mb();
+		a {
+			.block;
+			.rel;
+			.lh(38px);
+			.bradius;
+			.box-shadow;
+			color: #333;
+			background: #fff;
+			.i-arrow {
+				top:9px;
+				right: 10px;
+			}
+			span {
+				.block;
+				.pl();
+				box-sizing: border-box;
+				.mr(25px);
+				.ellipsis;
+			}
+		}
+	}
+}
+
+/* 千米服务 */
+.list-ul {
+	li {
+		a {
+			.box-shadow;
+			.bradius;
+			.rel;
+			.mb();
+			color: #333;
+			.block;	
+			.lh(40px);
+			.pd(15px 0 15px 70px);
+			background:#fff url('../images/qianmi-sevice.png') 0 0 no-repeat;
+			background-size: 60px auto;
+			.i-arrow {
+				top:27px;
+				right:15px;
+				.abs;
+			}
+			.i-newmsg {
+				width: 6px;
+				height: 6px;
+				border-radius: 50%;
+				background: @red;
+				margin-left: 5px;
+			}	
+		}
+		&.li1 {
+			a {
+				background-position: 6px -8px;
+			}
+		}
+		&.li2 {
+			a {
+				background-position: 6px -79px;
+			}
+		}
+		&.li3 {
+			a {
+				background-position: 6px -149px;
+			}
+		}
+		&.li4 {
+			a {
+				background-position: 6px -220px;
+			}
+		}
+		&.li5 {
+			a {
+				background-position: 6px -291px;
+			}
+		}
+		&.li6 {
+			a {
+				background-position: 6px -365px;
+			}
+		}
+	}
+	&.select-avatar {
+		li {
+			a {
+				background-image: url('../images/camere.png');
+			}
+		}		
+	}
+	&.qianmi-ul {
+		li {
+			a {
+				background-image: url('../images/qianmi-ul.png');
+			}
+		}		
+	}
+	&.wuye-ul {
+		li {
+			a {
+				background-image: url('../images/wuye-ul.png');
+			}
+		}		
+	}
+	&.record-ul {
+		li {
+			a {
+				background-image: url('../images/record-ul.png');
+			}
+		}		
+	}
+}
+

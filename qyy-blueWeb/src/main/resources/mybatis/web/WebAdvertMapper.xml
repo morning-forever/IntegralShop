@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebAdvertMapper">
+	
+	<select id="findAdvertList" parameterType="PageData" resultType="PageData">
+		SELECT id,title,context,DATE_FORMAT(effect_time,'%Y-%m-%d') effectTime 
+		FROM web_advert
+		WHERE 1 = 1 
+		
+		<if test=" title != null and title != '' ">
+			AND title LIKE CONCAT('%',#{title},'%')
+		</if>
+		
+		<if test=" startTime != null and startTime != '' ">
+			AND effect_time &gt; DATE('${startTime}')
+		</if>
+		<if test=" endTime != null and endTime != '' ">
+			AND effect_time &lt; DATE('${endTime}')
+		</if>
+		<!-- <if test=" isEffect != null and isEffect != '' and isEffect == 'yes' ">
+			AND effect_time &lt;= NOW()
+		</if> -->
+		LIMIT ${startLine},${showLine}
+		;
+	</select>
+	
+	<select id="findAdvertListCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		FROM web_advert
+		WHERE 1=1
+		
+		<if test=" title != null and title != '' ">
+			AND title LIKE CONCAT('%',#{title},'%')
+		</if>
+		
+		<if test=" startTime != null and startTime != '' ">
+			AND effect_time &gt; DATE('${startTime}')
+		</if>
+		<if test=" endTime != null and endTime != '' ">
+			AND effect_time &lt; DATE('${endTime}')
+		</if>
+		<!-- <if test=" isEffect != null and isEffect != '' and isEffect == 'yes' ">
+			AND effect_time &lt;= NOW()
+		</if> -->
+	</select>
+	
+	<select id="detail" parameterType="PageData" resultType="PageData">
+		SELECT id,title,context,DATE_FORMAT(effect_time,'%Y-%m-%d') effectTime 
+		FROM web_advert
+		WHERE id = #{id}
+	</select>
+	
+	<update id="updateAdvert" parameterType="PageData">
+		UPDATE web_advert SET 
+		update_time = NOW(),
+		title=#{title},
+		context=#{context}
+		<!-- ,effect_time = #{effectTime} -->
+		WHERE id = #{id}
+	</update>
+	
+	<insert id="addAdvert" parameterType="PageData">
+		INSERT web_advert (create_time,title,context) 
+		VALUES (NOW(),#{title},#{context});
+	</insert>
+	
+	<delete id="delAdvert" parameterType="PageData">
+		DELETE FROM web_advert WHERE id = #{id};
+	</delete>
+	
+	<select id="checkIsUsed" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_advert wa
+		INNER JOIN web_home_banner whb ON wa.id = whb.banner_link_specific AND whb.banner_link = 7
+		WHERE wa.id = #{id};
+	</select>
+	
+</mapper>

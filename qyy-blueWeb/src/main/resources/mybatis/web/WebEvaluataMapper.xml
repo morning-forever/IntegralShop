@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebEvaluataMapper">
+	
+	
+	<sql id="MerchEvaluataListSql">
+		SELECT mg.`id`,mg.`title`,ROUND(AVG(we.`score`),1) AS score
+		FROM `merch_goods` AS mg 
+		JOIN `web_evaluate` AS we ON we.`form_id`=mg.`id` AND we.`state`='ADD'
+		LEFT JOIN `web_user` AS wu ON wu.`id`=we.`user_id`
+		WHERE mg.`merch_user_id`=#{id} AND we.`forms`=#{goodsType}
+		<if test=" goodsName !=null and goodsName !='' ">
+			AND mg.`title` LIKE '%${goodsName}%'
+		</if>
+		GROUP BY mg.`id`
+		HAVING score BETWEEN #{downLimit} AND #{upperLimit}
+	</sql>
+	
+	<select id="findMerchEvaluataList" resultType="pageData">
+		<include refid="MerchEvaluataListSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findMerchEvaluataCount" resultType="long">
+	select count(*)
+	from (
+	<include refid="MerchEvaluataListSql"></include>
+	) as result
+	</select>
+	
+	<sql id="GoodsEvaluataSql">
+		SELECT we.`id`,wu.`id` AS userId,wu.`nickname`,we.`score`,we.`comment`,we.`create_time`
+		FROM `web_evaluate` AS we
+		LEFT JOIN `web_user` AS wu ON wu.`id`=we.`user_id`
+		WHERE we.`form_id`=#{goodsId} AND we.`forms`=#{goodsType}
+		AND we.`state`='ADD'
+		<if test=" nickName !=null and nickName !=''">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		<if test=" comment !=null and comment !=''">
+			AND we.`comment` LIKE '%${comment}%'
+		</if>
+		<if test=" startTime !=null and startTime !=''">
+			AND we.`create_time`&gt; ${startTime}
+		</if>
+		<if test=" endTime !=null and endTime !=''">
+			AND we.`create_time`&lt; #{endTime}
+		</if>
+	</sql>
+	
+	<select id="findGoodsEvaluataList" resultType="pageData">
+		<include refid="GoodsEvaluataSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findGoodsEvaluataCount" resultType="long">
+	select count(*)
+	from (
+	<include refid="GoodsEvaluataSql"></include>
+	) as result
+	</select>
+	
+	<update id="deleteEvals">
+		UPDATE `web_evaluate` SET state='DELETE' WHERE id IN (${ids})
+	</update>
+	
+	<!-- 查询评价列表 分页 -->
+	<select id="findEvaluateList" resultType="pageData">		
+		SELECT 
+		  we.`id`,
+		  we.`create_time`,
+		  FORMAT(we.`score`,1) as score,
+		  we.`comment`,
+		  wu.`nickname`,
+		  wu.`head_img`,
+		  wul2.`level_name`,
+		  wul.`level_name` AS level_detail,
+		  wul2.`level_desc` 
+		FROM
+		  web_evaluate we 
+		  INNER JOIN web_user wu 
+		    ON wu.`id` = we.`user_id` 
+		  LEFT JOIN web_user_level wul 
+		    ON wul.`id` = wu.`user_level_id` 
+		  LEFT JOIN web_user_level wul2 
+		    ON wul2.`id` = wul.`parent_id` 
+		WHERE we.`state`='ADD'
+		<if test=" fromType !=null and fromType !=''">
+			AND we.`forms` = #{fromType}
+		</if> 
+		<if test=" goodsId !=null and goodsId !=''">
+			AND we.`form_id` = #{goodsId}
+		</if> 
+		<if test=" userId !=null and userId !=''">
+			AND we.`user_id`  = #{userId}
+		</if>
+		order by we.`create_time` desc
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if> 
+	</select>
+	
+	<!-- 查询评价列表 总数-->
+	<select id="findEvaluateListTotal" resultType="Long">		
+		SELECT count(1)
+		FROM
+		  web_evaluate we 
+		  INNER JOIN web_user wu 
+		    ON wu.`id` = we.`user_id` 
+		  LEFT JOIN web_user_level wul 
+		    ON wul.`id` = wu.`user_level_id` 
+		  LEFT JOIN web_user_level wul2 
+		    ON wul2.`id` = wul.`parent_id` 
+		WHERE we.`state`='ADD'
+		<if test=" fromType !=null and fromType !=''">
+			AND we.`forms` = #{fromType}
+		</if> 
+		<if test=" goodsId !=null and goodsId !=''">
+			AND we.`form_id` = #{goodsId}
+		</if> 
+		<if test=" userId !=null and userId !=''">
+			AND we.`user_id`  = #{userId}
+		</if>
+	</select>
+	
+	<!-- 新增一条评论 -->
+	<insert id="addEvaluate" useGeneratedKeys="true" keyProperty="evaluateId">
+		insert into web_evaluate
+		(create_time, user_id, form_id, forms, comment, score)
+		values
+		(NOW(), #{userId}, #{fromId}, #{forms}, #{comment}, #{score})
+	</insert>
+	
+	<!-- 后台查询深度游评价列表 分页 -->
+	<select id="findAdminEvaluateList" resultType="PageData">
+		SELECT 
+		  wd.`id`,
+		  wd.`name`,
+		  temp.avgScore 
+		FROM
+		  web_depth wd 
+		  INNER JOIN 
+		    (SELECT 
+		      we.`form_id`,
+		      SUM(we.`score`) / COUNT(we.form_id) AS avgScore 
+		    FROM
+		      web_evaluate we 
+		    WHERE we.state = 'ADD' 
+      		AND we.forms = 'depth' 
+		    GROUP BY we.form_id) temp 
+		    ON temp.form_id = wd.`id` 
+		WHERE wd.state = 'ADD'
+		<if test=" depthName !=null and depthName !=''">
+			AND wd.`name` like  CONCAT('%', #{depthName},'%')
+		</if>
+		<if test=" scoreFrom !=null and scoreFrom !=''">
+			AND temp.avgScore &gt;= #{scoreFrom}
+		</if>
+		<if test=" scoreTo !=null and scoreTo !=''">
+			AND temp.avgScore &lt;= #{scoreTo}
+		</if>
+		<if test=" timeFrom !=null and timeFrom !=''">
+			AND we.create_time &gt;= #{timeFrom}
+		</if> 
+		<if test=" timeFrom !=null and timeFrom !=''">
+			AND DATE_FORMAT(we.create_time, '%Y-%m-%d') &gt;= str_to_date(#{timeFrom} , '%Y-%m-%d')
+		</if> 
+		<if test=" timeTo !=null and timeTo !=''">
+			AND DATE_FORMAT(we.create_time, '%Y-%m-%d') &lt;= str_to_date(#{timeTo} , '%Y-%m-%d')
+		</if>  
+	</select>
+	
+	<!-- 后台查询深度游评价总数 分页 -->
+	<select id="findAdminEvaluateListCount" resultType="Integer">
+		SELECT 
+		  count(1) 
+		FROM
+		  web_depth wd 
+		  INNER JOIN 
+		    (SELECT 
+		      we.`form_id`,
+		      SUM(we.`score`) / COUNT(we.form_id) AS avgScore 
+		    FROM
+		      web_evaluate we 
+		    WHERE we.state = 'ADD' 
+      		AND we.forms = 'depth' 
+		    GROUP BY we.form_id) temp 
+		    ON temp.form_id = wd.`id` 
+		WHERE wd.state = 'ADD'
+		<if test=" depthName !=null and depthName !=''">
+			AND wd.`name` like  CONCAT('%', #{depthName},'%')
+		</if>
+		<if test=" scoreFrom !=null and scoreFrom !=''">
+			AND temp.avgScore &gt;= #{scoreFrom}
+		</if>
+		<if test=" scoreTo !=null and scoreTo !=''">
+			AND temp.avgScore &lt;= #{scoreTo}
+		</if>
+		<if test=" timeFrom !=null and timeFrom !=''">
+			AND DATE_FORMAT(we.create_time, '%Y-%m-%d') &gt;= str_to_date(#{timeFrom} , '%Y-%m-%d')
+		</if> 
+		<if test=" timeTo !=null and timeTo !=''">
+			AND DATE_FORMAT(we.create_time, '%Y-%m-%d') &lt;= str_to_date(#{timeTo} , '%Y-%m-%d')
+		</if>   
+	</select>
+	
+	<!-- 后台查询具体深度游的所有评价 分页 -->
+	<select id="findAdminDepthEvaluateList" resultType="PageData">
+		SELECT 
+		  we.`id`,
+		  we.`score`,
+		  we.`create_time`,
+		  we.`comment`,
+		  wu.`id` AS userId,
+		  wu.`nickname` 
+		FROM
+		  web_evaluate we 
+		  INNER JOIN web_user wu 
+		    ON wu.`id` = we.`user_id` 
+		WHERE we.state = 'ADD' 
+      	  AND we.forms = 'depth' 
+		<if test=" depthId !=null and depthId !=''">
+			AND we.`form_id` = #{depthId}
+		</if>
+		<if test=" nickName !=null and nickName !=''">
+			AND wu.`nickname` like  CONCAT('%', #{nickName},'%')
+		</if>
+		<if test=" comment !=null and comment !=''">
+			AND we.`comment` like  CONCAT('%', #{comment},'%')
+		</if>
+		<if test=" timeFrom !=null and timeFrom !=''">
+			AND DATE_FORMAT(we.create_time, '%Y-%m-%d') &gt;= str_to_date(#{timeFrom} , '%Y-%m-%d')
+		</if> 
+		<if test=" timeTo !=null and timeTo !=''">
+			AND DATE_FORMAT(we.create_time, '%Y-%m-%d') &lt;= str_to_date(#{timeTo} , '%Y-%m-%d')
+		</if>  
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 后台查询具体深度游的所有评价总数 分页 -->
+	<select id="findAdminDepthEvaluateListCount" resultType="Integer">
+		SELECT 
+		  count(1)
+		FROM
+		  web_evaluate we 
+		  INNER JOIN web_user wu 
+		    ON wu.`id` = we.`user_id` 
+		WHERE we.state = 'ADD' 
+      	  AND we.forms = 'depth' 
+		<if test=" depthId !=null and depthId !=''">
+			AND we.`form_id` = #{depthId}
+		</if>
+		<if test=" nickName !=null and nickName !=''">
+			AND wu.`nickname` like  CONCAT('%', #{nickName},'%')
+		</if>
+		<if test=" comment !=null and comment !=''">
+			AND we.`comment` like  CONCAT('%', #{comment},'%')
+		</if>
+		<if test=" timeFrom !=null and timeFrom !=''">
+			AND DATE_FORMAT(we.create_time, '%Y-%m-%d') &gt;= str_to_date(#{timeFrom} , '%Y-%m-%d')
+		</if> 
+		<if test=" timeTo !=null and timeTo !=''">
+			AND DATE_FORMAT(we.create_time, '%Y-%m-%d') &lt;= str_to_date(#{timeTo} , '%Y-%m-%d')
+		</if>  
+	</select>
+	
+	<!-- 删除某条评价 -->
+	<update id="deleteEvaluate">
+		update web_evaluate set state = 'DELETE' where id = #{id}
+	</update>
+	
+	<!-- 删除某个深度游的所有评价 -->
+	<update id="deleteByDepth">
+		update web_evaluate set state = 'DELETE' where forms = 'depth' and form_id = #{fromId}
+	</update>
+	
+</mapper>

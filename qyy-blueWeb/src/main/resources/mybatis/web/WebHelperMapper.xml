@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebHelperMapper">
+	
+	<!-- 添加反馈信息 -->
+	<select id="helperList" resultType="PageData">
+		SELECT id,issue,answer FROM web_helper;
+	</select>
+	
+	<select id="helperWebList" resultType="PageData" parameterType="PageData">
+		SELECT id,issue,answer FROM web_helper 
+		WHERE 1 = 1
+		<if test=" issue != null and issue != '' ">
+			AND issue LIKE CONCAT('%',#{issue},'%')
+		</if>
+		<if test=" answer != null and answer != '' ">
+			AND answer LIKE CONCAT('%',#{answer},'%')
+		</if>
+		LIMIT ${startLine},${showLine};
+	</select>
+	
+	<select id="helperWebListCount" resultType="Long" parameterType="PageData">
+		SELECT COUNT(*) FROM web_helper
+		WHERE 1 = 1
+		<if test=" issue != null and issue != '' ">
+			AND issue LIKE CONCAT('%',#{issue},'%')
+		</if>
+		<if test=" answer != null and answer != '' ">
+			AND answer LIKE CONCAT('%',#{answer},'%')
+		</if>
+		;
+	</select>
+	
+	<insert id="addHelper" parameterType="PageData">
+		INSERT web_helper (create_time,issue,answer) VALUES (NOW(),#{issue},#{answer});
+	</insert>
+	
+	<update id="updateHelper" parameterType="PageData">
+		UPDATE web_helper SET update_time = NOW(),issue=#{issue},answer=#{answer} WHERE id = #{id};
+	</update>
+	
+	<select id="detail" parameterType="PageData" resultType="PageData">
+		SELECT id,issue,answer FROM web_helper 
+		WHERE id=#{id};
+	</select>
+	
+	<delete id="delHelper" parameterType="PageData">
+		DELETE FROM web_helper WHERE id = #{id};
+	</delete>
+	
+</mapper>

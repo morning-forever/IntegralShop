@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarBrandMapper">
+
+	<select id="findCarBrandList" resultType="pageData">
+		SELECT id,brand FROM `web_car_brand` WHERE brand_type=#{brandType}
+		<if test=" brandName !=null and brandName !='' ">
+			AND brand LIKE '%${brandName}%'
+		</if>
+	</select>
+	
+	<select id="findforWebBrandList" resultType="pageData">
+		SELECT wcb.`id`,wcb.`brand`
+		FROM `web_car_brand` AS wcb
+		WHERE wcb.`brand_type`=#{brandType}
+		GROUP BY wcb.`id`
+	</select>
+
+	<insert id="insertBrand">
+		INSERT INTO `web_car_brand`
+		SET create_time=NOW(),
+		update_time=NOW(),
+		brand=#{brandName},
+		brand_type=#{brandType}
+	</insert>
+	
+	<select id="checkBrandNameOnly" resultType="long">
+		SELECT id
+		FROM `web_car_brand`
+		WHERE brand=#{brandName} AND brand_type=#{brandType}
+	</select>
+
+</mapper>

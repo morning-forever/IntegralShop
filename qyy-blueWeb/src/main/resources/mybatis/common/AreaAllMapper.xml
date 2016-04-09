@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="AreaAllMapper">
+
+	<resultMap type="areaAll" id="areaAllMap">
+		<id column="id" property="id"/>
+		<result column="create_date" property="createDate"/>
+		<result column="modify_date" property="modifyDate"/>
+		<result column="orders" property="orders"/>
+		<result column="full_name" property="fullName"/>
+		<result column="name" property="name"/>
+		<result column="tree_path" property="treePath"/>
+		<result column="parent" property="parent"/>
+		<result column="first" property="first"/>
+		<result column="full" property="full"/>
+		<result column="is_show" property="isShow"/>
+	</resultMap>
+	
+	<select id="findAreaByParentId" parameterType="map" resultMap="areaAllMap">
+		SELECT * FROM `area_all` WHERE parent=#{parnetId}
+	</select>
+
+</mapper>

@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCitysMapper">
+
+	<!-- 获取区列表，有省市区 -->
+	<select id="findAllList" parameterType="PageData" resultType="PageData">
+		SELECT wc3.id, wc1.name province,wc2.name city,wc3.name county
+		FROM web_citys wc1
+		INNER JOIN web_citys wc2
+		ON wc1.id = wc2.parent_id
+		INNER JOIN web_citys wc3 ON wc2.id = wc3.parent_id
+		AND wc3.ctype ='county'
+		WHERE 1
+		= 1
+
+		<if test=" provinceId != null and provinceId != '' ">
+			AND wc1.id = #{provinceId}
+		</if>
+
+		<if test="cityId != null and cityId != ''">
+			AND wc2.id = #{cityId}
+		</if>
+
+		<if test="countyId != null and countyId != ''">
+			AND wc3.id = #{countyId}
+		</if>
+		<if test="startLine != null and startLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+		;
+	</select>
+	
+	<select id="getListByParentId" parameterType="PageData" resultType="PageData">
+		SELECT id,`name` ,ctype
+		<if test="selectId != null and selectId != '' ">
+			,IF(id = #{selectId},1,0) isSelect 
+		</if>
+		FROM web_citys WHERE 
+		<if test="parentId != 0 ">
+			parent_id = #{parentId}
+		</if>
+		<if test="parentId == 0 ">
+			ctype='province' 
+		</if>
+		;
+	</select>
+	
+	<select id="findAllId" parameterType="PageData" resultType="PageData">
+		SELECT c1.id countyId,c2.id cityId,c3.id provinceId FROM web_citys c1 
+		LEFT JOIN web_citys c2 ON c1.parent_id = c2.id
+		LEFT JOIN web_citys c3 ON c2.parent_id = c3.id
+		WHERE c1.ctype='county' 
+		AND c1.id = #{id}  ;
+	</select>
+	
+	<select id="pageListTotalCount" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*)
+		FROM web_citys wc1
+		INNER JOIN web_citys wc2 ON wc1.id = wc2.parent_id
+		INNER JOIN web_citys
+		wc3 ON wc2.id = wc3.parent_id
+		AND wc3.ctype ='county'
+		WHERE 1 = 1
+
+		<if test=" provinceId != null and provinceId != '' ">
+			AND wc1.id = #{provinceId}
+		</if>
+
+		<if test="cityId != null and cityId != ''">
+			AND wc2.id = #{cityId}
+		</if>
+
+		<if test="countyId != null and countyId != ''">
+			AND wc3.id = #{countyId}
+		</if>
+
+		;
+	</select>
+
+	<select id="findProvinceList" parameterType="PageData" resultType="PageData">
+		SELECT wc1.id, wc1.name province
+		FROM web_citys wc1 WHERE wc1.ctype='province'
+		;
+	</select>
+
+	<select id="findCitysList" parameterType="PageData" resultType="PageData">
+		SELECT wc2.id, wc1.name province,wc2.name city
+		FROM web_citys wc1
+		INNER JOIN web_citys wc2 ON wc1.id =
+		wc2.parent_id
+		AND wc2.ctype='city'
+		WHERE 1 = 1
+		<if test="provinceId != null and provinceId != ''">
+			AND wc1.id = #{provinceId}
+		</if>
+		<if test="cityId != null and cityId != ''">
+			AND wc2.id = #{cityId}
+		</if>
+		;
+	</select>
+	
+	<select id="findCountyByCityId" parameterType="PageData" resultType="PageData">
+		SELECT wc1.id , wc1.`name`
+		FROM web_citys wc1
+		WHERE 1 = 1
+		AND
+		wc1.parent_id = #{cityId}
+		;
+	</select>
+	
+	
+	<select id="getById" parameterType="PageData" resultType="PageData">
+		SELECT
+		id ,DATE_FORMAT(create_time,'%Y-%m-%d
+		%H:%i:%s') createTime
+		,DATE_FORMAT(update_time,'%Y-%m-%d %H:%i:%s')
+		updateTime
+		,`name`,ctype,parent_id
+		parentId
+		FROM web_citys WHERE id = #{id};
+	</select>
+
+	<select id="checkIsHave" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_citys
+		WHERE
+		`name` LIKE CONCAT(CONCAT('%', #{name} ),'%')
+		AND ctype = #{ctype}
+		<if test="parentId !=null and parentId != '' ">
+			AND parent_id = #{parentId} ;
+		</if>
+	</select>
+	
+	<select id="checkEditIsHave" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_citys
+		WHERE
+		`name` LIKE CONCAT(CONCAT('%', #{name} ),'%')
+		AND ctype = #{ctype} AND id != #{id}
+		<if test="parentId !=null and parentId != '' ">
+			AND parent_id = #{parentId} ;
+		</if>
+	</select>
+	
+	
+	<select id="findAllObject" parameterType="PageData" resultType="PageData">
+		SELECT wc3.id countyId,wc2.id cityId,wc1.id provinceId, wc1.name province,wc2.name city,wc3.name county
+		FROM web_citys wc1
+		INNER JOIN web_citys wc2
+		ON wc1.id = wc2.parent_id
+		INNER JOIN web_citys wc3 ON wc2.id = wc3.parent_id
+		WHERE wc3.id = ${id};
+	</select>
+	
+	<update id="updateCitys" parameterType="PageData">
+		UPDATE web_citys SET `name` = #{name} WHERE id = #{id}
+	</update>
+
+	<insert id="insertCitys" parameterType="PageData">
+		INSERT web_citys (
+		create_time,`name`,ctype,parent_id
+		)VALUES(
+		NOW(),#{name},#{ctype},#{parentId}
+		)
+	</insert>
+	
+	<select id="findChildCity" parameterType="long" resultType="pageData">
+		SELECT name,id FROM `web_citys` WHERE parent_id=#{id}
+	</select>
+
+	<select id="findPGId" parameterType="long" resultType="pageData">
+		SELECT a.`id` as id,b.`id` as pid,b.`parent_id` as gid FROM `web_citys` AS a LEFT JOIN `web_citys` AS b ON a.`parent_id`=b.`id` WHERE a.`id`=#{id}
+	</select>
+	
+	<select id="getSpecificAddress" resultType="String">
+		SELECT CONCAT(provinces.`name`,city.`name`,county.`name`) AS address
+		FROM `web_citys` AS county LEFT JOIN `web_citys` AS city ON county.`parent_id`=city.`id`
+		LEFT JOIN `web_citys` AS provinces ON provinces.`id`=city.`parent_id`
+		WHERE county.`id`=#{id}
+	</select>
+	
+	<!-- 根据类型，返回当前类型下所有的信息 -->
+	<select id="findListByType" parameterType="String" resultType="PageData" >
+		SELECT id,`name`,ctype,parent_id parentId FROM web_citys WHERE ctype = #{type}
+	</select>
+	
+	<!-- 返回门店 -->	
+	<select id="findStoreList" parameterType="PageData" resultType="pageData">
+		SELECT id,store,IFNULL(addr_detail,'暂无') addrDetail,IFNULL(link_tel,'暂无') linkTel,IFNULL( CONCAT(open_start,'-',open_end) ,'暂无') AS openTime 
+		FROM `web_car_addrs` WHERE `area`=#{countyId} AND addr_type = #{type}
+	</select>
+	
+	<!-- 查询酒店地点所在省地址List -->
+	<select id="findHotelAddrList" resultType="pageData">
+		SELECT pwc.`id`,pwc.`name`
+		FROM `merch_hotel_loc` AS mhc 
+		LEFT JOIN `web_citys` AS wc ON mhc.`addr_id`=wc.`id`
+		LEFT JOIN `web_citys` AS pwc ON wc.`parent_id`=pwc.`id`
+		GROUP BY pwc.`id`
+	</select>
+	
+	<select id="findHotelCityList" resultType="pageData">
+		SELECT wc.`id`,wc.`name`
+		FROM `merch_hotel_loc` AS mhc
+		LEFT JOIN `web_citys` AS wc ON wc.`id`=mhc.`addr_id`
+		WHERE wc.`parent_id`=#{id}
+		GROUP BY wc.`id`
+	</select>
+	
+	<select id="findAllCounty" resultType="map">
+		SELECT id,`name`
+		FROM `web_citys`
+		WHERE ctype='county'
+	</select>
+	
+	<select id="findAllProvince" resultType="map">
+		SELECT id,`name`
+		FROM `web_citys`
+		WHERE ctype='province'
+	</select>
+	
+	<select id="findAllCity" resultType="map">
+		SELECT id,NAME
+		FROM `area_all` AS aa
+		WHERE aa.`parent`=#{cityId}
+	</select>
+	
+	<select id="checkDepthAddr" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_depth_addr_ct wdac
+		LEFT JOIN web_citys wc ON wc.id = wdac.addr_id AND wc.ctype ='county'
+		WHERE wc.id = #{addrId}
+	</select>
+	
+	<select id="checkDepthPoint" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_depth_point wdp
+		LEFT JOIN web_citys wc ON wc.id = wdp.at_addr_id  AND wc.ctype ='county'
+		WHERE wc.id = #{addrId}
+	</select>
+	
+	<select id="checkTravels" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_travels wt
+		LEFT JOIN web_citys wc ON wc.id = wt.at_addr  AND wc.ctype ='county'
+		WHERE wc.id = #{addrId}
+	</select>
+	<select id="checkCartAddr" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_car_addrs wca
+		LEFT JOIN web_citys wc ON wc.id = wca.area  AND wc.ctype ='county'
+		WHERE wc.id = #{addrId}
+	</select>
+	
+	<delete id="delCitys" parameterType="PageData">
+		DELETE FROM web_citys WHERE id = #{addrId};
+	</delete>
+	
+	<update id="updateProvince">
+		UPDATE `web_citys`
+		SET `name`=#{name}
+		WHERE id=#{id}
+	</update>
+	
+	
+</mapper>

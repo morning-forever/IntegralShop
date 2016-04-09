@@ -1,0 +1,1191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebOrderMapper">
+
+	<select id="findOrderTypeById" resultType="String">
+		SELECT order_type
+		FROM `web_order_form`
+		WHERE id=#{id}
+	</select>
+	
+	<select id="findHotelOrderList" resultType="pageData">
+		SELECT wof.id,mg.`title`,wof.`order_code`,wof.`pay_order_id`,wu.`nickname`,wu.`phone`,woi.`goods_count`*woi.`real_price` AS count_price,
+		wof.`create_time`,
+		wof.`order_state`
+		FROM `web_order_form` AS wof JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		LEFT JOIN `merch_goods` AS mg ON woi.`goods_id`=mg.`id`
+		LEFT JOIN `web_user` AS wu ON wof.`user_id`=wu.`id`
+		WHERE wof.`merch_user_id`=#{id}
+		AND wof.`is_delete`=0
+ 		AND wof.`order_type` = #{orderType}
+		<if test=" user != null and user != '' ">
+			AND wu.`nickname` LIKE '%${user}%'
+		</if>
+		<if test=" orderId != null and orderId != '' ">
+			AND wof.`order_code` LIKE '%${orderId}%'
+		</if>
+		<if test=" payId != null and payId != '' ">
+			AND wof.`pay_order_id` LIKE '%${payId}%'
+		</if>
+		<if test=" phone != null and phone != '' ">
+			AND wu.`phone` LIKE '%${phone}%'
+		</if>
+		<if test=" serchDate != null and serchDate != '' ">
+			AND DATE_FORMAT(wof.`create_time`,'%Y-%m-%d')=#{serchDate}
+		</if>
+		<if test=" status != null and status != '' ">
+			AND wof.`order_state`=#{status}
+		</if>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findHotelOrderListCount" resultType="long">
+		SELECT count(*)
+		FROM `web_order_form` AS wof JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		LEFT JOIN `merch_goods` AS mg ON woi.`goods_id`=mg.`id`
+		LEFT JOIN `web_user` AS wu ON wof.`user_id`=wu.`id`
+		WHERE wof.`merch_user_id`=#{id}
+		AND wof.`is_delete`=0
+  		AND wof.`order_type` = #{orderType}
+		<if test=" user != null and user != '' ">
+			AND wu.`nickname` LIKE '%${user}%'
+		</if>
+		<if test=" orderId != null and orderId != '' ">
+			AND wof.`order_code` LIKE '%${orderId}%'
+		</if>
+		<if test=" payId != null and payId != '' ">
+			AND wof.`pay_order_id` LIKE '%${payId}%'
+		</if>
+		<if test=" phone != null and phone != '' ">
+			AND wu.`phone` LIKE '%${phone}%'
+		</if>
+		<if test=" serchDate != null and serchDate != '' ">
+			AND DATE_FORMAT(wof.`create_time`,'%Y-%m-%d')=#{serchDate}
+		</if>
+		<if test=" status != null and status != '' ">
+			AND wof.`order_state`=#{status}
+		</if>
+	</select>
+	
+	<update id="deleteOrders">
+		UPDATE `web_order_form`
+		SET is_delete=1
+		WHERE id IN (${ids})
+	</update>
+	
+	<update id="closeOrders">
+		UPDATE `web_order_form`
+		SET order_state='CLOSED'
+		WHERE id =#{id}
+	</update>
+	
+	<select id="findScenicOrderDetialById" resultType="pageData">
+		SELECT wu.`email`,wof.`order_code`,DATE_FORMAT(wof.`create_time`,'%Y-%m-%d %H:%i:%s') AS create_time,wof.`order_state`,woi.`goods_count`,woi.`real_price`,
+		mg.`title`,mgs.`at_area_id`,mgs.`addr_detail`,wu.`nickname`,wu.`phone`,wof.`pay_order_id`,woi.`coupon_no`,
+		au.`username`,DATE_FORMAT(mgs.`coupon_time`,'%Y-%m-%d') AS coupon_time
+		FROM `web_order_form` AS wof JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		JOIN `merch_goods` AS mg ON woi.`goods_id`=mg.`id` JOIN `merch_goods_scenic` AS mgs ON mgs.`goods_id`=mg.`id`
+		JOIN `web_user` AS wu ON wu.`id`=wof.`merch_user_id` JOIN `merch_user` AS mu ON wof.`merch_user_id`=mu.`id`
+		JOIN `admin_user` AS au ON au.`id`=mu.`admin_id`
+		WHERE wof.`id`=#{id}
+	</select>
+	
+	<!-- 根据订单编号查询订单 -->
+	<select id="findOrderFormByCode" resultType="PageData">
+		select * from web_order_form where order_code = #{orderCode}
+	</select>
+	
+	<!-- 新增订单 -->
+	<insert id="insertOrderForm" useGeneratedKeys="true" keyProperty="orderFormId">
+		insert into web_order_form
+		(create_time, order_type, order_code, pay_type, pay_time, order_state
+		<if test=" isInvoice != null and isInvoice !='' ">
+		, is_invoice
+		</if>
+		, is_delete, user_id, merch_user_id)
+		values
+		(NOW(), #{orderType}, #{orderCode}, #{payType}, NOW(), 'WAITPAY'
+		<if test=" isInvoice != null and isInvoice !='' ">
+		, #{isInvoice}
+		</if>
+		, 0, #{userId}, 0)
+	</insert>
+	
+	<!-- 新增订单条目 -->
+	<insert id="insertOrderItem" useGeneratedKeys="true" keyProperty="orderItemId">
+		insert into web_order_item
+		(create_time, goods_id, goods_count, real_price 
+		<if test=" isSafe != null and isSafe !='' ">
+		, is_safe
+		</if>
+		, safe_price, form_id)
+		values
+		(NOW(), #{goodsId}, #{goodsCount}, #{realPrice}
+		<if test=" isSafe != null and isSafe !='' ">
+		, #{isSafe}
+		</if>
+		, #{safePrice}, #{orderFormId})
+	</insert>
+	
+	<!-- 新增订单条目使用人信息 -->
+	<insert id="insertOrderItemPerson">
+		insert into web_order_item_person
+		(create_time, item_id, person_name, person_type, card_no, card_type, person_phone
+		<if test=" bankName != null and bankName !='' ">
+		,bank_name,bank_card
+		</if>
+		)
+		values
+		(NOW(), #{orderItemId}, #{personName}, #{personType}, #{cardNo}, #{cardType}, #{personPhone}
+		<if test=" bankName != null and bankName !='' ">
+			,#{bankName},#{bankCard}
+		</if>
+		)
+	</insert>
+	
+	<!-- 新增订单发票 -->
+	<insert id="insertOrderInvoice">
+		insert into web_order_invoice
+		(create_time, title, receiver, phone, addr_id, addr_detail, post_code, order_form_id)
+		values
+		(NOW(), #{title}, #{receiver}, #{phone}, #{addrId}, #{addrDetail}, #{postCode}, #{orderFormId})
+	</insert>
+	
+	<!-- 根据订单id找到订单条目 -->
+	<select id="findOrderItemByFormId" resultType="PageData">
+		select * from web_order_item where form_id = #{orderFormId}
+	</select>
+	
+	<insert id="insertOrderRentInfo"  useGeneratedKeys="true" keyProperty="id">
+		INSERT INTO `web_order_rent_info` 
+		SET create_time=NOW(),
+		start_date=#{startDate},
+		end_date=#{endDate},
+		get_store_id=#{getStoreId},
+		lose_store_id=#{loseStoreId},
+		order_form_id=#{orderFormId},
+		day_price=#{dayPrice}
+	</insert>
+	
+	<update id="updateOrderState">
+		UPDATE web_order_form 
+		SET 
+		order_state = #{newState}
+		<if test=" payOrderId != null and payOrderId != '' ">
+			,pay_type = #{payType}
+			,pay_order_id =#{payOrderId} 
+			,pay_time = NOW()
+		</if>
+		WHERE id = #{orderId} AND order_state = #{oldState};	
+	</update>
+	
+	<update id="updateOrderPay">
+		UPDATE web_order_form SET pay_type =#{payTime},pay_order_id =#{payOrderId},pay_time = NOW() WHERE id= #{orderId};
+	</update>
+	
+	<!-- 返回订单中的links方式 -->
+	<select id="findOrderLinks" parameterType="PageData" resultType="PageData">
+		SELECT woi.goods_id goodsId,wof.order_code orderCode,woip.person_phone phone,woip.card_no cardNo,woip.person_name name,woi.real_price realPrice
+		FROM web_order_form wof
+		LEFT JOIN web_order_item woi ON woi.form_id = wof.id
+		LEFT JOIN web_order_item_person woip ON woip.item_id = woi.id
+		WHERE wof.id = #{orderId} ORDER BY woip.id LIMIT 0,1;
+	</select>
+	
+	<select id="checkOrderState" parameterType="PageData" resultType="Integer">
+		SELECT COUNT(*) FROM web_order_form WHERE id = #{orderId} AND order_state = #{orderState};
+	</select>
+	
+	<select id="findRealPriceByOrderId" parameterType="PageData" resultType="Double">
+	SELECT real_price realPrice FROM web_order_form wof
+	LEFT JOIN web_order_item woi ON woi.form_id = wof.id
+	WHERE wof.id = #{orderId};
+	
+	</select>
+	
+	<!-- 租车订单 -->
+	<sql id="rentOrderList">
+		SELECT wof.`id`,wof.`create_time`,wof.`order_code`,wcb.`brand`,wcs.`sys`,wct.`car_type`,wcr.`outputs`,wcr.`gearbox`,woi.`real_price`,wof.`order_state`
+		,cu.`pic_url`,wori.`start_date`,wof.`pay_order_id`,wu.`nickname`,wu.`phone`,woip.`person_name`,woip.`person_phone`,
+		woip.`bank_card`,woip.`bank_name`,wof.`pay_type`,woip.`refund_over_time`,woip.`refund_time`,woip.`is_examine`
+		FROM `web_order_form` AS wof
+		LEFT JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		LEFT JOIN `web_car` AS wc ON woi.`goods_id`=wc.`id`
+		LEFT JOIN `web_car_rent` AS wcr ON wc.`id`=wcr.`car_id`
+		LEFT JOIN `web_car_brand` AS wcb ON wcb.`id`=wc.`brand_id`
+		LEFT JOIN `web_car_sys` AS wcs ON wcs.`id`=wc.`sys_id`
+		LEFT JOIN `web_car_type_ct` AS wctc ON wctc.`car_id`=wc.`id`
+		LEFT JOIN `web_car_type` AS wct ON wct.`id`=wctc.`car_type_id`
+		LEFT JOIN `common_upload` AS cu ON cu.`pic_from`='carRent' AND cu.`pic_type`='detial' AND cu.`from_id`=wc.`id`
+		LEFT JOIN `web_order_rent_info` AS wori ON wori.`order_form_id`=wof.`id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wof.`user_id`
+		LEFT JOIN `web_order_item_person` AS woip ON woip.`item_id`=woi.`id`
+		WHERE  wof.`order_type`='carRent' AND wof.`is_delete`=0
+		<if test=" nickName !=null and nickName !='' ">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		<if test=" orderCode !=null and orderCode !='' ">
+			AND wof.`order_code` LIKE '%${orderCode}%'
+		</if>
+		<if test=" payOrderId !=null and payOrderId !='' ">
+			AND wof.`pay_order_id` LIKE '%${payOrderId}%'
+		</if>
+		<if test=" phone !=null and phone !='' ">
+			AND wu.`phone` LIKE '%${phone}%'
+		</if>
+		<if test=" orderType !=null and orderType !='' ">
+			AND wof.`order_state`=#{orderType}
+		</if>
+		<if test=" orderTypes !=null and orderTypes !='' ">
+			AND wof.`order_state` in (${orderTypes})
+		</if>
+		<if test=" startDate !=null and startDate !='' ">
+			AND DATE_FORMAT(wof.`create_time`,'%Y-%m-%d')=#{startDate}
+		</if>
+		<if test=" userId !=null and userId !='' ">
+			AND wof.`user_id`=#{userId}
+		</if>
+		<if test=" payType != null and payType != '' ">
+			AND wof.`order_state`='WAITPAY'
+		</if>
+		<if test=" evaluate != null and evaluate != '' ">
+			AND wof.`is_evaluate`=1
+		</if>
+		<if test=" personName != null and personName != '' ">
+			AND woip.`person_name` LIKE '%${personName}%'
+		</if>
+		<if test=" bankName != null and bankName != '' ">
+			AND woip.`bank_name` LIKE '%${bankName}%'
+		</if>
+		<if test=" bankCard != null and bankCard != '' ">
+			AND woip.`bank_card` LIKE '%${bankCard}%'
+		</if>
+		<if test=" title != null and title != '' ">
+			AND CONCAT(wcb.brand,wcs.sys,"/", wct.car_type,"/", wcr.outputs, wcr.gearbox) LIKE '%${title}%'
+		</if>
+		GROUP BY wof.`id`
+		ORDER BY wof.`create_time` DESC
+	</sql>
+	<select id="findCarRentOrderList" resultType="pageData">
+		<include refid="rentOrderList"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findCarRentOrderListCount" resultType="long">
+		SELECT COUNT(*) 
+		FROM (
+		<include refid="rentOrderList"></include>
+		) as `result`
+	</select>
+	
+	<!-- 包车订单 -->
+	<sql id="wrapOrderList">
+		SELECT wof.`id`,wof.`create_time`,wof.`order_code`,wof.`pay_order_id`,wcb.`brand`,wcs.`sys`,wcw.`seating`,woi.`real_price`,wof.`order_state`
+		,cu.`pic_url`,wu.`nickname`,woip.`person_name`,wu.`phone`,wof.`pay_type`,
+		woip.`bank_card`,woip.`bank_name`,woip.`refund_time`,woip.`refund_over_time`,woip.`is_examine`,woi.`goods_count`,wof.`order_type`
+		,wcwi.`start_time` AS start_date
+		FROM `web_order_form` AS wof
+		LEFT JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		LEFT JOIN `web_car_wrap_info` AS wcwi ON woi.`goods_id` = wcwi.`id`
+    	LEFT JOIN `web_car` AS wc ON wc.`id`=wcwi.`car_id`
+		LEFT JOIN `web_car_wrap` AS wcw ON wc.`id`=wcw.`car_id`
+		LEFT JOIN `web_car_brand` AS wcb ON wcb.`id`=wc.`brand_id`
+		LEFT JOIN `web_car_sys` AS wcs ON wcs.`id`=wc.`sys_id`
+		LEFT JOIN `common_upload` AS cu ON cu.`pic_from`='carWrap' AND cu.`pic_type`='banner' AND cu.`from_id`=wc.`id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wof.`user_id`
+		LEFT JOIN `web_order_item_person` AS woip ON woip.`item_id`=woi.`id`
+		WHERE wof.`order_type`='carWrap' AND wof.`is_delete`=0
+		<if test=" nickName !=null and nickName !='' ">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		<if test=" orderCode !=null and orderCode !='' ">
+			AND wof.`order_code` LIKE '%${orderCode}%'
+		</if>
+		<if test=" payOrderId !=null and payOrderId !='' ">
+			AND wof.`pay_order_id` LIKE '%${payOrderId}%'
+		</if>
+		<if test=" phone !=null and phone !='' ">
+			AND wu.`phone` LIKE '%${phone}%'
+		</if>
+		<if test=" orderType !=null and orderType !='' ">
+			AND wof.`order_state`=#{orderType}
+		</if>
+		<if test=" orderTypes !=null and orderTypes !='' ">
+			AND wof.`order_state` in (${orderTypes})
+		</if>
+		<if test=" startDate !=null and startDate !='' ">
+			AND DATE_FORMAT(wof.`create_time`,'%Y-%m-%d')=#{startDate}
+		</if>
+		<if test=" userId !=null and userId !='' ">
+			AND wof.`user_id`=#{userId}
+		</if>
+		<if test=" personName != null and personName != '' ">
+			AND woip.`person_name` LIKE '%${personName}%'
+		</if>
+		<if test=" bankName != null and bankName != '' ">
+			AND woip.`bank_name` LIKE '%${bankName}%'
+		</if>
+		<if test=" bankCard != null and bankCard != '' ">
+			AND woip.`bank_card` LIKE '%${bankCard}%'
+		</if>
+		<if test=" payType != null and payType != '' ">
+			AND wof.`order_state`='WAITPAY'
+		</if>
+		<if test=" evaluate != null and evaluate != '' ">
+			AND wof.`is_evaluate`=1
+		</if>
+		<if test=" title != null and title != '' ">
+			AND CONCAT(wcb.brand,"/乘坐", wcw.`seating`,"人") LIKE '%${title}%'
+		</if>
+		GROUP BY wof.`id`
+		ORDER BY wof.`create_time` DESC
+	</sql>
+	
+	<select id="findCarWrapOrderList" resultType="pageData">
+		<include refid="wrapOrderList"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findCarWrapOrderListCount" resultType="long">
+		SELECT COUNT(*) 
+		FROM (
+		<include refid="wrapOrderList"></include>
+		) as `result`
+	</select>
+	
+	<!-- 拼车订单 -->
+	<sql id="CarPoolOrderList">
+		SELECT wof.`id`,COUNT(woip.`id`) AS peopleNumber,wof.`create_time`,wof.`order_code`,wof.`pay_order_id`,swc.`name` AS startCity,ewc.`name` AS endCity,woi.`real_price`,wof.`order_state`
+		,wu.`nickname`,woip.`person_name`,wu.`phone`,wof.`pay_type`,woip.`person_phone`,
+		woip.`bank_card`,woip.`bank_name`,woip.`refund_time`,woip.`refund_over_time`,woip.`is_examine`,
+		wcc.`publish_name`,wcc.`publish_phone`,wcc.`start_time` AS start_date,wof.`order_type`
+		FROM `web_order_form` AS wof
+		JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		JOIN `web_car_carpool` AS wcc ON woi.`goods_id`=wcc.`id`
+		JOIN `web_citys` AS swc ON wcc.`start_city_id`=swc.`id`
+		JOIN `web_citys` AS ewc ON wcc.`end_city_id`=ewc.`id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wof.`user_id`
+		LEFT JOIN `web_order_item_person` AS woip ON woip.`item_id`=woi.`id`
+		LEFT JOIN `web_user` AS pwu ON pwu.`id`=wcc.`publish_user_id`
+		WHERE wof.`order_type`='carpool' AND wof.`is_delete`=0
+		
+		<if test=" startDate !=null and startDate !='' ">
+			AND DATE_FORMAT(wof.`create_time`,'%Y-%m-%d')=#{startDate}
+		</if>
+		<if test=" phone !=null and phone !='' ">
+			AND woip.`person_phone` LIKE '%${phone}%'
+		</if>
+		<if test=" nickName !=null and nickName !='' ">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		<if test=" wccid !=null and wccid !='' ">
+			AND wcc.`id`=#{wccid}
+		</if>
+		<if test=" userId !=null and userId !='' ">
+			AND wof.`user_id`=#{userId}
+		</if>
+		<if test=" payType != null and payType != '' ">
+			AND wof.`order_state`='WAITPAY'
+		</if>
+		<if test=" orderType !=null and orderType !='' ">
+			AND wof.`order_state`=#{orderType}
+		</if>
+		<if test=" evaluate != null and evaluate != '' ">
+			AND wof.`is_evaluate`=1
+		</if>
+		<if test=" orderCode !=null and orderCode !='' ">
+			AND wof.`order_code` LIKE '%${orderCode}%'
+		</if>
+		<if test=" payOrderId !=null and payOrderId !='' ">
+			AND wof.`pay_order_id` LIKE '%${payOrderId}%'
+		</if>
+		<if test=" personName != null and personName != '' ">
+			AND woip.`person_name` LIKE '%${personName}%'
+		</if>
+		<if test=" bankName != null and bankName != '' ">
+			AND woip.`bank_name` LIKE '%${bankName}%'
+		</if>
+		<if test=" bankCard != null and bankCard != '' ">
+			AND woip.`bank_card` LIKE '%${bankCard}%'
+		</if>
+
+		<if test=" title !=null and title !='' ">
+			AND CONCAT(swc.`name`,'-',ewc.`name`) LIKE '%${title}%'
+		</if>
+		<if test=" startTime !=null and startTime !='' ">
+			AND DATE_FORMAT(wof.`create_time`,'%Y-%m-%d %H:%i:%s') LIKE '%${startTime}%'
+		</if>
+		<if test=" orderTypes !=null and orderTypes !='' ">
+			AND wof.`order_state` in (${orderTypes})
+		</if>
+		GROUP BY wof.`id`
+		ORDER BY wof.`create_time` DESC
+	</sql>
+	
+	<select id="findCarPoolOrderList" resultType="pageData">
+		<include refid="CarPoolOrderList"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findCarPoolOrderListCount" resultType="long">
+		SELECT COUNT(*) 
+		FROM (
+		<include refid="CarPoolOrderList"></include>
+		) as `result`
+	</select>
+	
+	<!-- 班车订单列表 -->
+	<sql id="busOrderList">
+		SELECT wof.`id`,wof.`create_time`,wof.`order_code`,wof.`pay_order_id`,wu.`nickname`,woip.`person_name`,woip.`person_phone`,swca.`addr_detail` AS fromAddr
+		,ewca.`addr_detail` AS toAddr,woi.`real_price`,wof.`order_state`,COUNT(woip.`id`) AS peopleNumber,
+		wcb.`car_card`,wcr.`from_time`,
+		woip.`bank_card`,woip.`bank_name`,woip.`refund_time`,woip.`refund_over_time`,woip.`is_examine`,wof.`pay_type`
+		,woi.`bus_start_time` AS start_date,wof.`order_type`
+		FROM `web_order_form` AS wof
+		JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		JOIN `web_car_bus` AS wcb ON woi.`goods_id`=wcb.`id`
+		JOIN `web_car_route` AS wcr ON wcb.`id`=wcr.`bus_id`
+		JOIN `web_car_addrs` AS swca ON swca.`id`=wcr.`from_addr_id`
+		JOIN `web_car_addrs` AS ewca ON ewca.`id`=wcr.`to_addr_id`
+		LEFT JOIN (SELECT `pic_url`,`from_id`,`pic_from` FROM  `common_upload` GROUP BY from_id) AS cu ON wcb.`car_id`=from_id AND  cu.`pic_from`='bus'
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wof.`user_id`
+		LEFT JOIN `web_order_item_person` AS woip ON woip.`item_id`=woi.`id`
+		WHERE  wof.`order_type`='bus'  AND wof.`is_delete`=0
+		<if test=" userId !=null and userId !='' ">
+			AND wof.`user_id`=#{userId}
+		</if>
+		<if test=" nickName !=null and nickName !='' ">
+			AND wu.`nickname` LIKE '%${nickName}%'
+		</if>
+		<if test=" orderCode !=null and orderCode !='' ">
+			AND wof.`order_code` LIKE '%${orderCode}%'
+		</if>
+		<if test=" payOrderId !=null and payOrderId !='' ">
+			AND wof.`pay_order_id` LIKE '%${payOrderId}%'
+		</if>
+		<if test=" phone !=null and phone !='' ">
+			AND wu.`phone` LIKE '%${phone}%'
+		</if>
+		<if test=" orderType !=null and orderType !='' ">
+			AND wof.`order_state`=#{orderType}
+		</if>
+		<if test=" startDate !=null and startDate !='' ">
+			AND DATE_FORMAT(wof.`create_time`,'%Y-%m-%d')=#{startDate}
+		</if>
+		<if test=" payType != null and payType != '' ">
+			AND wof.`order_state`='WAITPAY'
+		</if>
+		<if test=" evaluate != null and evaluate != '' ">
+			AND wof.`is_evaluate`=1
+		</if>
+		<if test=" busId != null and busId != '' ">
+			AND wcb.`id`=#{busId}
+		</if>
+		<if test=" date != null and date != '' ">
+			 AND DATE_FORMAT(wof.`create_time`,'%Y-%m-%d')=#{date}
+		</if>
+		<if test=" personName != null and personName != '' ">
+			AND woip.`person_name` LIKE '%${personName}%'
+		</if>
+		<if test=" bankName != null and bankName != '' ">
+			AND woip.`bank_name` LIKE '%${bankName}%'
+		</if>
+		<if test=" bankCard != null and bankCard != '' ">
+			AND woip.`bank_card` LIKE '%${bankCard}%'
+		</if>
+
+		<if test=" orderTypes !=null and orderTypes !='' ">
+			AND wof.`order_state` in (${orderTypes})
+		</if>
+		<if test=" carCard !=null and carCard !='' ">
+			AND wcb.`car_card` LIKE '%${carCard}%'
+		</if>
+		<if test=" startTime !=null and startTime !='' ">
+			AND CONCAT(DATE_FORMAT(wof.`create_time`,'%Y-%m-%d')," ",wcr.`from_time`) LIKE '%${startTime}%'
+		</if>
+ 
+		GROUP BY wof.`id`
+		ORDER BY wof.`create_time` DESC
+	</sql>
+	
+	<select id="findCarBusOrderList" resultType="pageData">
+		<include refid="busOrderList"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findCarBusOrderListCount" resultType="long">
+		SELECT COUNT(*) 
+		FROM (
+		<include refid="busOrderList"></include>
+		) as `result`
+	</select>
+	
+	<select id="findHotelOrderDetialById" resultType="pageData">
+		SELECT wu.`email`,wof.`order_code`,DATE_FORMAT(wof.`create_time`,'%Y-%m-%d %H:%i:%s') AS create_time,wof.`order_state`,woi.`goods_count`,woi.`real_price`,
+		mg.`title`,wu.`nickname`,wu.`phone`,wof.`pay_order_id`,woi.`coupon_no`,
+		au.`username`,mu.`addr_detail`,mgh.`room_name`,woi.`goods_count`,
+		DATE_FORMAT(woh.`stay_in_time`,'%Y-%m-%d') AS stay_in_time,
+		woh.`stay_in_time`,
+		woh.`leave_time`
+		FROM `web_order_form` AS wof JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		JOIN `merch_goods` AS mg ON woi.`goods_id`=mg.`id` JOIN `merch_goods_hotel` AS mgh ON mgh.`goods_id`=mg.`id`
+		JOIN `web_user` AS wu ON wu.`id`=wof.`merch_user_id` JOIN `merch_user` AS mu ON wof.`merch_user_id`=mu.`id`
+		JOIN `admin_user` AS au ON au.`id`=mu.`admin_id`
+		LEFT JOIN `web_order_hotel` AS woh ON wof.`id`=woh.`web_order_from_id`
+		WHERE wof.`id`=#{id}
+	</select>
+	
+	<!-- 查询深度游订单列表 -->
+	<select id="findDepthOrderList" resultType="PageData">
+		SELECT 
+		  wof.`id`,
+		  wof.`create_time`,
+		  wof.`order_code`,
+		  woi.`real_price`,
+		  wof.`order_state`,
+		  woi.`goods_count`,
+		  wod.`start_time`,
+		  wd.`id` AS goodsId,
+		  wd.`name`,
+		  cu.`pic_url`,
+		  wof.`is_evaluate` 
+		FROM
+		  `web_order_form` AS wof 
+		  JOIN `web_order_item` AS woi 
+		    ON wof.`id` = woi.`form_id` 
+		  JOIN web_depth AS wd 
+		    ON wd.`id` = woi.`goods_id` 
+		  JOIN web_order_depth wod 
+    		ON wod.`order_from_id` = wof.`id` 
+		  LEFT JOIN `common_upload` AS cu 
+		    ON cu.`from_id` = wd.`id` 
+		    AND cu.`pic_from` = 'depth' 
+		    AND cu.`pic_type` = #{picType} 
+		WHERE wof.`user_id` = #{userId} 
+		  AND wof.`order_type` = 'depth' 
+		  AND wof.is_delete = 0
+		<if test=" payState != null and payState != '' ">
+			AND wof.`order_state`= #{payState}
+		</if>
+		<if test=" isEvaluate != null and isEvaluate != '' ">
+			AND wof.`is_evaluate`= #{isEvaluate}
+		</if>
+		<if test=" isEvaluate != null and isEvaluate != '' and isEvaluate == 1 ">
+			AND DATE_FORMAT(wod.`start_time`, '%Y-%m-%d') &lt;= str_to_date(NOW() , '%Y-%m-%d') 
+		</if>
+		ORDER BY wof.`create_time` DESC 
+		<if test="showLine != null and showLine !='' ">
+			LIMIT ${startLine} , ${showLine}
+		</if>
+	</select>
+	
+	<!-- 查询深度游订单总数 -->
+	<select id="findDepthOrderListCount" resultType="Long">
+		SELECT 
+		  count(1)
+		FROM
+		  `web_order_form` AS wof 
+		  JOIN `web_order_item` AS woi 
+		    ON wof.`id` = woi.`form_id` 
+		  JOIN web_depth AS wd 
+		    ON wd.`id` = woi.`goods_id` 
+		  JOIN web_order_depth wod 
+    		ON wod.`order_from_id` = wof.`id` 
+		WHERE wof.`user_id` = #{userId} 
+		  AND wof.`order_type` = 'depth' 
+		  AND wof.is_delete = 0
+		<if test=" payState != null and payState != '' ">
+			AND wof.`order_state`= #{payState}
+		</if>
+		<if test=" isEvaluate != null and isEvaluate != '' ">
+			AND wof.`is_evaluate`= #{isEvaluate}
+		</if>
+		<if test=" isEvaluate != null and isEvaluate != '' and  isEvaluate == 1 ">
+			AND DATE_FORMAT(wod.`start_time`, '%Y-%m-%d') &lt;= str_to_date(NOW() , '%Y-%m-%d') 
+		</if>
+	</select>
+	
+	<!-- 查询订单详情 -->
+	<select id="findDepthOrderDetail" resultType="PageData">
+		SELECT 
+		  wof.id,
+		  wof.`create_time`,
+		  wof.`order_code`,
+		  wof.order_type,
+		  wof.pay_order_id,
+		  wof.`order_state`,
+		  wod.`start_time`,
+		  ADDDATE(wod.`start_time`,INTERVAL (wd.`days` - 1) DAY) AS end_time,
+		  wd.`days`,
+		  woi.`real_price`,
+		  woi.`goods_count`,
+		  woi.`goods_id` AS goodsId,
+		  wd.`name`,
+		  wod.`person_name`,
+		  wod.`person_phone`,
+		  cu.pic_url,
+		  wc2.`name` AS city,
+  		  wdta.`trip_addr`,
+  		  wof.`is_evaluate`,
+  		  wor.`create_time` AS refundTime,
+		  wor.`person_name` AS refundName,
+		  wor.`bank_name`,
+		  wor.`bank_no`  
+		FROM
+		  web_order_form wof 
+		  JOIN web_order_item woi 
+		    ON woi.`form_id` = wof.`id` 
+		  JOIN web_order_depth wod 
+		    ON wod.`order_from_id` = wof.`id` 
+		  JOIN web_depth wd 
+		    ON wd.`id` = woi.`goods_id` 
+		  LEFT JOIN common_upload cu 
+		    ON cu.pic_from = 'depth' 
+		    AND cu.pic_type = #{picType} 
+		    AND cu.from_id = wd.id 
+		  INNER JOIN web_citys wc1 
+		    ON wc1.`ctype` = 'province' 
+		  INNER JOIN web_citys wc2 
+		    ON wc1.id = wc2.parent_id 
+		    AND wc2.`ctype` = 'city' 
+		    AND wc2.id = wod.`start_addr_id` 
+		  LEFT JOIN web_depth_trip wdt 
+		    ON wdt.`depth_id` = wd.`id` 
+		    AND wdt.`day_type` = 'end' 
+		  LEFT JOIN web_depth_trip_addrs wdta 
+		    ON wdta.`trip_id` = wdt.`id` 
+		    AND wdta.`trip_order` = '1'
+		  LEFT JOIN web_order_refund wor 
+    		ON wor.`form_id` = wof.`id`
+    		AND wor.`state` = 'ADD'
+		  WHERE wof.id = #{id} AND wof.`is_delete`=0
+	</select>
+	
+	<!-- 查询订单关联人信息列表 -->
+	<select id="findOrderPersonList" resultType="PageData">
+		SELECT 
+		  woip.person_phone,
+		  woip.card_no,
+		  woip.`card_type`,
+		  woip.`person_type`,
+		  woip.person_name
+		FROM
+		  web_order_form wof 
+		  LEFT JOIN web_order_item woi 
+		    ON woi.form_id = wof.id 
+		  LEFT JOIN web_order_item_person woip 
+		    ON woip.item_id = woi.id 
+		WHERE wof.id = #{id}
+	</select>
+	
+	<!-- 修改订单的评价状态为已评价 -->
+	<update id="updateOrderEvaluate">
+		update web_order_form wof set wof.is_evaluate = 0 where wof.id = #{id}
+	</update>
+	
+	<!-- 检验订单是否评价过 -->
+	<select id="checkIsEvaluate" resultType="Integer">
+		select count(1) from web_order_form wof where wof.is_evaluate = 0 and wof.id = #{id}
+	</select>
+	
+	<!-- 新增一条退款信息 -->
+	<insert id="addRefund">
+		insert into web_order_refund
+		(create_time, person_name, bank_name, bank_no, reason, form_id)
+		values
+		(NOW(), #{personName}, #{bankName}, #{bankNo}, #{reason}, #{formId})
+	</insert>
+	
+	<!-- 删除退款信息 -->
+	<delete id="deleteRefund">
+		update web_order_refund set state = 'DELETE' where form_id = #{formId}
+	</delete>
+	
+	<select id="findCarRentOrderDetial" resultType="map">
+		<!-- ID:167 有数据 -->
+		SELECT wof.`id`,wof.`create_time`,wof.`order_code`,wof.`pay_order_id`,wcb.`brand`,wcs.`sys`,
+		wct.`car_type`,wcr.`outputs`,wcr.`gearbox`,wc.`car_year`,wc.`car_configure`,
+		wc.`seating`,wcr.`door`,wcr.`fuel`,wcr.`fuel_grade`,wcr.`drives`,wcr.`air_form`,
+		wcr.`skylight`,wcr.`fuel_tankage`,wcr.`voice_box`,wcr.`chair`,wcr.`radar`,
+		wcr.`gasbag`,wcr.`dvdcd`,wcr.`gps`,
+		woi.`real_price`,woi.`safe_price`,wof.`order_state`
+		,wu.`email`
+		,cu.`pic_url`,wof.`order_type`,swca.`addr_detail` AS getStore,wori.`start_date`,ewca.`addr_detail` AS loseStore,wori.`end_date`,
+		TIMESTAMPDIFF(DAY,DATE_FORMAT(wori.`start_date`,"%Y-%m-%d"),DATE_FORMAT(wori.`end_date`,"%Y-%m-%d")) AS `day`,
+		woip.`person_name`,woip.`person_phone`,woip.`person_type`,woip.`card_no`,woip.`bank_name`,woip.`bank_card`,woip.`card_type`,woip.`refund_reason`,woip.`refund_time`,
+		wof.`is_invoice`,woin.`title` AS invoiceTitle,woin.`receiver` AS invoiceReceiver,woin.`phone` invoicePhone,CONCAT(aa.`full_name`,woin.`addr_detail`) AS invoiceAddr,woin.`post_code`,
+		wori.`day_price`,woip.`refund_reamrk`
+		FROM `web_order_form` AS wof 
+		JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		JOIN `web_car` AS wc ON woi.`goods_id`=wc.`id`
+		JOIN `web_car_rent` AS wcr ON wc.`id`=wcr.`car_id`
+		JOIN `web_car_brand` AS wcb ON wcb.`id`=wc.`brand_id`
+		JOIN `web_car_sys` AS wcs ON wcs.`id`=wc.`sys_id`
+		JOIN `web_car_type_ct` AS wctc ON wctc.`car_id`=wc.`id`
+		JOIN `web_car_type` AS wct ON wct.`id`=wctc.`car_type_id`
+		LEFT JOIN `web_order_rent_info` AS wori ON wori.`order_form_id`=wof.`id`
+		LEFT JOIN `web_car_addrs` AS swca ON swca.`id`=wori.`get_store_id`
+		LEFT JOIN `web_car_addrs` AS ewca ON ewca.`id`=wori.`lose_store_id`
+		JOIN `web_order_item_person` AS woip ON woip.`item_id`=woi.`id`
+		LEFT JOIN `web_order_invoice` AS woin ON woin.`order_form_id`=wof.`id`
+		LEFT JOIN `area_all` AS aa ON aa.`id`=woin.`addr_id`
+		JOIN `common_upload` AS cu ON cu.`pic_from`='carRent' AND cu.`pic_type`='detial' AND cu.`from_id`=wc.`id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wof.`user_id`
+		WHERE wof.`id` =#{id} AND wof.`order_type`='carRent' AND wof.`is_delete`=0
+		GROUP BY wof.`id`
+	</select>
+	
+	<select id="findCarWrapOrderDetial" resultType="map">
+		SELECT wof.`id`,wof.`create_time`,wof.`order_code`,wof.`pay_order_id`,woi.`real_price`,woi.`safe_price`,woi.`goods_count`,wof.`order_state`
+		,cu.`pic_url`,wof.`order_type`,wc.`seating`,wcb.`brand`,wcs.`sys`,wc.`car_year`,wc.`car_configure`,wcwi.`start_time`,wcwi.`end_time`,
+		woip.`person_name`,woip.`person_phone`,woip.`person_type`,wcwi.`start_addr_detail`,
+		wof.`is_invoice`,woin.`title` AS invoiceTitle,woin.`receiver` AS invoiceReceiver,woin.`phone` invoicePhone,
+		CONCAT(IFNULL(aa.`full_name`,""),woin.`addr_detail`) AS invoiceAddr,woin.`post_code`,
+		TIMESTAMPDIFF(DAY,DATE_FORMAT(wcwi.`start_time`,"%Y-%m-%d"),DATE_FORMAT(wcwi.`end_time`,"%Y-%m-%d")) AS `day`,
+		wcwi.`day_price`,wof.`pay_order_id`,woip.`refund_reason`,woip.`refund_time`,woip.`bank_card`,woip.`bank_name`,woip.`refund_reamrk`
+		FROM `web_order_form` AS wof 
+		LEFT JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		LEFT JOIN `web_car_wrap_info` AS wcwi ON wcwi.`id`=woi.`goods_id`
+		LEFT JOIN `web_car` AS wc ON wcwi.`car_id`=wc.`id`
+		LEFT JOIN `web_car_brand` AS wcb ON wcb.`id`=wc.`brand_id`
+		LEFT JOIN `web_car_sys` AS wcs ON wcs.`id`=wc.`sys_id`
+		LEFT JOIN `web_order_item_person` AS woip ON woip.`item_id`=woi.`id`
+		LEFT JOIN `web_order_invoice` AS woin ON woin.`order_form_id`=wof.`id`
+		LEFT JOIN `area_all` AS aa ON aa.`id`=woin.`addr_id`
+		LEFT JOIN `common_upload` AS cu ON cu.`pic_from`='carWrap' AND cu.`pic_type`='banner' AND cu.`from_id`=wc.`id`
+		WHERE wof.`id` =#{id} AND wof.`order_type`='carWrap' AND wof.`is_delete`=0
+		GROUP BY wof.`id`
+	</select>
+	
+	<select id="findCarWrapAddrList" resultType="map">
+		SELECT swca.`store` AS startStore,ewca.`store` AS endStore
+		FROM `web_order_item` AS woi
+		LEFT JOIN `web_car_wrap_info` AS wcwi ON wcwi.`id`=woi.`goods_id`
+		LEFT JOIN `web_car_wrap_route` AS wcwr ON wcwr.`wrap_info_id`=wcwi.`id`
+		LEFT JOIN `web_car_addrs` AS swca ON swca.`id`=wcwr.`start_addr_id`
+		LEFT JOIN `web_car_addrs` AS ewca ON ewca.`id`=wcwr.`end_addr_id`
+		WHERE woi.`form_id`=#{id};
+	</select>
+	
+	<select id="findCarBusOrderDetial" resultType="map">
+		SELECT wof.`id`,wof.`create_time`,wu.`phone`,wu.`email`,wof.`order_code`,wof.`pay_order_id`,woi.`real_price`,woi.`safe_price`,woi.`goods_count`,wof.`order_state`
+		,cu.`pic_url`,wof.`order_type`,wc.`seating`,wcb.`brand`,wc.`car_year`,wcs.`sys`,
+		swca.`store` AS startStore,ewca.`store` AS endStore,wcr.`from_time`,wcr.`to_time`,
+		wof.`is_invoice`,woin.`title` AS invoiceTitle,woin.`receiver` AS invoiceReceiver,woin.`phone` invoicePhone,
+		CONCAT(aa.`full_name`,woin.`addr_detail`) AS invoiceAddr,woin.`post_code`,
+		woi.`bus_start_time` AS start_time
+		,woip.`person_name`,woip.`person_phone`,wof.`pay_order_id`,woip.`refund_reason`,woip.`refund_time`,woip.`bank_card`,woip.`bank_name`,woip.`refund_reamrk`
+		,woip.`refund_reason`
+		FROM `web_order_form` AS wof 
+		LEFT JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		LEFT JOIN `web_car_bus` AS wcbus ON wcbus.`id`=woi.`goods_id`
+		LEFT JOIN `web_car` AS wc ON wcbus.`car_id`=wc.`id`
+		LEFT JOIN `web_car_route` AS wcr ON wcr.`bus_id`=wcbus.`id`
+		LEFT JOIN `web_car_addrs` AS swca ON wcr.`from_addr_id`=swca.`id`
+		LEFT JOIN `web_car_addrs` AS ewca ON wcr.`to_addr_id`=ewca.`id`
+		LEFT JOIN `web_car_brand` AS wcb ON wcb.`id`=wc.`brand_id`
+		LEFT JOIN `web_car_sys` AS wcs ON wcs.`brand_id`=wcb.`id`
+		LEFT JOIN `web_order_invoice` AS woin ON woin.`order_form_id`=wof.`id`
+		LEFT JOIN `area_all` AS aa ON aa.`id`=woin.`addr_id`
+		LEFT JOIN `common_upload` AS cu ON cu.`pic_from`='bus' AND cu.`pic_type`='banner' AND cu.`from_id`=wc.`id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wof.`user_id`
+		LEFT JOIN `web_order_item_person` AS woip ON woip.`item_id`=woi.`id`
+		WHERE wof.`id` =#{id} AND wof.`order_type`='bus' AND wof.`is_delete`=0
+		GROUP BY wof.`id`
+	</select>
+	
+	<select id="findCarBusOrderPersonList" resultType="map">
+		SELECT woip.`person_name`,woip.`person_type`,woip.`card_no`,woip.`card_type`,woip.`person_phone`
+		FROM `web_order_form` AS wof
+		JOIN `web_order_item` AS woi ON woi.`form_id`=wof.`id`
+		JOIN `web_order_item_person` AS woip ON woi.`id`=woip.`item_id`
+		WHERE wof.`id`=#{id}
+	</select>
+	
+	<select id="findCarPoolOrderDetial" resultType="map">
+		SELECT wof.`id`,wof.`create_time`,wof.`order_code`,wof.`pay_order_id`,woi.`real_price`,woi.`safe_price`,woi.`goods_count`,wof.`order_state`
+		,wof.`order_type`,wcc.`pool_dss`,
+		swca.`store` AS startStore,ewca.`store` AS endStore,wcc.`start_time`,wcc.`id` AS carPoolId,
+		DATE_ADD(wcc.`start_time`,INTERVAL -2 HOUR) AS end_time,
+		wof.`is_invoice`,woin.`title` AS invoiceTitle,woin.`receiver` AS invoiceReceiver,woin.`phone` invoicePhone,
+		CONCAT(aa.`full_name`,woin.`addr_detail`) AS invoiceAddr,woin.`post_code`,
+		woip.`bank_card`,woip.`bank_name`,woip.`refund_reamrk`,woip.`person_name`,woip.`refund_time`,
+		wu.`phone`,wu.`email`
+		FROM `web_order_form` AS wof 
+		LEFT JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		LEFT JOIN `web_car_carpool` AS wcc ON wcc.`id`=woi.`goods_id`
+		LEFT JOIN `web_car_addrs` AS swca ON wcc.`start_addr_id`=swca.`id`
+		LEFT JOIN `web_car_addrs` AS ewca ON wcc.`end_addrs_id`=ewca.`id`
+		LEFT JOIN `web_order_invoice` AS woin ON woin.`order_form_id`=wof.`id`
+		LEFT JOIN `area_all` AS aa ON aa.`id`=woin.`addr_id`
+		LEFT JOIN `web_order_item_person` AS woip ON woip.`item_id`=woi.`id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wof.`user_id`
+		WHERE wof.`id` =#{id} AND wof.`order_type`='carpool' AND wof.`is_delete`=0
+		GROUP BY wof.`id`
+	</select>
+	
+	<select id="findCarPoolOrderPersonList" resultType="map">
+		SELECT woip.`person_name`,woip.`person_type`,woip.`card_no`,woip.`card_type`,woip.`person_phone`
+		FROM `web_order_form` AS wof
+		JOIN `web_order_item` AS woi ON woi.`form_id`=wof.`id`
+		JOIN `web_order_item_person` AS woip ON woi.`id`=woip.`item_id`
+		WHERE wof.`id`=#{id}
+	</select>
+	
+	<select id="findOrderType" resultType="String">
+		select order_type from web_order_form t where t.id = #{orderId}
+	</select>
+	
+	<select id="checkCannel" resultType="long">
+		SELECT wof.`id`
+		FROM `web_order_form` AS wof 
+		WHERE wof.`order_state`='WAITPAY' AND wof.`id`=#{id}
+	</select>
+	
+	<update id="cannelOrder">
+		UPDATE `web_order_form`
+		SET order_state='CLOSED',update_time=NOW()
+		WHERE id=#{id}
+	</update>
+	
+	<select id="checkDelete" resultType="long">
+		SELECT wof.`id`
+		FROM `web_order_form` AS wof 
+		WHERE wof.`order_state` in (${allowedOrderType}) AND wof.`id`=#{id}
+	</select>
+	
+	<update id="deleteOrder">
+		UPDATE `web_order_form`
+		SET is_delete=1
+		WHERE id=#{id}
+	</update>
+	
+	<select id="checkRefund" resultType="long">
+		SELECT wof.`id`
+		FROM `web_order_form` AS wof 
+		WHERE wof.`order_state` in (${orderTypes}) AND wof.`id`=#{id}
+	</select>
+	
+	<update id="refund">
+		UPDATE `web_order_form`
+		SET order_state='REFUNDING'
+		WHERE id=#{id}
+	</update>
+	
+	<update id="updatePerson">
+		UPDATE `web_order_item_person`
+		SET bank_name=#{bank_name},bank_card=#{bank_card},refund_time=NOW(),refund_reason=#{reason},is_examine=2
+		WHERE item_id=(SELECT id FROM `web_order_item` WHERE form_id=#{id})
+	</update>
+	
+	<insert id="insertExcelOrder">
+		INSERT INTO `web_order_form`
+		SET id=#{id},
+		state=#{state},
+		create_time=#{create_time},
+		update_time=#{update_time},
+		order_type=#{order_type},
+		order_code=#{order_code},
+		pay_type=#{pay_type},
+		pay_order_id=#{pay_order_id},
+		pay_time=#{pay_time},
+		order_state=#{order_state},
+		is_invoice=#{is_invoice},
+		is_delete=#{is_delete},
+		user_id=#{user_id},
+		merch_user_id=#{merch_user_id},
+		is_evaluate=#{is_evaluate}
+	</insert>
+	
+	<sql id="findAdminBusCountSql">
+		SELECT wcb.`id`,DATE_FORMAT(wof.`create_time`,'%Y-%m-%d') AS start_date,
+		SUM(IF(wof.`order_state`='PAY_OK',1,0)) AS payOrder,
+		SUM(IF(wof.`order_state`!='PAY_OK',1,0)) AS unPayOrder,
+		wc.`car_card`,CONCAT(swca.`store`,"-",ewca.`store`) AS title,wc.`seating`,(wc.`seating`-wcb.`use_count`) AS surplus,wcr.`price`,
+		wcr.`from_time`,wcr.`to_time`
+		FROM `web_car_bus` AS wcb
+		JOIN `web_car` AS wc ON wcb.`car_id`=wc.`id`
+		JOIN `web_car_route` AS wcr ON wcr.`bus_id`=wcb.`id`
+		JOIN `web_car_addrs` AS swca ON wcr.`from_addr_id`=swca.`id`
+		JOIN `web_car_addrs` AS ewca ON wcr.`to_addr_id`=ewca.`id`
+		JOIN `web_order_item` AS woi ON woi.`goods_id`=wcb.`id`
+		JOIN `web_order_form` AS wof ON wof.`id`=woi.`form_id` AND wof.`order_type`='bus'
+		where wcb.`state`='ADD'
+		<if test="timeEndStr !=null and timeEndStr!=''">
+			AND wcr.`from_time`=#{timeEndStr}
+		</if>
+		<if test=" limit !=null and limit !='' ">
+			<if test=" limit == 0 ">
+				AND TIMESTAMPDIFF(DAY,NOW(),wof.`create_time`) &gt; (-30)
+			</if>
+			<if test=" limit == 1 ">
+				AND TIMESTAMPDIFF(DAY,NOW(),wof.`create_time`)=0
+			</if>
+		</if>	
+		GROUP BY wcb.`id`,start_date
+		HAVING title LIKE '%${title}%'
+		<if test=" startDate !=null and startDate!='' ">
+			AND start_date=#{startDate}
+		</if>
+		ORDER BY start_date DESC
+	</sql>
+	
+	<select id="findAdminBusCountList" resultType="map">
+		<include refid="findAdminBusCountSql"></include>
+		LIMIT ${startLine},${showLine}
+	</select>
+	
+	<select id="findAdminBusCountCount" resultType="Long">
+		SELECT COUNT(*) 
+		FROM (
+		<include refid="findAdminBusCountSql"></include>
+		) as `result`
+	</select>
+	
+	
+	<sql id="findAdminPoolCountSql">
+		SELECT wcc.`id`,swc.`name` AS startCity,ewc.`name` AS endCity,wu.`nickname`,wcc.`publish_name`,wcc.`publish_phone`,wcc.`max_price`
+		,COUNT(woi.`id`) AS peopleNumber
+		,SUM(IF(wof.`order_state` IN ('PAY_OK','REFUNDING','REFUNDING_FAIL'),1,0)) AS payPeople
+		,SUM(IF(wof.`order_state`='WAITPAY',1,0)) AS unPayPeople
+		,wcc.`create_time`,wcc.`start_time`,wcc.`flag`
+		FROM `web_car_carpool` AS wcc
+		JOIN `web_order_item` AS woi ON woi.`goods_id`=wcc.`id` 
+		JOIN `web_order_form` AS wof ON woi.`form_id`=wof.`id` AND wof.`order_type`='carpool'
+		JOIN `web_citys` AS swc ON wcc.`start_city_id`=swc.`id`
+		JOIN `web_citys` AS ewc ON wcc.`end_city_id`=ewc.`id`
+		LEFT JOIN `web_user`  AS wu ON wu.`id`=wcc.`publish_user_id`
+		where wcc.`state`='ADD'
+		<if test=" createDate !=null and createDate !='' ">
+			AND DATE_FORMAT(wcc.`create_time`,'%Y-%m-%d+%H:%i') = #{createDate}
+		</if>
+		<if test=" startDate !=null and startDate !='' ">
+			AND DATE_FORMAT(wcc.`start_time`,'%Y-%m-%d+%H:%i') = #{startDate}
+		</if>
+		<if test=" limit !=null and limit !='' ">
+			<if test=" limit == 0 ">
+				AND TIMESTAMPDIFF(DAY,NOW(),wof.`create_time`) &gt; (-30)
+			</if>
+			<if test=" limit == 1 ">
+				AND TIMESTAMPDIFF(DAY,NOW(),wof.`create_time`)=0
+			</if>
+		</if>
+		GROUP BY wcc.`id`
+		HAVING CONCAT(startCity,"-",endCity) LIKE '%${title}%'
+		ORDER BY wcc.`create_time` DESC
+	</sql>
+	
+	<select id="findAdminPoolCountList" resultType="map">
+		<include refid="findAdminPoolCountSql"></include>
+		LIMIT ${startLine},${showLine}
+	</select>
+	
+	<select id="findAdminPoolCountCount" resultType="Long">
+		SELECT COUNT(*) 
+		FROM (
+		<include refid="findAdminPoolCountSql"></include>
+		) as `result`
+	</select>
+	
+	<update id="updateExamineRefund">
+		UPDATE `web_order_item_person`
+		SET refund_reamrk=#{refundReamrk},is_examine=#{state},refund_over_time=NOW()
+		WHERE item_id=(
+		SELECT woi.`id`
+		FROM `web_order_form` AS wof 
+		JOIN `web_order_item` AS woi ON wof.`id`=woi.`form_id`
+		WHERE wof.`id`=#{id}
+		)
+	</update>
+	
+	<insert id="insertOrderExamine">
+		INSERT INTO `web_order_examine`
+		SET create_time=NOW(),form_id=#{id},reason=#{refundReamrk},result=#{state}
+	</insert>
+	
+	<select id="findOrderExamineList" resultType="map">
+		SELECT create_time,reason,result
+		FROM `web_order_examine`
+		WHERE form_id=#{id}
+		ORDER BY create_time DESC
+	</select>
+	
+	<select id="findorderUser" resultType="map">
+		SELECT wu.`nickname`,woip.`person_name`,woip.`person_phone`,woip.`bank_card`,woip.`bank_name`
+		FROM `web_order_form` AS wof
+		JOIN `web_order_item` AS woi ON woi.`form_id`=wof.`id`
+		LEFT JOIN `web_order_item_person` AS woip ON woip.`item_id`=woi.`id`
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wof.`user_id`
+		WHERE wof.`id`=#{id}
+		GROUP BY woi.`id`
+	</select>
+	
+	<!-- 关闭半个小时未支付的订单 -->
+	<update id="closeNotPayOrderInTime">
+		UPDATE `web_order_form` wof SET wof.`order_state` = 'CLOSED'
+		WHERE wof.`order_state` = 'WAITPAY' 
+		  AND DATE_ADD(wof.`create_time`, INTERVAL 30 MINUTE) &lt; NOW()
+	</update>
+	
+	<!-- 获取需要通知支付的订单 订单失效前15分钟通知 -->
+	<select id="findNoticeOrderList" resultType="PageData">
+		SELECT 
+		  wof.`id`,
+		  wof.`user_id`,
+		  wof.`order_code`,
+		  wof.`order_type`
+		FROM
+		  web_order_form wof 
+		WHERE wof.`order_state` = 'WAITPAY' 
+		  AND DATE_ADD(wof.`create_time`, INTERVAL 15 MINUTE) &lt; NOW()
+		  AND DATE_ADD(wof.`create_time`, INTERVAL 30 MINUTE) &gt; NOW()
+	</select>
+	
+	<!-- 检验是否通知过 -->
+	<select id="checkIsNotice" resultType="Integer">
+		SELECT 
+		  COUNT(1) 
+		FROM
+		  web_order_form wof 
+		  INNER JOIN web_message wm 
+		    ON wm.`msg_type` = 'notice' 
+    		AND wm.`msg_source` = #{orderType}
+		    AND wm.`biuld_id` = wof.`id` 
+		WHERE wof.`id` = #{id}
+	</select>
+	
+	<select id="findOrderEvaluateInfo" resultType="PageData">
+		SELECT 
+		  wof.`id` AS orderId,
+		  woi.`goods_id` AS goodsId,
+		  wd.`name` AS goodsName,
+		  woi.`goods_count` AS goodsCount,
+		  woi.`real_price` AS realPrice,
+		  IFNULL(
+		    cu.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS picUrl 
+		FROM
+		  web_order_form wof 
+		  INNER JOIN web_order_item woi 
+		    ON woi.`form_id` = wof.`id` 
+		  INNER JOIN web_depth wd 
+		    ON wd.`id` = woi.`goods_id` 
+		  INNER JOIN common_upload cu 
+		    ON cu.`pic_from` = 'depth' 
+		    AND cu.`pic_type` = 'webCover' 
+		    AND cu.`from_id` = wd.`id` 
+		WHERE wof.`is_delete` = 0 
+		  AND wof.`id` = #{orderId} 
+	</select>
+	
+	<update id="deletesBus">
+		UPDATE `web_car_bus`
+		SET state='DEL'
+		WHERE id IN (${ids})
+	</update>
+	
+	<update id="deletesPool">
+		UPDATE `web_car_carpool`
+		SET state='DEL'
+		WHERE id IN (${ids})
+	</update>
+	
+	<select id="findOperationCarPool" resultType="PageData">
+		SELECT id,pool_dss
+		FROM `web_car_carpool`
+		WHERE start_time &lt; NOW() AND flag =2
+	</select>
+	
+	<select id="findCarPoolOrder" resultType="PageData">
+		SELECT wof.`id`,wof.`order_type`,wof.`user_id`,wof.`order_code`
+		FROM `web_order_form` AS wof 
+		JOIN `web_order_item` AS woi ON woi.`form_id`=wof.`id`
+		WHERE woi.`goods_id` IN (${ids}) AND wof.`order_type`='carpool'
+	</select>
+	
+	<update id="closePoolOrder">
+		UPDATE `web_order_form`
+		SET order_state='CLOSED'
+		WHERE id=#{id}
+	</update>
+	<update id="refundPoolOrder">
+		UPDATE `web_order_form`
+		SET order_state='REFUNDING'
+		WHERE id=#{id}
+	</update>
+	
+	<update id="updateRefundTime">
+		UPDATE `web_order_item_person`
+		SET refund_time=NOW()
+		WHERE item_id=(
+		SELECT woi.`id`
+		FROM `web_order_form` AS wof
+		JOIN `web_order_item` AS woi ON woi.`form_id`=wof.`id`
+		WHERE wof.`id`=#{id}
+		)
+	</update>
+	
+	<update id="updateCarPool">
+		UPDATE `web_car_carpool`
+		SET flag=#{flag}
+		WHERE id IN (${ids})
+	</update>
+	
+	<update id="subCarPoolDss">
+		UPDATE `web_car_carpool`
+		SET pool_dss=pool_dss-#{number}
+		WHERE id=#{carPoolId}
+	</update>
+	
+	<select id="findOrderStateByid" parameterType="PageData" resultType="PageData">
+		SELECT order_state
+		from web_order_form
+		where id=#{orderId}
+	</select>
+	
+	<select id="findRefundMes" resultType="PageData">
+		SELECT 
+		  wof.order_code,
+		  woip.`person_name`,
+		  woip.`person_phone` 
+		FROM
+		  web_order_form wof 
+		  INNER JOIN web_order_item woi 
+		    ON woi.`form_id` = wof.`id` 
+		  INNER JOIN web_order_item_person woip 
+		    ON woip.`item_id` = woi.`id` 
+		WHERE wof.`id` = #{orderId}
+	</select>
+	
+	<update id="updateInitBus">
+		UPDATE `web_car_bus`
+		SET use_count=0
+		WHERE id IN (
+		SELECT id
+		FROM (
+		SELECT wcb.`id`
+		FROM `web_car_route` AS wcr
+		JOIN `web_car_bus` AS wcb ON wcr.`bus_id`=wcb.`id`
+		WHERE wcr.`from_time`=DATE_FORMAT(NOW(),'%H:%i')
+		) tempResult
+		)
+	</update>
+	
+	<update id="updateBusStartDate">
+		UPDATE `web_order_item`
+		SET bus_start_time=(
+		SELECT *
+		FROM (
+		SELECT CAST(CONCAT(DATE_FORMAT(DATE_ADD(DATE_ADD(wof.`create_time`,INTERVAL CAST(wcr.`from_time` AS TIME) &lt; CAST(NOW() AS TIME) DAY),INTERVAL -30 MINUTE),'%Y-%m-%d')," ",wcr.`from_time`,":00") AS DATETIME) AS startTime
+		FROM `web_car_route` AS wcr
+		JOIN `web_order_item` AS woi ON woi.`goods_id`=wcr.`bus_id`
+		JOIN `web_order_form` AS wof ON wof.`id`=woi.`form_id`
+		WHERE woi.`id`=#{orderItemId}
+		) AS start_date_result
+		)
+		WHERE id=#{orderItemId}
+	</update>
+	
+</mapper>

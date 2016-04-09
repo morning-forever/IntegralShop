@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebCarSafeMapper">
+	
+	<select id="findByType" parameterType="PageData" resultType="PageData">
+		SELECT *  FROM web_car_safe where safe_type = #{type};
+	</select>
+	
+	<insert id="insert">
+		insert into web_car_safe 
+		(create_time, safe_type, price, remark)
+		values
+		(NOW(), #{type}, #{price}, #{remark})
+	</insert>
+	
+	<update id="update">
+		update web_car_safe set update_time = NOW()
+		<if test=" price != null and price != '' ">
+			, price = #{price}
+		</if>
+		<if test=" remark != null and remark != '' ">
+			, remark = #{remark}
+		</if>
+		where id = #{id}
+	</update>
+	
+</mapper>

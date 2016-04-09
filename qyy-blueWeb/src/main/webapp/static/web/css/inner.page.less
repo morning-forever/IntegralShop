@@ -1,0 +1,267 @@
+﻿@charset "utf-8";
+
+@import (reference) "common";
+@import (reference) "inner.style.less";
+
+.red {
+	color: red;
+}
+.f30 {
+	font-size: 30px;
+}
+.pd20 {
+	.pd(20px);
+}
+
+
+/* 已筛选结果 */
+.ctgresult {
+	.pd(10px 40px);
+	.f12;
+	.varrow {
+		.inline;
+		.mr();
+		.f14;
+		color: @grey9;
+	}
+	.item {
+		.inline;
+		.border(#c9c9c9);
+		.lh(1.6em);
+		color: @grey9;
+		.pl();
+		.mr();
+		.iicon {
+			width: 22px;
+			height: 23px;
+			.ml();
+			.borderl1(#c9c9c9);
+			background-position: -281px -63px;
+			.pointer;
+		}
+	}
+}
+
+.i-viewarea,.i-eat,.i-equipment {
+	width: 28px;
+	height: 32px;
+}
+.i-viewarea {
+	background-position: -4px -531px;
+}
+.i-eat {
+	background-position: -37px -531px;
+}
+.i-equipment {
+	background-position: -66px -531px;
+}
+
+/* 漫游商城 */
+.i-recommend {
+	background-position: -3px -476px;
+}
+.tablinks {
+	border-bottom: 2px solid #ccc;	
+	a {
+		.inline;
+		width: 24.9%;
+		.tc;
+		color: @dark;
+		.pd(15px 0);
+		&.active {
+			.rel;
+			top:2px;
+			color: @lorange;
+			border-bottom: 2px solid @lorange;
+		}
+	}
+}
+
+.listwrap.type2{
+	.pd(20px 17px);
+	.mr(-16px);
+	.list_ul {
+		li {
+			.mr(16px);
+			.price {
+				.pb(0);
+			}
+			.incont {
+				.pd(10px 10px 13px);
+			}
+		}
+	}
+}
+
+/* 漫游商城 */
+.listwrap.type3{
+	.pd(20px);
+	.mr(-20px);
+	.list_ul {
+		li {
+			width: 225px;
+			.mr(20px);
+			.mb(20px);
+			background: #fff;
+			.price {
+				.pb(0);
+			}
+			.incont {
+				.pd(10px 10px 13px);
+				.border(#f4f4f4);
+				border-top: 0;
+			}
+			h4 {
+				.f14;
+				.rel;
+				.pr(60px);
+				
+			}
+			.abs {
+				right: 0;
+				top:0;
+			}
+		}
+	}
+	&.type3_3 {
+		.list_ul {
+			li {
+				h4 {
+					.pr(0);				
+				}
+			}
+		}
+	}
+}
+
+/* 酒店列表 */
+.i-tag {
+	width: 9px;
+	height: 14px;
+	background-position: -341px -101px;
+}
+.hotallist_wrap {
+	.pb(100px);
+}
+.hotalunit {
+	.rel;
+	.pd(0 20px);
+	.borderb1(#f4f4f4);
+	.mb(50px);
+	.hotal-img {
+		.fl;
+		.mr(20px);
+	}
+	.info {
+		.rel;
+		.pt(20px);
+		h3 {
+			.f(20px);
+			.mb(30px);
+		}
+	}
+	.price {
+		.abs;
+		right: 0;
+		top:20px;
+		color: @lorange;
+	}
+	.judge {
+		.abs;
+		right:0;
+		top:70px;
+		color: @lorange;
+		.f16;
+	}
+}
+
+/* 商家介绍 */
+.i-seller {
+	background-position: -118px -535px;
+}
+.i-addr {
+	background-position: -139px -535px;
+}
+.i-contactnum {
+	background-position: -162px -535px;
+}
+.i-intro {
+	background-position: -184px -535px;
+}
+.i-install {
+	background-position: -206px -535px;
+}
+.i-install2 {
+	background-position: -273px -535px;
+}
+.i-wifi {
+	width: 18px;
+	height: 18px;
+	background-position: -231px -535px;
+}
+.i-cfj {
+	width: 18px;
+	height: 18px;
+	background-position: -252px -535px;
+}
+.detail-content {
+	.pd(30px 40px);
+}
+.listitem {
+	@w : 120px;
+	.rel;
+	.mb(15px);
+	.iicon {
+		width: 20px;
+		height: 20px;
+		.mr();
+	}
+	.l-title {
+		color: @grey;
+		.abs;
+		.inline;
+		left:0;
+		top:0;
+		width: @w;
+	}
+	.r-content {
+		.ml(@w);
+		color: @grey9;
+		p {
+			text-indent: 2em;
+			color: @grey9;
+			.mr(20px);
+		}
+		.iicon {
+			.mr(5px);
+		}
+	}
+}
+
+.form-box {
+	width: 335px;
+	left: 50%;
+	top:30px;
+	z-index: 1999;
+	margin-left: -500px;
+	background: #fff;
+	.pb(30px);
+	.box-title {
+		height: 28px;
+		background: @lorange;
+		.tc;
+		.lh(28px);
+		.f12;
+		color: #fff;
+		.mb(20px);
+	}
+	.fitemwrap {
+		color: @grey;
+		.ml(20px);
+	}
+}
+
+
+
+
+

@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebDepthTripMapper">
+	
+	<!-- 根据深度游id获取行程列表 -->
+	<select id="getTripListByDepthId" resultType="PageData">
+		SELECT 
+		  wdt.`id`,
+		  wdt.`current_day`,
+		  wdt.`day_type` 
+		FROM
+		  web_depth_trip wdt 
+		WHERE wdt.`depth_id` = #{depthId} 
+	</select>
+	
+	<!-- 根据行程id获取行程地点列表 -->
+	<select id="getTripAddrsByTripId" resultType="String">
+		SELECT 
+		  GROUP_CONCAT(wdta.`trip_addr` SEPARATOR '-') AS trip 
+		FROM
+		  web_depth_trip_addrs wdta 
+		WHERE wdta.`trip_id` = #{tripId} 
+		ORDER BY wdta.`trip_order` 
+	</select>
+	
+	<!-- 根据行程id获取行程地点列表list -->
+	<select id="getTripAddrsListByTripId" resultType="PageData">
+		SELECT 
+		  wdta.`trip_addr` 
+		FROM
+		  web_depth_trip_addrs wdta 
+		WHERE wdta.`trip_id` = #{tripId}  
+		ORDER BY wdta.`trip_order` 
+	</select>
+	
+	<!-- 根据行程id获取行程交通列表 -->
+	<select id="getTripTrafficByTripId" resultType="PageData">
+		SELECT 
+		  wdtt.`used_hour`,
+		  wdtt.`used_minute`,
+		  wdt.`id` AS toolId,
+		  wdt.`name` AS toolName 
+		FROM
+		  web_depth_trip_traffic wdtt 
+		  LEFT JOIN web_depth_tool wdt 
+		    ON wdt.`id` = wdtt.`tools_id` 
+		WHERE wdtt.`trip_id` = #{tripId}  
+		ORDER BY wdtt.`tools_order` 
+	</select>
+	
+	<!-- 根据行程id获取行程图片列表 -->
+	<select id="getTripImgByTripId" resultType="PageData">
+		SELECT 
+		  wdti.`used_hour`,
+		  wdti.`used_minute`,
+		  wdti.`remark`,
+		  wdti.`pic_type`,
+		  IFNULL(
+		    cu.pic_url,
+		    'uploadFiles/uploadImgs/zanwutupian.jpg'
+		  ) AS picUrl 
+		FROM
+		  web_depth_trip_imgs wdti 
+		  LEFT JOIN common_upload cu 
+		    ON cu.pic_from = 'depthTrip' 
+		    AND cu.`pic_type` = 'detail'
+		    AND cu.from_id = wdti.id 
+		WHERE wdti.`trip_id` = #{tripId}  
+		ORDER BY wdti.`img_order` 
+	</select>
+	
+	<!-- 获取app端交通，保证字段与图片list的一致 -->
+	<select id="getAppTrafficByTripId" resultType="PageData">
+		SELECT 
+		  wdtt.`used_hour`,
+		  wdtt.`used_minute`,
+		  wdt.`id` AS pic_type,
+		  wdt.`name` AS remark,
+		  '' as  picUrl
+		FROM
+		  web_depth_trip_traffic wdtt 
+		  LEFT JOIN web_depth_tool wdt 
+		    ON wdt.`id` = wdtt.`tools_id` 
+		WHERE wdtt.`trip_id` = #{tripId}  
+		ORDER BY wdtt.`tools_order`  
+	</select>
+	
+	<!-- 根据深度游id删除行程 -->
+	<delete id="deleteTrip">
+		delete from web_depth_trip where depth_id = #{depthId}
+	</delete>
+	
+	<!-- 根据深度游id新增行程 -->
+	<insert id="addTrip">
+		insert into web_depth_trip
+		(create_time, current_day, day_type, depth_id)
+		values
+		(NOW(), #{currentDay}, #{dayType}, #{depthId})
+	</insert>
+	
+	<!-- 根据行程id删除行程地址 -->
+	<delete id="deleteTripAddr">
+		delete from web_depth_trip_addrs where trip_id = #{tripId}
+	</delete>
+	
+	<!-- 根据行程id新增行程地址 -->
+	<insert id="addTripAddr">
+		insert into web_depth_trip_addrs
+		(create_time, trip_id, trip_addr, trip_order)
+		values
+		(NOW(), #{tripId}, #{tripAddr}, #{tripOrder})
+	</insert>
+	
+	<!-- 根据行程id删除交通 -->
+	<delete id="deleteTripTraffic">
+		delete from web_depth_trip_traffic where trip_id = #{tripId}
+	</delete>
+	
+	<!-- 根据行程id新增交通 -->
+	<insert id="addTripTraffic">
+		insert into web_depth_trip_traffic
+		(create_time, trip_id, tools_id, used_hour, used_minute, tools_order)
+		values
+		(NOW(), #{tripId}, #{toolId}, #{usedHour}, #{usedMinute}, #{toolOrder})
+	</insert>
+	
+	<!-- 根据行程id删除图片 -->
+	<delete id="deleteTripImg">
+		delete from web_depth_trip_imgs where trip_id = #{tripId}
+	</delete>
+	
+	<!-- 根据行程id新增图片 -->
+	<insert id="addTripImg" useGeneratedKeys="true" keyProperty="imgId">
+		insert into web_depth_trip_imgs
+		(create_time, trip_id, remark, used_hour, used_minute, img_order, pic_type)
+		values
+		(NOW(), #{tripId}, #{remark}, #{usedHour}, #{usedMinute}, #{imgOrder}, #{picType})
+	</insert>
+	
+</mapper>

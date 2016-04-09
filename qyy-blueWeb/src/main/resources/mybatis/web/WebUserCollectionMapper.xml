@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="WebUserCollectionMapper">
+   
+   <!-- 新增一个收藏 -->
+   <select id="insert">
+   		insert into web_user_collection 
+   		(create_time, from_id, user_id, from_table)
+   		values
+   		(NOW(), #{fromId}, #{userId}, #{fromTable})
+   </select>
+   
+   <!-- 取消收藏 -->
+   <delete id="delete">
+   		delete from web_user_collection where from_id = #{fromId} and user_id = #{userId} and from_table = #{fromTable}
+   </delete>
+   
+   <select id="checkCollection" resultType="int">
+   		SELECT id
+		FROM `web_user_collection` AS wuc
+		WHERE wuc.`from_id`=#{fromId} AND wuc.`user_id`=#{userId} AND wuc.`from_table`=#{fromTable}
+   </select>
+   
+   <sql id="findTravelsCollectionSql">
+   		SELECT wt.`id`,wt.`title`,wti.`context` AS imgUrl,wwti.`context`,wuc.`create_time`,cwu.`id` AS userId,
+   		cwu.`nickname`,cwu.`head_img`
+		FROM `web_user_collection` AS  wuc
+		LEFT JOIN `web_travels` AS wt ON wuc.`from_id`=wt.`id`
+		LEFT JOIN `web_travels_item` AS wti ON wti.`travel_id`=wt.`id` AND wti.`item_type`='imgs' AND wti.`is_cover`=0
+		LEFT JOIN `web_travels_item` AS wwti ON wwti.`travel_id`=wt.`id` AND wwti.`item_type`='word'
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wuc.`user_id`
+		LEFT JOIN `web_user` AS cwu ON cwu.`id`=wt.`user_id`
+		WHERE wuc.`from_table`='web_travels' 
+		AND wuc.`user_id`=#{userId}
+		AND wt.`travel_type`=#{travelsType}
+		AND wt.`state`='ADD'
+		GROUP BY wt.`id`
+		ORDER BY wuc.`create_time` DESC
+   </sql>
+   
+   <select id="findTravelsCollectionList"  resultType="map">
+		<include refid="findTravelsCollectionSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findTravelsCollectionCount" resultType="int">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findTravelsCollectionSql"></include>
+		) AS countResult
+	</select>
+   
+	<select id="findCollectionCount" resultType="long">
+		SELECT COUNT(*) AS `count`
+		FROM `web_user_collection` AS  wuc
+		WHERE wuc.`user_id`=#{userId}
+	</select>
+	
+	<sql id="findDepthCollectionSql">
+		SELECT wd.`id`,wd.`name`,wd.`adult_price`,'' AS `remark`,
+		wuc.`create_time`,cu.`pic_url`
+		FROM `web_user_collection` AS wuc
+		JOIN `web_depth` AS wd ON wuc.`from_id`=wd.`id` AND wuc.`from_table`='web_depth'
+		LEFT JOIN common_upload cu ON cu.pic_from = 'depth'  AND cu.pic_type = 'webCover'  AND cu.from_id = wd.id
+		WHERE wuc.`user_id`=#{userId}
+		AND wd.`state`='ADD'
+		GROUP BY wd.`id`
+		ORDER BY wuc.`create_time` DESC
+	</sql>
+	
+	<select id="findDepthCollectionList"  resultType="map">
+		<include refid="findDepthCollectionSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findDepthCollectionCount" resultType="int">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findDepthCollectionSql"></include>
+		) AS countResult
+	</select>
+	
+	<sql id="findAllCollectionSql">
+		SELECT *
+		FROM (
+		SELECT wd.`id`,wd.`name` AS title,CONCAT("￥",wd.`adult_price`,"起") AS `context`,
+		wd.`create_time` AS createTime,cu.`pic_url` AS imgUrl,'depth' AS `type`,wuc.`create_time` AS collectionTime
+		FROM `web_user_collection` AS wuc
+		JOIN `web_depth` AS wd ON wuc.`from_id`=wd.`id` AND wuc.`from_table`='web_depth'
+		LEFT JOIN common_upload cu ON cu.pic_from = 'depth'  AND cu.pic_type = 'webCover'  AND cu.from_id = wd.id
+		WHERE wuc.`user_id`=#{userId}
+		AND wd.state='ADD'
+		GROUP BY wd.`id`
+		UNION
+		SELECT wt.`id`,wt.`title`,wwti.`context` AS `context`,wuc.`create_time` AS createTime,wti.`context` AS imgUrl,"travels" AS `type`
+		,wuc.`create_time` AS collectionTime
+		FROM `web_user_collection` AS  wuc
+		JOIN `web_travels` AS wt ON wuc.`from_id`=wt.`id` AND wt.`state`='ADD' AND wuc.`from_table`='web_travels'
+		LEFT JOIN `web_travels_item` AS wti ON wti.`travel_id`=wt.`id` AND wti.`item_type`='imgs' AND wti.`is_cover`=0
+		LEFT JOIN `web_travels_item` AS wwti ON wwti.`travel_id`=wt.`id` AND wwti.`item_type`='word'
+		LEFT JOIN `web_user` AS wu ON wu.`id`=wuc.`user_id`
+		LEFT JOIN `web_user` AS cwu ON cwu.`id`=wt.`user_id`
+		WHERE wuc.`user_id`=#{userId}
+		AND wt.state='ADD'
+		GROUP BY wt.id
+		) AS orderResult
+		ORDER BY collectionTime DESC
+	</sql>
+	
+	<select id="findAllCollectionList" resultType="CollectionItem">
+		<include refid="findAllCollectionSql"></include>
+		LIMIT #{startLine},#{showLine}
+	</select>
+	
+	<select id="findAllCollectionCount" resultType="long">
+		SELECT COUNT(*)
+		FROM (
+		<include refid="findAllCollectionSql"></include>
+		) AS countResult
+	</select>
+	
+	
+	
+</mapper>
